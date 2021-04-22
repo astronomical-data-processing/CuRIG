@@ -10,7 +10,7 @@
             exit(1);                                                    \
         }                                                               \
     }
-int main(int argc, char **argv){
+void GPU_info(){
     /*
     int *h_max_test, *h_max_test2, *h_max_test3;
     CHECK(cudaMalloc(&h_max_test,sizeof(float)*1024*1024));
@@ -20,7 +20,7 @@ int main(int argc, char **argv){
     cudaMalloc(&h_max_test3,sizeof(float)*1024*1024*1000));
     cudaFree(h_max_test);
     */
-    printf("%s Starting... \n",argv[0]);
+    printf("%s Starting... \n");
     int deviceCount = 0;
     cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
     if (error_id != cudaSuccess){
