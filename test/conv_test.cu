@@ -2,9 +2,9 @@
 #include <iomanip>
 #include <math.h>
 #include <helper_cuda.h>
-#include <thrust/complex>
+#include <thrust/complex.h>
 #include <algorithm>
-#include <thrust>
+//#include <thrust>
 using namespace thrust;
 using namespace std::complex_literals;
 #include "../src/FT/conv_invoker.h"
