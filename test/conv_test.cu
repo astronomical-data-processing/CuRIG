@@ -10,7 +10,7 @@ using namespace std::complex_literals;
 #include "../src/FT/conv_invoker.h"
 #include "../include/curafft.h"
 #include "../include/curafft_opts.h"
-#include "../include/utils.h"
+#include "../src/utils.h"
 
 
 int main(int argc, char* argv[]){

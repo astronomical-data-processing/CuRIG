@@ -2,7 +2,7 @@
 #define __CONV_CUH__
 
 //#include "../../include/curafft.h"
-#include "../../include/utils.h"
+#include "../utils.h"
 #include "../../include/dataType.h"
 
 __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M, 

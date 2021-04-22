@@ -6,7 +6,7 @@
 #include <cuda.h>
 #include <stdio.h>
 #include "dataType.h"
-#include "../../inlucde/utils.h"
+#include "../utils.h"
 
 #define MAX_KERNEL_WIDTH 16     // w, even when padded
                            // (see evaluate_kernel_vector); also for common

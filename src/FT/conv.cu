@@ -3,7 +3,7 @@
 #include <math.h>
 #include <cuda.h>
 #include <stdio.h>
-#include "../../include/utils.h"
+#include "../utils.h"
 #include "conv_invoker.h"
 
 //------ convolutional gridding -------
