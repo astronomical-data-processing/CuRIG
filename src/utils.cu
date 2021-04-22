@@ -63,7 +63,7 @@ void GPU_info(){
     printf("Warp size:                                  %d\n",deviceProp.warpSize);
     printf("Number of multiprocessors:                  %d\n", deviceProp.multiProcessorCount);
     printf("Maximum number of threads per multiprocessor: %d\n",deviceProp.maxThreadsPerMultiProcessor);
-    printf("Maximum number of blocks per multiprocessor: %d\n",deviceProp.maxBlocksPerMultiProcessor);
+    //printf("Maximum number of blocks per multiprocessor: %d\n",deviceProp.maxBlocksPerMultiProcessor);
     printf("Maximum number of thread per block:          %d\n",deviceProp.maxThreadsPerBlock);
     printf("Maximum sizes of each dimension of a block: %d x %d x %d\n",deviceProp.maxThreadsDim[0],deviceProp.maxThreadsDim[1]
     ,deviceProp.maxThreadsDim[2]);
