@@ -72,11 +72,11 @@ int main(int argc, char* argv[]){
 
 	PCS *d_x, *d_y, *d_z;
 	CUCPX *d_c, *d_fw;
-	CHECK(cudaMalloc(&d_x,M*sizeof(PCS));
-	CHECK(cudaMalloc(&d_y,M*sizeof(PCS)));
-	CHECK(cudaMalloc(&d_z,M*sizeof(PCS)));
-	CHECK(cudaMalloc(&d_c,M*sizeof(CUCPX)));
-	//checkCudaErrors(cudaMalloc(&d_fw,nf1*nf2*nf3*sizeof(CUCPX)));
+	checkCudaErrors(cudaMalloc(&d_x,M*sizeof(PCS));
+	checkCudaErrors(cudaMalloc(&d_y,M*sizeof(PCS)));
+	checkCudaErrors(cudaMalloc(&d_z,M*sizeof(PCS)));
+	checkCudaErrors(cudaMalloc(&d_c,M*sizeof(CUCPX)));
+	//checkCudaErrorsCudaErrors(cudaMalloc(&d_fw,nf1*nf2*nf3*sizeof(CUCPX)));
 
     //generating data
     int nupts_distribute = 0;
@@ -109,10 +109,10 @@ int main(int argc, char* argv[]){
 	}
 
     //data transfer
-	checkCudaErrors(cudaMemcpy(d_x,x,M*sizeof(FLT),cudaMemcpyHostToDevice)); //u
-	checkCudaErrors(cudaMemcpy(d_y,y,M*sizeof(FLT),cudaMemcpyHostToDevice)); //v
-	checkCudaErrors(cudaMemcpy(d_z,z,M*sizeof(FLT),cudaMemcpyHostToDevice)); //w
-	checkCudaErrors(cudaMemcpy(d_c,c,M*sizeof(CUCPX),cudaMemcpyHostToDevice));
+	checkCudaErrorsCudaErrors(cudaMemcpy(d_x,x,M*sizeof(FLT),cudaMemcpyHostToDevice)); //u
+	checkCudaErrorsCudaErrors(cudaMemcpy(d_y,y,M*sizeof(FLT),cudaMemcpyHostToDevice)); //v
+	checkCudaErrorsCudaErrors(cudaMemcpy(d_z,z,M*sizeof(FLT),cudaMemcpyHostToDevice)); //w
+	checkCudaErrorsCudaErrors(cudaMemcpy(d_c,c,M*sizeof(CUCPX),cudaMemcpyHostToDevice));
 
     curafft_plan *h_plan = new curafft_plan();
     memset(h_plan, 0, sizeof(curafft_plan));
@@ -134,7 +134,7 @@ int main(int argc, char* argv[]){
 
 
     cudaMallocHost(&fw,nf1*nf2*h_plan->num_w*sizeof(CPX)); //malloc after plan setting
-    CHECK(cudaMalloc(&d_fw,nf1*nf2*h_plan->num_w*sizeof(CUCPX)));
+    checkCudaErrors(cudaMalloc(&d_fw,nf1*nf2*h_plan->num_w*sizeof(CUCPX)));
 
 	//binsize, obinsize need to be set here, since SETUP_BINSIZE() is not 
 	//called in spread, interp only wrappers.
@@ -171,7 +171,7 @@ int main(int argc, char* argv[]){
 	/*warm up gpu*/
 	char *a;
 	timer.restart();
-	checkCudaErrors(cudaMalloc(&a,1));
+	checkCudaErrorsCudaErrors(cudaMalloc(&a,1));
 	// cout<<"[time  ]"<< " (warm up) First cudamalloc call " << timer.elapsedsec()
 	//	<<" s"<<endl<<endl;
 
@@ -181,7 +181,7 @@ int main(int argc, char* argv[]){
 
     // convolution
     curafft_conv(h_plan);
-    CHECK(cudaDeviceSynchronize());
+    checkCudaErrors(cudaDeviceSynchronize());
 	PCS t=timer.elapsedsec();
 	int nf3 = h_plan->num_w;
 	printf("[Method %d] %ld NU pts to #%d U pts in %.3g s\n",
@@ -202,11 +202,11 @@ int main(int argc, char* argv[]){
 	}
 
 
-	CHECK(cudaDeviceReset());
-	CHECK(cudaFreeHost(x));
-	CHECK(cudaFreeHost(y));
-	CHECK(cudaFreeHost(z));
-	CHECK(cudaFreeHost(c));
-	CHECK(cudaFreeHost(fw));
+	checkCudaErrors(cudaDeviceReset());
+	checkCudaErrors(cudaFreeHost(x));
+	checkCudaErrors(cudaFreeHost(y));
+	checkCudaErrors(cudaFreeHost(z));
+	checkCudaErrors(cudaFreeHost(c));
+	checkCudaErrors(cudaFreeHost(fw));
 	return 0;
 }
