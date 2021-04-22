@@ -78,7 +78,7 @@ CURAFFTOBJS_32=$(CURAFFTOBJS_64:%.o=%_32.o)
 default: all
 
 # Build all, but run no tests. Note: CI currently uses this default...
-all: libtest spreadtest examples
+all: libtest convtest
 
 # testers for the lib (does not execute)
 libtest: lib $(BINDIR)/conv_test 
