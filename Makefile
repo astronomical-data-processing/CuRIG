@@ -40,8 +40,8 @@ LIBS += -lm -lcudart -lstdc++ -lnvToolsExt -lcufft -lcuda
 # Include header files
 INC += -I include
 
-
-LIBNAME=libcurafft #??
+#??
+LIBNAME=libcurafft
 DYNAMICLIB=lib/$(LIBNAME).so
 STATICLIB=lib-static/$(LIBNAME).a
 
@@ -54,9 +54,9 @@ HEADERS = include/curafft_opts.h include/curafft_plan include/dataType.h include
 
 # We create three collections of objects:
 #  Double (_64), Single (_32), and floating point agnostic (no suffix)
-
-CURAFFTOBJS=src/utils.o #contrib/legendre_rule_fast.o
-CUFINUFFTOBJS_64=src/FT/conv_invoker.o src/FT/conv.o 
+# add contrib/legendre_rule_fast.o to curafftobjs later
+CURAFFTOBJS=src/utils.o
+CUFINUFFTOBJS_64=src/FT/conv_invoker.o src/FT/conv.o
 
 # $(CONTRIBOBJS)
 CURAFFTOBJS_32=$(CURAFFTOBJS_64:%.o=%_32.o)
@@ -97,11 +97,11 @@ $(BINDIR)/%: test/%.o $(CURAFFTOBJS_64) $(CURAFFTOBJS)
 
 # user-facing library...
 lib: $(STATICLIB) $(DYNAMICLIB)
-
-$(STATICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CURAFFTOBJS_32) #$(CONTRIBOBJS)
+ # add $(CONTRIBOBJS) to static and dynamic later
+$(STATICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CURAFFTOBJS_32)
 	mkdir -p lib-static
 	ar rcs $(STATICLIB) $^
-$(DYNAMICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CURAFFTOBJS_32) #$(CONTRIBOBJS)
+$(DYNAMICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CURAFFTOBJS_32)
 	mkdir -p lib
 	$(NVCC) -shared $(NVCCFLAGS) $^ -o $(DYNAMICLIB) $(LIBS)
 
