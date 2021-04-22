@@ -47,7 +47,7 @@ STATICLIB=lib-static/$(LIBNAME).a
 
 BINDIR=bin
 
-HEADERS = include/curafft_opts.h include/curafft_plan include/dataType.h src/utils.h \
+HEADERS = include/curafft_opts.h include/curafft_plan.h include/dataType.h src/utils.h \
 	src/FT/conv_invoker.h src/FT/conv.cuh src/FT/matrix.cuh src/FT/nufft.cuh src/FT/visibility.h
 #later put some file into the contrib
 #CONTRIBOBJS=contrib/dirft2d.o contrib/common.o contrib/spreadinterp.o contrib/utils_fp.o
