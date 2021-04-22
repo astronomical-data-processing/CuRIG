@@ -116,7 +116,7 @@ check:
 checkconv: convtest
 	@echo "Running conv/interp only tests..."
 	@echo "conv 3D.............................................."
-    bin/conv_test 0 1 1024 1024 1024*1024
+	bin/conv_test 0 1 1024 1024 1024*1024
 
 
 # --------------------------------------------- end of check tasks ---------
