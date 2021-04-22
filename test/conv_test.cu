@@ -209,6 +209,4 @@ int main(int argc, char* argv[]){
 	cudaFreeHost(c);
 	cudaFreeHost(fw);
 	return 0;
-
-    return 0;
 }
