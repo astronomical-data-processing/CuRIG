@@ -202,11 +202,11 @@ int main(int argc, char* argv[]){
 	}
 
 
-	cudaDeviceReset();
-	cudaFreeHost(x);
-	cudaFreeHost(y);
-	cudaFreeHost(z);
-	cudaFreeHost(c);
-	cudaFreeHost(fw);
+	CHECK(cudaDeviceReset());
+	CHECK(cudaFreeHost(x));
+	CHECK(cudaFreeHost(y));
+	CHECK(cudaFreeHost(z));
+	CHECK(cudaFreeHost(c));
+	CHECK(cudaFreeHost(fw));
 	return 0;
 }
