@@ -14,7 +14,8 @@ using namespace std::complex_literals;
 
 
 int main(int argc, char* argv[]){
-
+	//improved WS stacking 1,
+	//gpu_method == 0, nupts driven
     int nf1, nf2;
 	PCS sigma = 2.0;
 	int M;
@@ -23,13 +24,13 @@ int main(int argc, char* argv[]){
 			"Usage: spread3d method nupts_distr nf1 nf2 nf3 [maxsubprobsize [M [tol [kerevalmeth [sort]]]]]\n"
 			"Arguments:\n"
 			"  method: One of\n"
-			"    1: nupts driven,\n"
+			"    0: nupts driven,\n"
 			"    2: sub-problem, or\n"
 			"    4: block gather (each nf must be multiple of 8).\n"
             "  w_term_method: \n"
             "    0: w-stacking\n"
             "    1: improved w-stacking\n"
-			"  nf1, nf2, nf3: The size of the 3D array.\n"
+			"  nf1, nf2 : image size.\n"
 			"  M: The number of non-uniform points.\n"
 			"  tol: NUFFT tolerance (default 1e-6).\n"
 			"  kerevalmeth: Kernel evaluation method; one of\n"
@@ -96,7 +97,7 @@ int main(int argc, char* argv[]){
 				for (int i = 0; i < M; i++) {
 					x[i] = M_PI*rand01()/nf1*16;
 					y[i] = M_PI*rand01()/nf2*16;
-					z[i] = M_PI*rand01()/nf3*16;
+					z[i] = M_PI*rand01()/nf2*16;
 					c[i].real(randm11());
 					c[i].imag(randm11());
 				}
@@ -123,17 +124,17 @@ int main(int argc, char* argv[]){
 
     setup_conv_opts(h_plan->copts,tol,h_plan->opts);
 
-	ier = setup_spreader_for_nufft(dplan->spopts, tol, dplan->opts);
-
     
     // w term related setting
     //setup_grid_wsize();
     
     // plan setting
-    setup_plan(nf1, nf2, M, d_x, d_y, d_z, d_c, plan);
+	
+    setup_plan(nf1, nf2, M, d_x, d_y, d_z, d_c, h_plan);
 
-    cudaMallocHost(&fw,nf1*nf2*plan->num_w*sizeof(CPX)); //malloc after plan setting
-    CHECK(cudaMalloc(&d_fw,nf1*nf2*plan->num_w*sizeof(CUCPX)));
+
+    cudaMallocHost(&fw,nf1*nf2*h_plan->num_w*sizeof(CPX)); //malloc after plan setting
+    CHECK(cudaMalloc(&d_fw,nf1*nf2*h_plan->num_w*sizeof(CUCPX)));
 
 	//binsize, obinsize need to be set here, since SETUP_BINSIZE() is not 
 	//called in spread, interp only wrappers.
@@ -179,9 +180,35 @@ int main(int argc, char* argv[]){
 	timer.restart();
 
     // convolution
-    curafft_conv(curafft_plan *plan)
-    
+    curafft_conv(h_plan);
+    CHECK(cudaDeviceSynchronize());
+	PCS t=timer.elapsedsec();
+	int nf3 = h_plan->num_w;
+	printf("[Method %d] %ld NU pts to #%d U pts in %.3g s\n",
+			dplan->opts.gpu_method,M,nf1*nf2*nf3,t);
+	
+	
 
+	cout<<"[result-input]"<<endl;
+	for(int k=0; k<nf3; k++){
+		for(int j=0; j<nf2; j++){
+			for (int i=0; i<nf1; i++){
+				printf(" (%2.3g,%2.3g)",fw[i+j*nf1+k*nf2*nf1].real(),
+					fw[i+j*nf1+k*nf2*nf1].imag() );
+			}
+			cout<<endl;
+		}
+		cout<<"----------------------------------------------------------------"<<endl;
+	}
+
+
+	cudaDeviceReset();
+	cudaFreeHost(x);
+	cudaFreeHost(y);
+	cudaFreeHost(z);
+	cudaFreeHost(c);
+	cudaFreeHost(fw);
+	return 0;
 
     return 0;
 }
