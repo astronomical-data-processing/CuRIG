@@ -117,6 +117,8 @@ int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c
   */
   plan->num_w = 2 * nf1;
 
+
+
 	plan->M = M;
 	//plan->maxbatchsize = 1;
 
