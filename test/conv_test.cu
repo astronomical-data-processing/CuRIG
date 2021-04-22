@@ -72,7 +72,7 @@ int main(int argc, char* argv[]){
 
 	PCS *d_x, *d_y, *d_z;
 	CUCPX *d_c, *d_fw;
-	checkCudaErrors(cudaMalloc(&d_x,M*sizeof(PCS));
+	checkCudaErrors(cudaMalloc(&d_x,M*sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_y,M*sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_z,M*sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_c,M*sizeof(CUCPX)));
