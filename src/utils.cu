@@ -1,16 +1,7 @@
 #include <cuda_runtime.h>
 #include <cuda.h>
 #include <stdio.h>
-#define CHECK(call)                                                     \
-    {                                                                   \
-        const cudaError_t error = call;                                 \
-        if (error != cudaSuccess)                                       \
-        {                                                               \
-            printf("Error:%s:%d", __FILE__, __LINE__);                  \
-            printf("code:%d, reason: %s\n", error, cudaGetErrorString); \
-            exit(1);                                                    \
-        }                                                               \
-    }
+
 void GPU_info(){
     /*
     int *h_max_test, *h_max_test2, *h_max_test3;

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <cuda.h>
 #include <stdio.h>
-#include "dataType.h"
+#include "../../include/dataType.h"
 #include "../utils.h"
 
 #define MAX_KERNEL_WIDTH 16     // w, even when padded

@@ -1,7 +1,7 @@
 #ifndef __CURAFFT_OPTS_H__
 #define __CURAFFT_OPTS_H__
 
-typedef struct curafft_opts {  
+struct curafft_opts {  
 	/*
 		upsampfac - upsampling ratio sigma, only 2.0 (standard) is implemented
 		gpu_device_id - for choosing GPU

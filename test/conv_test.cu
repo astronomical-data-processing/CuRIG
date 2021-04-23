@@ -61,7 +61,7 @@ int main(int argc, char* argv[]){
 
     // fov and 1 pixel corresonding to pix_deg degree
 
-	int ier;
+	//int ier;
 	PCS *x, *y, *z;
 	CPX *c, *fw;
 	cudaMallocHost(&x, M*sizeof(PCS)); //Allocates page-locked memory on the host.
@@ -104,15 +104,15 @@ int main(int argc, char* argv[]){
 			}
 			break;
 		default:
-			cerr << "not valid nupts distr" << endl;
+			std::cerr << "not valid nupts distr" << std::endl;
 			return 1;
 	}
 
     //data transfer
-	checkCudaErrorsCudaErrors(cudaMemcpy(d_x,x,M*sizeof(FLT),cudaMemcpyHostToDevice)); //u
-	checkCudaErrorsCudaErrors(cudaMemcpy(d_y,y,M*sizeof(FLT),cudaMemcpyHostToDevice)); //v
-	checkCudaErrorsCudaErrors(cudaMemcpy(d_z,z,M*sizeof(FLT),cudaMemcpyHostToDevice)); //w
-	checkCudaErrorsCudaErrors(cudaMemcpy(d_c,c,M*sizeof(CUCPX),cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(d_x,x,M*sizeof(PCS),cudaMemcpyHostToDevice)); //u
+	checkCudaErrors(cudaMemcpy(d_y,y,M*sizeof(PCS),cudaMemcpyHostToDevice)); //v
+	checkCudaErrors(cudaMemcpy(d_z,z,M*sizeof(PCS),cudaMemcpyHostToDevice)); //w
+	checkCudaErrors(cudaMemcpy(d_c,c,M*sizeof(CUCPX),cudaMemcpyHostToDevice));
 
     curafft_plan *h_plan = new curafft_plan();
     memset(h_plan, 0, sizeof(curafft_plan));
@@ -122,7 +122,7 @@ int main(int argc, char* argv[]){
     h_plan->opts.gpu_method = method;
 	h_plan->opts.gpu_kerevalmeth = kerevalmeth;
 
-    setup_conv_opts(h_plan->copts,tol,h_plan->opts);
+    setup_conv_opts(h_plan->copts,tol,h_plan->opts); //check the arguements
 
     
     // w term related setting
@@ -130,7 +130,7 @@ int main(int argc, char* argv[]){
     
     // plan setting
 	
-    setup_plan(nf1, nf2, M, d_x, d_y, d_z, d_c, h_plan);
+    setup_plan(nf1, nf2, M, d_x, d_y, d_z, d_c, h_plan); //add to .h file
 
 
     cudaMallocHost(&fw,nf1*nf2*h_plan->num_w*sizeof(CPX)); //malloc after plan setting
@@ -164,10 +164,10 @@ int main(int argc, char* argv[]){
 	}
     */
 
-	cout<<scientific<<setprecision(3);
+	std::cout<<std::scientific<<setprecision(3);
 
 
-	CNTime timer;
+	CNTime timer; //
 	/*warm up gpu*/
 	char *a;
 	timer.restart();
@@ -180,12 +180,12 @@ int main(int argc, char* argv[]){
 	timer.restart();
 
     // convolution
-    curafft_conv(h_plan);
+    curafft_conv(h_plan); //add to include
     checkCudaErrors(cudaDeviceSynchronize());
 	PCS t=timer.elapsedsec();
 	int nf3 = h_plan->num_w;
 	printf("[Method %d] %ld NU pts to #%d U pts in %.3g s\n",
-			dplan->opts.gpu_method,M,nf1*nf2*nf3,t);
+			h_plan->opts.gpu_method,M,nf1*nf2*nf3,t);
 	
 	
 
@@ -196,9 +196,9 @@ int main(int argc, char* argv[]){
 				printf(" (%2.3g,%2.3g)",fw[i+j*nf1+k*nf2*nf1].real(),
 					fw[i+j*nf1+k*nf2*nf1].imag() );
 			}
-			cout<<endl;
+			std::cout<<std::endl;
 		}
-		cout<<"----------------------------------------------------------------"<<endl;
+		std::cout<<"----------------------------------------------------------------"<<std::endl;
 	}
 
 

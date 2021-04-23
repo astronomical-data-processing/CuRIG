@@ -33,4 +33,5 @@
 
 #define BLOCKSIZE 1024
 
+//random11 and rand01
 #endif
