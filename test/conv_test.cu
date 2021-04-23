@@ -164,14 +164,14 @@ int main(int argc, char* argv[]){
 	}
     */
 
-	std::cout<<std::scientific<<setprecision(3);
+	std::cout<<std::scientific<<setprecision(3);//setprecision not define
 
 
 	CNTime timer; //
 	/*warm up gpu*/
 	char *a;
 	timer.restart();
-	checkCudaErrorsCudaErrors(cudaMalloc(&a,1));
+	checkCudaErrors(cudaMalloc(&a,1));
 	// cout<<"[time  ]"<< " (warm up) First cudamalloc call " << timer.elapsedsec()
 	//	<<" s"<<endl<<endl;
 
@@ -189,7 +189,7 @@ int main(int argc, char* argv[]){
 	
 	
 
-	cout<<"[result-input]"<<endl;
+	std::cout<<"[result-input]"<<std::endl;
 	for(int k=0; k<nf3; k++){
 		for(int j=0; j<nf2; j++){
 			for (int i=0; i<nf1; i++){
