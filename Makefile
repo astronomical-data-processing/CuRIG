@@ -75,7 +75,13 @@ CURAFFTOBJS_32=$(CURAFFTOBJS_64:%.o=%_32.o)
 %.o: %.cu $(HEADERS)
 	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
-src/utils.o: src/utils.cu $(HEADERS)
+src/%.o: src/%.cu $(HEADERS)
+	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
+
+src/FT/%.o: src/FT/%.cu $(HEADERS)
+	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
+
+src/test/%.o src/test/%.cu $(HEADERS)
 	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
 default: all
