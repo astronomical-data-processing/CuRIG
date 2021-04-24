@@ -5,7 +5,6 @@
 #include "curafft_plan.h"
 
 
-#define MAX_KERNEL_WIDTH 16
 #define CONV_THREAD_NUM 32
 
 int setup_conv_opts(conv_opts &c_opts, PCS eps, PCS upsampfac, int kerevalmeth);//cautious the &

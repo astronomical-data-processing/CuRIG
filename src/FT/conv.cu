@@ -7,6 +7,8 @@
 #include <math.h>
 #include <cuda.h>
 #include <stdio.h>
+#include <helper_cuda.h>
+//#include <thrust/extrema.h>
 #include "conv.h"
 
 static __inline__ __device__ int kerval(PCS x, PCS es_c, PCS es_beta){
@@ -48,7 +50,6 @@ __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M,
 
 	PCS temp1, temp2;
 	int idx;
-	int xstart, ystart, xend, yend;
 	//__shared__ CUCPX s_c[blockDim.x];
 	//assert(pirange==1);// check
 
@@ -142,15 +143,15 @@ void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw, int M,
 		val_kernel_vec(ker2,y1,ns,es_c,es_beta);
 		val_kernel_vec(ker3,z1,ns,es_c,es_beta);
 		for(zz=zstart; zz<=zend; zz++){
-			ker_val_3=ker3[zz-zstart];
+			temp3=ker3[zz-zstart];
 			for(yy=ystart; yy<=yend; yy++){
-				ker_val_2=ker2[yy-ystart];
+				temp2=ker2[yy-ystart];
 				for(xx=xstart; xx<=xend; xx++){
 					if( (xx<0) || (xx>nf1-1) || (yy < 0) || (yy>nf2-1) || (zz<0) || (zz>nf3-1))continue;
 					outidx = ix+iy*nf1+iz*nf1*nf2;
 
 					temp1=ker1[xx-xstart];
-					FLT kervalue=temp1*temp2*temp3;
+					PCS kervalue=temp1*temp2*temp3;
 
 					atomicAdd(&fw[outidx].x, c[idx].x*kervalue);
 					atomicAdd(&fw[outidx].y, c[idx].y*kervalue);

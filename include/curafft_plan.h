@@ -11,6 +11,8 @@
 #include "utils.h"
 #include "visibility.h"
 
+#define MAX_KERNEL_WIDTH 16
+
 struct conv_opts{
   /*
     options for convolutional gridding process
