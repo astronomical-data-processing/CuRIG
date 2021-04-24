@@ -2,7 +2,7 @@
 #define __VISIBILITY_H__
 
 
-#include "dataType.h"
+#include "../../include/dataType.h"
 
 struct visibility
 {
