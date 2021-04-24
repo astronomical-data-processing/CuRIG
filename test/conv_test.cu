@@ -121,7 +121,39 @@ int main(int argc, char* argv[]){
     h_plan->opts.gpu_method = method;
 	h_plan->opts.gpu_kerevalmeth = kerevalmeth;
 
-    setup_conv_opts(&(h_plan->copts),sigma, tol, kerevalmeth); //check the arguements
+    //setup_conv_opts(&(h_plan->copts),sigma, tol, kerevalmeth); //check the arguements
+	
+	h_plan->c_opts.direction = 1;
+	h_plan->c_opts.pirange = 1;
+	h_plan->c_opts.upsampfac = upsampfac;
+		
+	// Set kernel width w (aka kw) and ES kernel beta parameter, in opts...
+	int kw = std::ceil(-log10(eps / (PCS)10.0));                  // 1 digit per power of ten
+	if (upsampfac != 2.0)                                         // override ns for custom sigma
+		kw = std::ceil(-log(eps) / (PI * sqrt(1 - 1 / upsampfac))); // formula, gamma=1
+	kw = max(2, kw);                                              // we don't have ns=1 version yet
+	if (kw > MAX_KERNEL_WIDTH)
+	{ // clip to match allocated arrays
+		kw = MAX_KERNEL_WIDTH;  
+	}
+	  
+	h_plan->c_opts.kw = kw;
+	h_plan->c_opts.ES_halfwidth = (PCS)kw / 2; // constants to help ker eval (except Horner)
+	h_plan->c_opts.ES_c = 4.0 / (PCS)(kw * kw);
+	  
+	PCS betaoverns = 2.30; // gives decent betas for default sigma=2.0
+	if (kw == 2)
+	  betaoverns = 2.20; // some small-width tweaks...
+	if (kw == 3)
+			  betaoverns = 2.26;
+	if (kw == 4)
+	  betaoverns = 2.38;
+	if (upsampfac != 2.0)
+	{                                                      // again, override beta for custom sigma
+	  PCS gamma = 0.97;                                    // must match devel/gen_all_horner_C_code.m
+	  betaoverns = gamma * PI * (1 - 1 / (2 * upsampfac)); // formula based on cutoff
+	}
+	h_plan->c_opts.ES_beta = betaoverns * (PCS)kw; // set the kernel beta parameter
 
     // w term related setting
     //setup_grid_wsize();
