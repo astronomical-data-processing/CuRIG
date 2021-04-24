@@ -15,6 +15,7 @@ Invoke conv related kernel
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
 #include <thrust/reduce.h>
+#include "conv_invoker.h"
 #include "conv.h"
 
 

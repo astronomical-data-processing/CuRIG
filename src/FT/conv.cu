@@ -7,6 +7,7 @@
 #include <math.h>
 #include <cuda.h>
 #include <stdio.h>
+#include "conv.h"
 
 static __inline__ __device__ kerval(PCS x, PCS es_c, PCS es_beta){
 	//not using the fast kernel evaluation
