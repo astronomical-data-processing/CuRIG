@@ -47,6 +47,15 @@ struct conv_opts{
   PCS ES_beta;
   PCS ES_halfwidth;
   PCS ES_c;//default 4/kw^2 for reusing
+  conv_opts(){
+    kw=0;
+    direction = 0;
+    pirange = 0;
+    upsampfac = 0;
+    ES_beta = 0;
+    ES_halfwidth = 0;
+    ES_c = 0;
+  }
 };
 
 
