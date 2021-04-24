@@ -2,7 +2,7 @@
 #define __UTILS_H__
 
 #include <cstdlib>
-#include <cufft.h>
+#include <cuda.h>
 #include <assert.h>
 #include <cuda_runtime.h>
 #include "dataType.h"
@@ -34,4 +34,10 @@
 #define BLOCKSIZE 1024
 
 //random11 and rand01
+// Random numbers: crappy unif random number generator in [0,1):
+//#define rand01() (((FLT)(rand()%RAND_MAX))/RAND_MAX)
+#define rand01() ((PCS)rand()/RAND_MAX)
+// unif[-1,1]:
+#define randm11() (2*rand01() - (PCS)1.0)
+
 #endif

@@ -122,9 +122,8 @@ int main(int argc, char* argv[]){
     h_plan->opts.gpu_method = method;
 	h_plan->opts.gpu_kerevalmeth = kerevalmeth;
 
-    setup_conv_opts(h_plan->copts,tol,h_plan->opts); //check the arguements
+    setup_conv_opts(h_plan->copts,sigma, tol, kerevalmeth); //check the arguements
 
-    
     // w term related setting
     //setup_grid_wsize();
     
@@ -164,10 +163,10 @@ int main(int argc, char* argv[]){
 	}
     */
 
-	std::cout<<std::scientific<<setprecision(3);//setprecision not define
+	std::cout<<std::scientific<<std::setprecision(3);//setprecision not define
 
 
-	CNTime timer; //
+	//CNTime timer; //
 	/*warm up gpu*/
 	char *a;
 	timer.restart();
