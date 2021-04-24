@@ -8,8 +8,7 @@
 #include "../../include/dataType.h"
 #include "../utils.h"
 
-#define MAX_KERNEL_WIDTH 16     // w, even when padded
-                           // (see evaluate_kernel_vector); also for common
+#define MAX_KERNEL_WIDTH 16     // w, even when padded // (see evaluate_kernel_vector); also for common
 #define CONV_THREAD_NUM 32
 
 // NU coord handling macro: if p is true, rescales from [-pi,pi] to [0,N], then
@@ -18,7 +17,7 @@
 		     ((x*M_1_2PI + (x<-PI ? 1.5 : (x>=PI ? -0.5 : 0.5)))*N) : \
 		     (x<0 ? x+N : (x>=N ? x-N : x)))
 // yuk! But this is *so* much faster than slow std::fmod that we stick to it.
-struct conv_opts { 
+struct conv_opts{
   /*
     options for convolutional gridding process
     kw - w, the kernel width (number of grid cells)
@@ -38,8 +37,6 @@ struct conv_opts {
   PCS ES_halfwidth;
   PCS ES_c;//default 4/kw^2 for reusing
 };
-
-
 
 
 
