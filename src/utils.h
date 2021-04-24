@@ -5,7 +5,7 @@
 #include <cuda.h>
 #include <assert.h>
 #include <cuda_runtime.h>
-#include "dataType.h"
+#include "../include/dataType.h"
 #include "curafft_opts.h"
 #include "curafft_plan.h"
 #include "../src/FT/conv_invoker.h"
