@@ -24,7 +24,7 @@ struct curafft_opts {
 	int gpu_conv_only; // 0: NUFFT, 1: spread or interpolation only
 	int gpu_method;
 
-
+	/*
     curafft_opts(){
         gpu_device_id = 0;
         upsampfac = 2.0;
@@ -35,7 +35,7 @@ struct curafft_opts {
 		gpu_kerevalmeth = 0;
 		gpu_conv_only = 0;
     };
-
+	*/
 
 	/* following options are for gpu */
     /*
