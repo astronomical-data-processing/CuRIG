@@ -16,7 +16,7 @@ struct visibility
     PCS* v;
     PCS* w;
 
-    CPX* vis;
+    CUCPX* vis;
     PCS* weight;
     bool* flag;
 
