@@ -25,17 +25,17 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth)
   { // nonstandard sigma
     if (kerevalmeth == 1)
     {
-      fprintf(stderr, "setup_spreader: nonstandard upsampfac=%.3g cannot be handled by kerevalmeth=1\n", (double)upsampfac);
+      fprintf(stderr, "setup_conv_opts: nonstandard upsampfac with kerevalmeth=1\n", (double)upsampfac);
       return 2;
     }
     if (upsampfac <= 1.0)
     {
-      fprintf(stderr, "setup_spreader: error, upsampfac=%.3g is <=1.0\n", (double)upsampfac);
+      fprintf(stderr, "setup_conv_opts: error, upsampling factor too small\n", (double)upsampfac);
       return 2;
     }
     // calling routine must abort on above errors, since opts is garbage!
     if (upsampfac > 4.0)
-      fprintf(stderr, "setup_spreader: warning, upsampfac=%.3g is too large to be beneficial!\n", (double)upsampfac);
+      fprintf(stderr, "setup_conv_opts: warning, upsampfac=%.3g is too large\n", (double)upsampfac);
   }
 
   // defaults... (user can change after this function called)
@@ -47,7 +47,7 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth)
   int ier = 0;
   if (eps < EPSILON)
   {
-    fprintf(stderr, "setup_spreader: warning, increasing tol=%.3g to eps_mach=%.3g.\n", (double)eps, (double)EPSILON);
+    fprintf(stderr, "setup_conv_opts: warning, eps (tol) is too small, set eps = %.3g.\n", (double)eps, (double)EPSILON);
     eps = EPSILON;
     ier = 1;
   }
@@ -59,7 +59,7 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth)
   kw = max(2, kw);                                              // we don't have ns=1 version yet
   if (kw > MAX_KERNEL_WIDTH)
   { // clip to match allocated arrays
-    fprintf(stderr, "%s warning: at upsampfac=%.3g, tol=%.3g would need kernel width ns=%d; clipping to max %d.\n", __func__,
+    fprintf(stderr, "%s warning: at upsampfac=%.3g, tol=%.3g would need kernel width ns=%d; clipping to max %d, better to revise sigma and tol.\n", __func__,
             upsampfac, (double)eps, kw, MAX_KERNEL_WIDTH);
     kw = MAX_KERNEL_WIDTH;
     ier = 1;

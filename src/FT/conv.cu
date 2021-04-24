@@ -9,13 +9,13 @@
 #include <stdio.h>
 #include "conv.h"
 
-static __inline__ __device__ kerval(PCS x, PCS es_c, PCS es_beta){
+static __inline__ __device__ int kerval(PCS x, PCS es_c, PCS es_beta){
 	//not using the fast kernel evaluation
 	return exp(es_beta * (sqrt(1.0 - es_c*x*x)));
 }
 
 static __inline__ __device__
-void val_kernel_vec(FLT *ker, const FLT x, const double w, const double es_c, 
+void val_kernel_vec(PCS *ker, const PCS x, const double w, const double es_c, 
 					 const double es_beta)
 {
 	//get vector of kernel function values
@@ -48,8 +48,9 @@ __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M,
 
 	PCS temp1, temp2;
 	int idx;
+	int xstart, ystart, xend, yend;
 	//__shared__ CUCPX s_c[blockDim.x];
-	assert(pirange==1);// check
+	//assert(pirange==1);// check
 
 	for(idx = blockIdx.x * blockDim.x + threadIdx.x;idx<M;idx+=gridDim.x*blockDim.x){
 		
@@ -66,10 +67,10 @@ __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M,
 		xend = floor(temp1 + ns/2.0);
 		yend = floor(temp2 + ns/2.0);
 		
-		PCS x1=(PCS)xstart-temp1; //cell
-		PCS y1=(PCS)ystart-temp2;
-		val_kernel_vec(ker1,x1,ns,es_c,es_beta);
-		val_kernel_vec(ker2,y1,ns,es_c,es_beta);
+		PCS x_1=(PCS)xstart-temp1; //cell
+		PCS y_1=(PCS)ystart-temp2;
+		val_kernel_vec(ker1,x_1,ns,es_c,es_beta);
+		val_kernel_vec(ker2,y_1,ns,es_c,es_beta);
 		for(int yy=ystart; yy<=yend; yy++){
 			temp1=ker2[yy-ystart];
 			for(int xx=xstart; xx<=xend; xx++){
