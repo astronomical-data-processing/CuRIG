@@ -22,20 +22,7 @@ Invoke conv related kernel
 
 int setup_conv_opts(conv_opts &c_opts, PCS eps, PCS upsampfac, int kerevalmeth){
   int ier = 0;
-  if(upsampfac != 2.0){
-    if(kerevalmeth == 1){
-      fprintf(stderr,"setup_conv_opts fails to kernel evaluation method with non-standard upsampfac\n");
-      return 2;
-    }
-    if(upsampfac <= 1.0){
-      fprintf(stderr,"setup_conv_opts upsampfac is too small\n");
-      return 2;
-    }
-    if(upsampfac > 4.0){
-      fprintf(stderr,"setup_conv_opts upsampfac is too large\n");
-      return 2;
-    }
-  }
+  
   return ier;
 }
 
