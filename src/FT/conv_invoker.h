@@ -12,7 +12,12 @@
                            // (see evaluate_kernel_vector); also for common
 #define CONV_THREAD_NUM 32
 
-
+// NU coord handling macro: if p is true, rescales from [-pi,pi] to [0,N], then
+// folds *only* one period below and above, ie [-N,2N], into the domain [0,N]...
+//#define RESCALE(x,N,p) (p ? \
+		     ((x*M_1_2PI + (x<-PI ? 1.5 : (x>=PI ? -0.5 : 0.5)))*N) : \
+		     (x<0 ? x+N : (x>=N ? x-N : x)))
+// yuk! But this is *so* much faster than slow std::fmod that we stick to it.
 
 struct conv_opts { 
   /*
@@ -25,27 +30,18 @@ struct conv_opts {
     ES_halfwidth
     ES_c
   */
-  int kw;           //kernel width // also need to take factors in improved ws into consideration
-  int direction;   
-  int pirange;            
+  int kw;   //kernel width // also need to take factors in improved ws into consideration
+  int direction;
+  int pirange;
   PCS upsampfac;
   // ES kernel specific...
   PCS ES_beta;
   PCS ES_halfwidth;
-  PCS ES_c; //default 4/kw^2 for reusing
+  PCS ES_c;//default 4/kw^2 for reusing
 };
 
 
 
-// NU coord handling macro: if p is true, rescales from [-pi,pi] to [0,N], then
-// folds *only* one period below and above, ie [-N,2N], into the domain [0,N]...
-#define RESCALE(x,N,p) (p ? \
-		     ((x*M_1_2PI + (x<-PI ? 1.5 : (x>=PI ? -0.5 : 0.5)))*N) : \
-		     (x<0 ? x+N : (x>=N ? x-N : x)))
-// yuk! But this is *so* much faster than slow std::fmod that we stick to it.
-
-
-//FLT evaluate_kernel(FLT x, const SPREAD_OPTS &opts);
 
 
 int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth);

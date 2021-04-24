@@ -179,16 +179,32 @@ int main(int argc, char* argv[]){
 	timer.restart();
 	*/
 
-	
+	cudaEvent_t cuda_start, cuda_end;
+
+    float kernel_time;
+    
+    cudaEventCreate(&cuda_start);
+    cudaEventCreate(&cuda_end);
+
+    cudaEventRecord(cuda_start);
+
     // convolution
     curafft_conv(h_plan); //add to include
+	cudaEventRecord(cuda_end);
+
+    cudaEventSynchronize(cuda_start);
+    cudaEventSynchronize(cuda_end);
+
+    cudaEventElapsedTime(&kernel_time, cuda_start, cuda_end);
+
+
     checkCudaErrors(cudaDeviceSynchronize());
-	PCS t=timer.elapsedsec();
-	int nf3 = h_plan->num_w;
+	
+	
 	printf("[Method %d] %ld NU pts to #%d U pts in %.3g s\n",
-			h_plan->opts.gpu_method,M,nf1*nf2*nf3,t);
+			h_plan->opts.gpu_method,M,nf1*nf2*nf3,kernel_time);
 	
-	
+	int nf3 = h_plan->num_w;
 
 	std::cout<<"[result-input]"<<std::endl;
 	for(int k=0; k<nf3; k++){
