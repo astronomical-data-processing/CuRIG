@@ -4,9 +4,9 @@
 //#include "../../include/curafft.h"
 
 #include <stdlib.h>
-#include "../utils.h"
-#include "../../include/dataType.h"
-#include "../../include/curafft_plan.h"
+#include "utils.h"
+#include "dataType.h"
+#include "curafft_plan.h"
 
 
 

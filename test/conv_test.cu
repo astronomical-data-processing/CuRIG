@@ -8,8 +8,8 @@
 using namespace thrust;
 using namespace std::complex_literals;
 
-#include "../src/FT/conv_invoker.h"
-#include "../src/utils.h"
+#include "conv_invoker.h"
+#include "utils.h"
 
 
 int main(int argc, char* argv[]){

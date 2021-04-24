@@ -2,7 +2,7 @@
 #define __CONV_INVOKER_H__
 
 
-#include "../../include/curafft_plan.h"
+#include "curafft_plan.h"
 
 
 #define MAX_KERNEL_WIDTH 16     // w, even when padded // (see evaluate_kernel_vector); also for common

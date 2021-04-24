@@ -8,8 +8,8 @@
 #include <cuda_runtime.h>
 #include "dataType.h"
 #include "curafft_opts.h"
-#include "../src/utils.h"
-#include "../src/RA/visibility.h"
+#include "utils.h"
+#include "visibility.h"
 
 struct conv_opts{
   /*
