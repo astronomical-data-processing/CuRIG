@@ -131,7 +131,9 @@ int main(int argc, char* argv[]){
     setup_plan(nf1, nf2, M, d_x, d_y, d_z, d_c, h_plan); //add to .h file
 
 	printf("the num of w %d\n",h_plan->num_w);
-    checkCudaErrors(cudaMallocHost(&fw,nf1*nf2*h_plan->num_w*sizeof(CPX))); //malloc after plan setting
+
+	fw = (CPX *)malloc(sizeof(CPX)*h_plan->num_w);
+    //checkCudaErrors(cudaMallocHost(&fw,nf1*nf2*h_plan->num_w*sizeof(CPX))); //malloc after plan setting
     checkCudaErrors(cudaMalloc(&d_fw,nf1*nf2*h_plan->num_w*sizeof(CUCPX)));
 
 	//binsize, obinsize need to be set here, since SETUP_BINSIZE() is not 
