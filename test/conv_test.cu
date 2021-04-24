@@ -7,9 +7,10 @@
 //#include <thrust>
 using namespace thrust;
 using namespace std::complex_literals;
-#include "../src/utils.h"
-#include "../include/curafft_plan.h"
 
+#include "../include/curafft_plan.h"
+#include "../src/FT/conv_invoker.h"
+#include "../src/utils.h"
 
 
 int main(int argc, char* argv[]){
