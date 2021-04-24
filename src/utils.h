@@ -6,10 +6,11 @@
 #include <assert.h>
 #include <cuda_runtime.h>
 #include "../include/dataType.h"
+#include "../include/curafft_plan.h"
 #include "../include/curafft_opts.h"
 #include "../src/FT/conv_invoker.h"
 #include "../src/RA/visibility.h"
-#include "../include/curafft_plan.h"
+
 
 
 // 0 correct  1 warning 2 error
