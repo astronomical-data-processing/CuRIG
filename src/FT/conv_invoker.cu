@@ -18,39 +18,33 @@ Invoke conv related kernel
 #include "conv_invoker.h"
 #include "conv.h"
 
-int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth)
-{
-  if (upsampfac != 2.0)
-  { // nonstandard sigma
-    if (kerevalmeth == 1)
-    {
-      fprintf(stderr, "setup_spreader: nonstandard upsampfac=%.3g cannot be handled by kerevalmeth=1\n", (double)upsampfac);
-      return 2;
-    }
-    if (upsampfac <= 1.0)
-    {
-      fprintf(stderr, "setup_spreader: error, upsampfac=%.3g is <=1.0\n", (double)upsampfac);
-      return 2;
-    }
-    // calling routine must abort on above errors, since opts is garbage!
-    if (upsampfac > 4.0)
-      fprintf(stderr, "setup_spreader: warning, upsampfac=%.3g is too large to be beneficial!\n", (double)upsampfac);
-  }
 
-  // defaults... (user can change after this function called)
-  opts.direction = 1; // user should always set to 1 or 2 as desired
-  opts.pirange = 1;   // user also should always set this
-  opts.upsampfac = upsampfac;
-
-  // as in FINUFFT v2.0, allow too-small-eps by truncating to eps_mach...
+int setup_conv_opts(conv_opts &c_opts, PCS eps, PCS upsampfac, int kerevalmeth){
   int ier = 0;
-  if (eps < EPSILON)
-  {
-    fprintf(stderr, "setup_spreader: warning, increasing tol=%.3g to eps_mach=%.3g.\n", (double)eps, (double)EPSILON);
+  if(upsampfac != 2.0){
+    if(kerevalmeth == 1){
+      fprintf(std::stderr,"setup_conv_opts fails to kernel evaluation method with non-standard upsampfac\n");
+      return 2;
+    }
+    if(upsampfac <= 1.0){
+      fprintf(std::stderr,"setup_conv_opts upsampfac is too small\n");
+      return 2;
+    }
+    if(upsampfac > 4.0){
+      fprintf(std::stderr,"setup_conv_opts upsampfac is too large\n");
+      return 2;
+    }
+  }
+  if(eps<EPSILON){
+    //warning
+    fprintf(std::stderr,"setup_conv_opts warning, eps (tol) is too small and set eps = %.3g\n", EPSILON);
     eps = EPSILON;
     ier = 1;
   }
-
+  c_opts.direction = 1;
+  c_opts.pirange = 1;
+  c_opts.upsampfac = upsampfac;
+  
   // Set kernel width w (aka kw) and ES kernel beta parameter, in opts...
   int kw = std::ceil(-log10(eps / (PCS)10.0));                  // 1 digit per power of ten
   if (upsampfac != 2.0)                                         // override ns for custom sigma
@@ -63,6 +57,7 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth)
     kw = MAX_KERNEL_WIDTH;
     ier = 1;
   }
+
   opts.kw = kw;
   opts.ES_halfwidth = (PCS)kw / 2; // constants to help ker eval (except Horner)
   opts.ES_c = 4.0 / (PCS)(kw * kw);
@@ -151,21 +146,7 @@ int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c
     }
   }
   break;
-  case 2:
-  {
-    int numbins[2];
-    numbins[0] = ceil((PCS)nf1 / plan->opts.gpu_binsizex);
-    numbins[1] = ceil((PCS)nf2 / plan->opts.gpu_binsizey);
-    checkCudaErrors(cudaMalloc(&plan->numsubprob, numbins[0] *
-                                                      numbins[1] * sizeof(int)));
-    checkCudaErrors(cudaMalloc(&plan->binsize, numbins[0] *
-                                                   numbins[1] * sizeof(int)));
-    checkCudaErrors(cudaMalloc(&plan->binstartpts, numbins[0] *
-                                                       numbins[1] * sizeof(int)));
-    checkCudaErrors(cudaMalloc(&plan->subprobstartpts,
-                               (numbins[0] * numbins[1] + 1) * sizeof(int)));
-  }
-  break;
+  
   default:
     std::cerr << "err: invalid method " << std::endl;
   }
@@ -185,7 +166,8 @@ int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c
     dim3 block;
     if (plan->opts.gpu_method == 0)
     {
-      block.x = 256 grid.x = (M - 1) / block.x + 1;
+      block.x = 256;
+      grid.x = (M - 1) / block.x + 1;
       conv_3d_nputsdriven<<<grid, block>>>(plan->kv.u, plan->kv.v, plan->kv.w, plan->kv.vis, plan->fw, plan->M,
                                            plan->copts.kw, nf1, nf2, nf3, plan->copts.ES_c, plan->copts.ES_beta, plan->copts.pirange, plan->cell_loc);
     }
