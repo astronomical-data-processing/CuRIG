@@ -5,8 +5,19 @@
 #include <stdlib.h>
 #include <cuda.h>
 #include <stdio.h>
-#include "../../include/dataType.h"
+#include <helper_cuda.h>
+#include <iostream>
+#include <iomanip>
+#include <assert.h>
+#include <cuComplex.h>
+#include <thrust/device_ptr.h>
+#include <thrust/scan.h>
+#include <thrust/reduce.h>
+
 #include "../utils.h"
+#include "../../include/dataType.h"
+#include "../../include/curafft_plan.h"
+#include "conv.cuh"
 
 #define MAX_KERNEL_WIDTH 16     // w, even when padded // (see evaluate_kernel_vector); also for common
 #define CONV_THREAD_NUM 32

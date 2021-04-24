@@ -6,6 +6,7 @@
 #include <cufft.h>
 #include <assert.h>
 #include <cuda_runtime.h>
+#include "../src/utils.h"
 #include "dataType.h"
 #include "curafft_opts.h"
 #include "../src/FT/conv_invoker.h"

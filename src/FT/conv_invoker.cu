@@ -1,18 +1,7 @@
 /*
 Invoke conv related kernel
 */
-#include <helper_cuda.h>
-#include <iostream>
-#include <iomanip>
-#include <assert.h>
 
-#include <thrust/device_ptr.h>
-#include <thrust/scan.h>
-#include <thrust/reduce.h>
-
-#include <cuComplex.h>
-#include "../../include/curafft_plan.h"
-#include "conv.cuh"
 //#include "../memtransfer.h"
 
 
