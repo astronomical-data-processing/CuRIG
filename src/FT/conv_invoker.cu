@@ -21,9 +21,8 @@ Invoke conv related kernel
 
 
 int setup_conv_opts(conv_opts &c_opts, PCS eps, PCS upsampfac, int kerevalmeth){
-  int ier = 0;
   
-  return ier;
+  return 0;
 }
 
 /*
