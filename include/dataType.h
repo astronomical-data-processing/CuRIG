@@ -5,9 +5,10 @@
 #include <cuComplex.h>
 #include <cuda.h>
 #include <math.h>
-#include <thrust/complex.h>
+#include <complex.h>
 using namespace std::complex_literals;
-#define COMPLEX(X) thrust::complex<X>
+//complex not thrust/complex
+#define COMPLEX(X) complex<X>
 
 #undef PCS
 #undef CPX

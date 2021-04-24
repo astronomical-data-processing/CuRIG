@@ -46,11 +46,13 @@ int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c
         d_c - value
     */
   int ier = 0;
+  //wrong here
+  /*
   plan->kv.u = d_u;
   plan->kv.v = d_v;
   plan->kv.w = d_w;
   plan->kv.vis = d_c;
-
+  */ 
   //int ier;
   plan->nf1 = nf1;
   plan->nf2 = nf2;
