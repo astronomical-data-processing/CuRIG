@@ -23,59 +23,18 @@ int setup_conv_opts(conv_opts &c_opts, PCS eps, PCS upsampfac, int kerevalmeth){
   int ier = 0;
   if(upsampfac != 2.0){
     if(kerevalmeth == 1){
-      fprintf(std::stderr,"setup_conv_opts fails to kernel evaluation method with non-standard upsampfac\n");
+      fprintf(stderr,"setup_conv_opts fails to kernel evaluation method with non-standard upsampfac\n");
       return 2;
     }
     if(upsampfac <= 1.0){
-      fprintf(std::stderr,"setup_conv_opts upsampfac is too small\n");
+      fprintf(stderr,"setup_conv_opts upsampfac is too small\n");
       return 2;
     }
     if(upsampfac > 4.0){
-      fprintf(std::stderr,"setup_conv_opts upsampfac is too large\n");
+      fprintf(stderr,"setup_conv_opts upsampfac is too large\n");
       return 2;
     }
   }
-  if(eps<EPSILON){
-    //warning
-    fprintf(std::stderr,"setup_conv_opts warning, eps (tol) is too small and set eps = %.3g\n", EPSILON);
-    eps = EPSILON;
-    ier = 1;
-  }
-  c_opts.direction = 1;
-  c_opts.pirange = 1;
-  c_opts.upsampfac = upsampfac;
-  
-  // Set kernel width w (aka kw) and ES kernel beta parameter, in opts...
-  int kw = std::ceil(-log10(eps / (PCS)10.0));                  // 1 digit per power of ten
-  if (upsampfac != 2.0)                                         // override ns for custom sigma
-    kw = std::ceil(-log(eps) / (PI * sqrt(1 - 1 / upsampfac))); // formula, gamma=1
-  kw = max(2, kw);                                              // we don't have ns=1 version yet
-  if (kw > MAX_KERNEL_WIDTH)
-  { // clip to match allocated arrays
-    fprintf(stderr, "%s warning: at upsampfac=%.3g, tol=%.3g would need kernel width ns=%d; clipping to max %d.\n", __func__,
-            upsampfac, (double)eps, kw, MAX_KERNEL_WIDTH);
-    kw = MAX_KERNEL_WIDTH;
-    ier = 1;
-  }
-
-  opts.kw = kw;
-  opts.ES_halfwidth = (PCS)kw / 2; // constants to help ker eval (except Horner)
-  opts.ES_c = 4.0 / (PCS)(kw * kw);
-
-  PCS betaoverns = 2.30; // gives decent betas for default sigma=2.0
-  if (kw == 2)
-    betaoverns = 2.20; // some small-width tweaks...
-  if (kw == 3)
-    betaoverns = 2.26;
-  if (kw == 4)
-    betaoverns = 2.38;
-  if (upsampfac != 2.0)
-  {                                                      // again, override beta for custom sigma
-    PCS gamma = 0.97;                                    // must match devel/gen_all_horner_C_code.m
-    betaoverns = gamma * PI * (1 - 1 / (2 * upsampfac)); // formula based on cutoff
-  }
-  opts.ES_beta = betaoverns * (PCS)kw; // set the kernel beta parameter
-  //fprintf(stderr,"setup_spreader: sigma=%.6f, chose ns=%d beta=%.6f\n",(double)upsampfac,ns,(double)opts.ES_beta); // user hasn't set debug yet
   return ier;
 }
 
