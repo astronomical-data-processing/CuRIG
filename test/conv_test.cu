@@ -159,7 +159,7 @@ int main(int argc, char* argv[]){
     //setup_grid_wsize();
     
     // plan setting
-	
+	/*
     setup_plan(nf1, nf2, M, d_x, d_y, d_z, d_c, h_plan); //add to .h file
 
 
@@ -192,7 +192,7 @@ int main(int argc, char* argv[]){
 		dplan->opts.gpu_binsizey=16;
 		dplan->opts.gpu_binsizez=2;
 	}
-    */
+    
 
 	std::cout<<std::scientific<<std::setprecision(3);//setprecision not define
 
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]){
 
 
 	timer.restart();
-	*/
+	
 
 	cudaEvent_t cuda_start, cuda_end;
 
@@ -248,13 +248,13 @@ int main(int argc, char* argv[]){
 		}
 		std::cout<<"----------------------------------------------------------------"<<std::endl;
 	}
-
+	*/
 
 	checkCudaErrors(cudaDeviceReset());
 	checkCudaErrors(cudaFreeHost(x));
 	checkCudaErrors(cudaFreeHost(y));
 	checkCudaErrors(cudaFreeHost(z));
 	checkCudaErrors(cudaFreeHost(c));
-	checkCudaErrors(cudaFreeHost(fw));
+	//checkCudaErrors(cudaFreeHost(fw));
 	return 0;
 }

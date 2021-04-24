@@ -34,7 +34,7 @@ void get_max_min(PCS *x, int num, PCS *h_res){
   cudaFree(d_res);
 }
 */
-
+/*
 int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan)
 {
   /* different dim will have different setting
@@ -43,7 +43,7 @@ int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c
         M - number of NUPTS (num of vis)
         d_u, d_v, d_w - location
         d_c - value
-    */
+  
   int ier = 0;
   //wrong here
   /*
@@ -51,7 +51,7 @@ int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c
   plan->kv.v = d_v;
   plan->kv.w = d_w;
   plan->kv.vis = d_c;
-  */ 
+  
   //int ier;
   plan->nf1 = nf1;
   plan->nf2 = nf2;
@@ -68,7 +68,7 @@ int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c
   if (l_max * l_max + m_max * m_max > 1.)
     n_scale = -sqrt(abs(1. - l_max * l_max - m_max * m_max)) - 1.;
   plan->num_w =  abs(n_scale)/(0.25) * (max-min) + plan->copts.kw;
-  */
+  
   plan->num_w = 2 * nf1;
 
   plan->M = M;
@@ -126,7 +126,7 @@ int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c
   {
     /*
     ---- convolution opertion ----
-    */
+    
 
     int ier = 0;
     int nf1 = plan->nf1;
@@ -144,3 +144,4 @@ int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c
     }
     return ier;
   }
+  */
