@@ -1,11 +1,3 @@
-#include <stdlib.h>
-#include <math.h>
-#include <math.h>
-#include <cuda.h>
-#include <stdio.h>
-#include "../utils.h"
-#include "conv_invoker.h"
-
 //------ convolutional gridding -------
 /*
     1. W-term gridding
