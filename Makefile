@@ -62,31 +62,17 @@ HEADERS = include/curafft_opts.h include/curafft_plan.h include/dataType.h inclu
 CURAFFTOBJS=src/utils.o
 CURAFFTOBJS_64=src/FT/conv_invoker.o src/FT/conv.o
 
+#ignore single precision first
 # $(CONTRIBOBJS)
-CURAFFTOBJS_32=$(CURAFFTOBJS_64:%.o=%_32.o)
+#CURAFFTOBJS_32=$(CURAFFTOBJS_64:%.o=%_32.o)
 
 
-%_32.o: %.cpp $(HEADERS)
-	$(CXX) -DSINGLE -c $(CXXFLAGS) $(INC) $< -o $@
-%_32.o: %.c $(HEADERS)
-	$(CC) -DSINGLE -c $(CFLAGS) $(INC) $< -o $@
-%_32.o: %.cu $(HEADERS)
-	$(NVCC) -DSINGLE --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
+
 %.o: %.cpp $(HEADERS)
 	$(CXX) -c $(CXXFLAGS) $(INC) $< -o $@
 %.o: %.c $(HEADERS)
 	$(CC) -c $(CFLAGS) $(INC) $< -o $@
 %.o: %.cu $(HEADERS)
-	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
-
-
-src/%_32.o: src/%.cu $(HEADERS)
-	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
-
-src/FT/%_32.o: src/FT/%.cu $(HEADERS)
-	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
-
-test/%_32.o: test/%.cu $(HEADERS)
 	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
 src/%.o: src/%.cu $(HEADERS)
@@ -110,9 +96,6 @@ libtest: lib $(BINDIR)/conv_test
 convtest: $(BINDIR)/conv_test 
 #	$(BINDIR)/interp_test
 
-$(BINDIR)/%_32: test/%_32.o $(CURAFFTOBJS_32) $(CURAFFTOBJS)
-	mkdir -p $(BINDIR)
-	$(NVCC) -DSINGLE $^ $(NVCCFLAGS) $(NVCC_LIBS_PATH) $(LIBS) -o $@
 
 $(BINDIR)/%: test/%.o $(CURAFFTOBJS_64) $(CURAFFTOBJS)
 	mkdir -p $(BINDIR)
@@ -121,10 +104,10 @@ $(BINDIR)/%: test/%.o $(CURAFFTOBJS_64) $(CURAFFTOBJS)
 # user-facing library...
 lib: $(STATICLIB) $(DYNAMICLIB)
  # add $(CONTRIBOBJS) to static and dynamic later
-$(STATICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CURAFFTOBJS_32)
+$(STATICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64)
 	mkdir -p lib-static
 	ar rcs $(STATICLIB) $^
-$(DYNAMICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CURAFFTOBJS_32)
+$(DYNAMICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64)
 	mkdir -p lib
 	$(NVCC) -shared $(NVCCFLAGS) $^ -o $(DYNAMICLIB) $(LIBS)
 
