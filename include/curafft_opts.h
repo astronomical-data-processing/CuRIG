@@ -34,7 +34,7 @@ struct curafft_opts {
 		gpu_binsizez = -1;
 		gpu_kerevalmeth = 0;
 		gpu_conv_only = 0;
-    }
+    };
 
 
 	/* following options are for gpu */
