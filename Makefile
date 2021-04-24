@@ -81,7 +81,7 @@ src/%.o: src/%.cu $(HEADERS)
 src/FT/%.o: src/FT/%.cu $(HEADERS)
 	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
-src/test/%.o src/test/%.cu $(HEADERS)
+test/%.o: test/%.cu $(HEADERS)
 	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
 default: all
