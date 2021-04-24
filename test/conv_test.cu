@@ -167,7 +167,7 @@ int main(int argc, char* argv[]){
 
 
 	//CNTime timer; //
-	/*warm up gpu*/
+	/*warm up gpu
 	char *a;
 	timer.restart();
 	checkCudaErrors(cudaMalloc(&a,1));
@@ -177,7 +177,9 @@ int main(int argc, char* argv[]){
 
 
 	timer.restart();
+	*/
 
+	
     // convolution
     curafft_conv(h_plan); //add to include
     checkCudaErrors(cudaDeviceSynchronize());
