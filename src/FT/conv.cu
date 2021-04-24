@@ -42,7 +42,7 @@ __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M,
 		es_ - gridding kernel related factors
 		pirange - 1
 		cell_loc - location of nupts in grid cells
-	*/
+	
 	//need to revise 
 	int xstart,ystart,xend,yend;
 	int ix, iy;
