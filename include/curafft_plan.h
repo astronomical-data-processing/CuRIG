@@ -11,6 +11,26 @@
 #include "../src/FT/conv_invoker.h"
 #include "../src/RA/visibility.h"
 
+struct conv_opts { 
+  /*
+    options for convolutional gridding process
+    kw - w, the kernel width (number of grid cells)
+    direction - 1 means inverse NU->U, 0 means forward interpolate U->NU //changed
+    pirange - 0: coords in [0,N), 1 coords in [-pi,pi), for scaling
+    upsampfac - sigma, upsampling factor, default 2.0
+    ES_beta
+    ES_halfwidth
+    ES_c
+  */
+  int kw;   //kernel width // also need to take factors in improved ws into consideration
+  int direction;
+  int pirange;
+  PCS upsampfac;
+  // ES kernel specific...
+  PCS ES_beta;
+  PCS ES_halfwidth;
+  PCS ES_c;//default 4/kw^2 for reusing
+};
 
 struct curafft_plan
 {

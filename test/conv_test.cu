@@ -200,11 +200,11 @@ int main(int argc, char* argv[]){
 
     checkCudaErrors(cudaDeviceSynchronize());
 	
-	
+	int nf3 = h_plan->num_w;
 	printf("[Method %d] %ld NU pts to #%d U pts in %.3g s\n",
 			h_plan->opts.gpu_method,M,nf1*nf2*nf3,kernel_time);
 	
-	int nf3 = h_plan->num_w;
+	
 
 	std::cout<<"[result-input]"<<std::endl;
 	for(int k=0; k<nf3; k++){
