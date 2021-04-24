@@ -56,7 +56,7 @@ HEADERS = include/curafft_opts.h include/curafft_plan.h include/dataType.h inclu
 #  Double (_64), Single (_32), and floating point agnostic (no suffix)
 # add contrib/legendre_rule_fast.o to curafftobjs later
 CURAFFTOBJS=src/utils.o
-CUFINUFFTOBJS_64=src/FT/conv_invoker.o src/FT/conv.o
+CURAFFTOBJS_64=src/FT/conv_invoker.o src/FT/conv.o
 
 # $(CONTRIBOBJS)
 CURAFFTOBJS_32=$(CURAFFTOBJS_64:%.o=%_32.o)
