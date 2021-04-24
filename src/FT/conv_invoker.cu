@@ -3,7 +3,19 @@ Invoke conv related kernel
 */
 
 //#include "../memtransfer.h"
-
+#include <math.h>
+#include <stdlib.h>
+#include <cuda.h>
+#include <stdio.h>
+#include <helper_cuda.h>
+#include <iostream>
+#include <iomanip>
+#include <assert.h>
+#include <cuComplex.h>
+#include <thrust/device_ptr.h>
+#include <thrust/scan.h>
+#include <thrust/reduce.h>
+#include "conv.h"
 
 
 int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth){

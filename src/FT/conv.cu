@@ -3,6 +3,11 @@
     1. W-term gridding
     2. u v gridding
 */
+
+#include <math.h>
+#include <cuda.h>
+#include <stdio.h>
+
 static __inline__ __device__ kerval(PCS x, PCS es_c, PCS es_beta){
 	//not using the fast kernel evaluation
 	return exp(es_beta * (sqrt(1.0 - es_c*x*x)));
