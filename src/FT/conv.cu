@@ -93,12 +93,12 @@ __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M,
 }
 */
 
-
+/*
 __global__
 void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw, int M,
 	const int ns, int nf1, int nf2, int nf3, PCS es_c, PCS es_beta, int pirange, INT_M* cell_loc)
 {
-	/*
+	
 		x, y, z - range [-pi,pi)
 		c - complex number
 		fw - result
@@ -165,9 +165,9 @@ void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw, int M,
 		}
 		if((idx/blockDim.x+1)*blockDim.x<M){ __syncthreads(); }
 	}
-	*/
+	
 }
-
+*/
 
 
 /*
