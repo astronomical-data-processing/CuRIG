@@ -121,7 +121,7 @@ int main(int argc, char* argv[]){
     h_plan->opts.gpu_method = method;
 	h_plan->opts.gpu_kerevalmeth = kerevalmeth;
 
-    setup_conv_opts(h_plan->copts,sigma, tol, kerevalmeth); //check the arguements
+    setup_conv_opts(&(h_plan->copts),sigma, tol, kerevalmeth); //check the arguements
 
     // w term related setting
     //setup_grid_wsize();

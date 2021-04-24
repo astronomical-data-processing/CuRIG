@@ -20,7 +20,11 @@ Invoke conv related kernel
 #include "conv.h"
 
 
-void setup_conv_opts(conv_opts &c_opts, PCS eps, PCS upsampfac, int kerevalmeth){}
+int setup_conv_opts(conv_opts *c_opts, PCS eps, PCS upsampfac, int kerevalmeth){
+  int ier = 0;
+  kerevalmeth = 1;
+  return ier;
+}
 
 /*
 void get_max_min(PCS *x, int num, PCS *h_res){
