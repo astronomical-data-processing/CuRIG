@@ -8,7 +8,6 @@
 using namespace thrust;
 using namespace std::complex_literals;
 
-#include "../include/curafft_plan.h"
 #include "../src/FT/conv_invoker.h"
 #include "../src/utils.h"
 

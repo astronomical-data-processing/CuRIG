@@ -2,8 +2,6 @@
 #define __CONV_INVOKER_H__
 
 
-#include "../utils.h"
-#include "../../include/dataType.h"
 #include "../../include/curafft_plan.h"
 
 
