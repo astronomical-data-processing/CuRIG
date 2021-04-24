@@ -103,6 +103,7 @@ void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw, int M,
 		pirange - 1
 		cell_loc - location of nupts in grid cells
 	*/
+	/*
 	int xx, yy, zz, ix, iy, iz;
 	int outidx;
 	PCS ker1[MAX_KERNEL_WIDTH];
@@ -158,6 +159,7 @@ void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw, int M,
 		}
 		if((idx/blockDim.x+1)*blockDim.x<M){ __syncthreads(); }
 	}
+	*/
 }
 
 
