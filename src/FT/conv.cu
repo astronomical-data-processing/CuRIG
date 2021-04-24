@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include "conv.h"
 
+/*
+
 static __inline__ __device__ kerval(PCS x, PCS es_c, PCS es_beta){
 	//not using the fast kernel evaluation
 	return exp(es_beta * (sqrt(1.0 - es_c*x*x)));
@@ -23,12 +25,14 @@ void val_kernel_vec(FLT *ker, const FLT x, const double w, const double es_c,
 		ker[i] = kerval(abs(x+i), es_c, es_beta);		
 	}
 }
+*/
 
 // 2D for w-stacking. 1D + 2D for improved WS will consume more memory
+/*
 __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M, 
 	const int ns, int nf1, int nf2, PCS es_c, PCS es_beta, int pirange, INT_M* cell_loc)
 {
-	/*
+	
 		x, y - range [-pi,pi)
 		c - complex number
 		fw - result
@@ -87,6 +91,8 @@ __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M,
 	}
 	
 }
+*/
+
 
 __global__
 void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw, int M,
