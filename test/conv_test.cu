@@ -63,10 +63,11 @@ int main(int argc, char* argv[]){
 	//int ier;
 	PCS *x, *y, *z;
 	CPX *c, *fw;
-	cudaMallocHost(&x, M*sizeof(PCS)); //Allocates page-locked memory on the host.
-	cudaMallocHost(&y, M*sizeof(PCS));
-	cudaMallocHost(&z, M*sizeof(PCS));
-	cudaMallocHost(&c, M*sizeof(CPX));
+	x = (PCS *)malloc(M*sizeof(PCS)); //Allocates page-locked memory on the host.
+	y = (PCS *)malloc(M*sizeof(PCS));
+	z = (PCS *)malloc(M*sizeof(PCS));
+	c = (CPX *)malloc(M*sizeof(CPX));
+
 	//cudaMallocHost(&fw,nf1*nf2*nf3*sizeof(CPX)); //malloc after plan setting
 
 	PCS *d_x, *d_y, *d_z;
@@ -129,8 +130,7 @@ int main(int argc, char* argv[]){
     
     // plan setting
 	
-    ier = setup_plan(nf1, nf2, M, d_x, d_y, d_z, d_c, h_plan); //add to .h file
-	if(ier!=0)printf("plan_setup_error\n");
+    ier = setup_plan(nf1, nf2, M, d_x, d_y, d_z, d_c, h_plan);
 
 	printf("the num of w %d\n",h_plan->num_w);
 
@@ -171,19 +171,6 @@ int main(int argc, char* argv[]){
 	std::cout<<std::scientific<<std::setprecision(3);//setprecision not define
 
 
-	//CNTime timer; //
-	/*warm up gpu
-	char *a;
-	timer.restart();
-	checkCudaErrors(cudaMalloc(&a,1));
-	// cout<<"[time  ]"<< " (warm up) First cudamalloc call " << timer.elapsedsec()
-	//	<<" s"<<endl<<endl;
-
-
-
-	timer.restart();
-	*/
-
 	cudaEvent_t cuda_start, cuda_end;
 
     float kernel_time;
@@ -206,7 +193,7 @@ int main(int argc, char* argv[]){
     checkCudaErrors(cudaDeviceSynchronize());
 	
 	int nf3 = h_plan->num_w;
-	printf("[Method %d] %ld NU pts to #%d U pts in %.3g s\n",
+	printf("Method %d (nupt driven) %ld NU pts to #%d U pts in %.3g s\n",
 			h_plan->opts.gpu_method,M,nf1*nf2*nf3,kernel_time);
 	
 	
@@ -224,12 +211,18 @@ int main(int argc, char* argv[]){
 		std::cout<<"----------------------------------------------------------------"<<std::endl;
 	}
 	*/
-
+	checkCudaErrors(cudaFree(d_x));
+	checkCudaErrors(cudaFree(d_y));
+	checkCudaErrors(cudaFree(d_z));
+	checkCudaErrors(cudaFree(d_c));
+	checkCudaErrors(cudaFree(d_fw));
+	
 	checkCudaErrors(cudaDeviceReset());
-	checkCudaErrors(cudaFreeHost(x));
-	checkCudaErrors(cudaFreeHost(y));
-	checkCudaErrors(cudaFreeHost(z));
-	checkCudaErrors(cudaFreeHost(c));
-	checkCudaErrors(cudaFreeHost(fw));
+	free(x);
+	free(y);
+	free(z);
+	free(c);
+	free(fw);
+	
 	return 0;
 }
