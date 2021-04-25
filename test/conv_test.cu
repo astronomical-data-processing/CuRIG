@@ -75,7 +75,7 @@ int main(int argc, char* argv[]){
 	checkCudaErrors(cudaMalloc(&d_y,M*sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_z,M*sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_c,M*sizeof(CUCPX)));
-	//checkCudaErrorsCudaErrors(cudaMalloc(&d_fw,nf1*nf2*nf3*sizeof(CUCPX)));
+	//checkCudaErrors(cudaMalloc(&d_fw,8*nf1*nf2*nf1*sizeof(CUCPX)));
 
     //generating data
     int nupts_distribute = 0;
@@ -121,20 +121,24 @@ int main(int argc, char* argv[]){
     h_plan->opts.gpu_method = method;
 	h_plan->opts.gpu_kerevalmeth = kerevalmeth;
 
-    setup_conv_opts(h_plan->copts, tol, sigma, kerevalmeth); //check the arguements
+    int ier = setup_conv_opts(h_plan->copts, tol, sigma, kerevalmeth); //check the arguements
 
+	if(ier!=0)printf("setup_error\n");
     // w term related setting
     //setup_grid_wsize();
     
     // plan setting
 	
-    setup_plan(nf1, nf2, M, d_x, d_y, d_z, d_c, h_plan); //add to .h file
+    ier = setup_plan(nf1, nf2, M, d_x, d_y, d_z, d_c, h_plan); //add to .h file
+	if(ier!=0)printf("plan_setup_error\n");
 
 	printf("the num of w %d\n",h_plan->num_w);
 
-	fw = (CPX *)malloc(sizeof(CPX)*h_plan->num_w);
+	int f_size = nf1*sigma*nf2*sigma*h_plan->num_w;
+	fw = (CPX *)malloc(sizeof(CPX)*f_size);
+	checkCudaErrors(cudaMalloc(&d_fw,f_size*sizeof(CUCPX)));
     //checkCudaErrors(cudaMallocHost(&fw,nf1*nf2*h_plan->num_w*sizeof(CPX))); //malloc after plan setting
-    checkCudaErrors(cudaMalloc(&d_fw,nf1*nf2*h_plan->num_w*sizeof(CUCPX)));
+    //checkCudaErrors(cudaMalloc( &d_fw,( nf1*nf2*(h_plan->num_w)*sizeof(CUCPX) ) ) ); //check
 
 	//binsize, obinsize need to be set here, since SETUP_BINSIZE() is not 
 	//called in spread, interp only wrappers.
@@ -206,6 +210,7 @@ int main(int argc, char* argv[]){
 			h_plan->opts.gpu_method,M,nf1*nf2*nf3,kernel_time);
 	
 	
+	/*
 
 	std::cout<<"[result-input]"<<std::endl;
 	for(int k=0; k<nf3; k++){
@@ -218,7 +223,7 @@ int main(int argc, char* argv[]){
 		}
 		std::cout<<"----------------------------------------------------------------"<<std::endl;
 	}
-
+	*/
 
 	checkCudaErrors(cudaDeviceReset());
 	checkCudaErrors(cudaFreeHost(x));
