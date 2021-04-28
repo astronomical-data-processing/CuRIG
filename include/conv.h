@@ -9,7 +9,6 @@
 #include "curafft_plan.h"
 
 
-
 __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M, 
 	const int ns, int nf1, int nf2, PCS es_c, PCS es_beta, int pirange, INT_M* cell_loc);
 

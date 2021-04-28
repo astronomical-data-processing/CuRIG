@@ -15,10 +15,10 @@ using namespace std::complex_literals;
 int main(int argc, char* argv[]){
 	//improved WS stacking 1,
 	//gpu_method == 0, nupts driven
-    int nf1, nf2;
+    int N1, N2;
 	PCS sigma = 2.0;
 	int M;
-	if (argc<6) {
+	if (argc<5) {
 		fprintf(stderr,
 			"Usage: spread3d method nupts_distr nf1 nf2 nf3 [maxsubprobsize [M [tol [kerevalmeth [sort]]]]]\n"
 			"Arguments:\n"
@@ -29,7 +29,7 @@ int main(int argc, char* argv[]){
             "  w_term_method: \n"
             "    0: w-stacking\n"
             "    1: improved w-stacking\n"
-			"  nf1, nf2 : image size.\n"
+			"  N1, N2 : image size.\n"
 			"  M: The number of non-uniform points.\n"
 			"  tol: NUFFT tolerance (default 1e-6).\n"
 			"  kerevalmeth: Kernel evaluation method; one of\n"
@@ -38,15 +38,19 @@ int main(int argc, char* argv[]){
 		);
 		return 1;
 	}
+	//no result
 	double w;
 	int method;
 	sscanf(argv[1],"%d",&method);
 	int w_term_method;
 	sscanf(argv[2],"%d",&w_term_method);
-	sscanf(argv[3],"%lf",&w); nf1 = (int)w;  // so can read 1e6 right!
-	sscanf(argv[4],"%lf",&w); nf2 = (int)w;  // so can read 1e6 right!
-	sscanf(argv[5],"%lf",&w); M  = (int)w;  // so can read 1e6 right!
+	sscanf(argv[3],"%lf",&w); N1 = (int)w;  // so can read 1e6 right!
+	sscanf(argv[4],"%lf",&w); N2 = (int)w;  // so can read 1e6 right!
 	
+	M = N1 * N2;
+	if(argc>5){
+		sscanf(argv[5],"%lf",&w); M  = (int)w;  // so can read 1e6 right!
+	}
 
 	PCS tol=1e-6;
 	if(argc>6){
@@ -95,9 +99,9 @@ int main(int argc, char* argv[]){
 		case 1: // concentrate on a small region
 			{
 				for (int i = 0; i < M; i++) {
-					x[i] = M_PI*rand01()/nf1*16;
-					y[i] = M_PI*rand01()/nf2*16;
-					z[i] = M_PI*rand01()/nf2*16;
+					x[i] = M_PI*rand01()/N1*16;
+					y[i] = M_PI*rand01()/N2*16;
+					z[i] = M_PI*rand01()/N2*16;
 					c[i].real(randm11());
 					c[i].imag(randm11());
 				}
@@ -108,6 +112,7 @@ int main(int argc, char* argv[]){
 			return 1;
 	}
 
+	printf("generated data, x[1] %2.2g, y[1] %2.2g , z[1] %2.2g, c[1] %2.2g\n",x[1] , y[1], z[1], c[1].real());
     //data transfer
 	checkCudaErrors(cudaMemcpy(d_x,x,M*sizeof(PCS),cudaMemcpyHostToDevice)); //u
 	checkCudaErrors(cudaMemcpy(d_y,y,M*sizeof(PCS),cudaMemcpyHostToDevice)); //v
@@ -121,52 +126,26 @@ int main(int argc, char* argv[]){
     h_plan->opts.gpu_conv_only = 1;
     h_plan->opts.gpu_method = method;
 	h_plan->opts.gpu_kerevalmeth = kerevalmeth;
+	h_plan->w_term_method = w_term_method;
 
     int ier = setup_conv_opts(h_plan->copts, tol, sigma, kerevalmeth); //check the arguements
 
 	if(ier!=0)printf("setup_error\n");
-    // w term related setting
-    //setup_grid_wsize();
     
     // plan setting
 	
-    ier = setup_plan(nf1, nf2, M, d_x, d_y, d_z, d_c, h_plan);
+    ier = setup_plan(N1, N2, M, d_x, d_y, d_z, d_c, h_plan); //cautious the number of plane using N1 N2 to get nf1 nf2
 
 	printf("the num of w %d\n",h_plan->num_w);
-
-	int f_size = nf1*sigma*nf2*sigma*h_plan->num_w;
+	int nf1 = h_plan->nf1;
+	int nf2 = h_plan->nf2;
+	int nf3 = h_plan->num_w;
+	int f_size = nf1*nf2*nf3;
 	fw = (CPX *)malloc(sizeof(CPX)*f_size);
 	checkCudaErrors(cudaMalloc(&d_fw,f_size*sizeof(CUCPX)));
     //checkCudaErrors(cudaMallocHost(&fw,nf1*nf2*h_plan->num_w*sizeof(CPX))); //malloc after plan setting
     //checkCudaErrors(cudaMalloc( &d_fw,( nf1*nf2*(h_plan->num_w)*sizeof(CUCPX) ) ) ); //check
 
-	//binsize, obinsize need to be set here, since SETUP_BINSIZE() is not 
-	//called in spread, interp only wrappers.
-    /*
-	if(dplan->opts.gpu_method == 4)
-	{
-		dplan->opts.gpu_binsizex=4;
-		dplan->opts.gpu_binsizey=4;
-		dplan->opts.gpu_binsizez=4;
-		dplan->opts.gpu_obinsizex=8;
-		dplan->opts.gpu_obinsizey=8;
-		dplan->opts.gpu_obinsizez=8;
-		dplan->opts.gpu_maxsubprobsize=maxsubprobsize;
-	}
-	if(dplan->opts.gpu_method == 2)
-	{
-		dplan->opts.gpu_binsizex=16;
-		dplan->opts.gpu_binsizey=16;
-		dplan->opts.gpu_binsizez=2;
-		dplan->opts.gpu_maxsubprobsize=maxsubprobsize;
-	}
-	if(dplan->opts.gpu_method == 1)
-	{
-		dplan->opts.gpu_binsizex=16;
-		dplan->opts.gpu_binsizey=16;
-		dplan->opts.gpu_binsizez=2;
-	}
-    */
 
 	std::cout<<std::scientific<<std::setprecision(3);//setprecision not define
 
@@ -190,15 +169,17 @@ int main(int argc, char* argv[]){
     cudaEventElapsedTime(&kernel_time, cuda_start, cuda_end);
 
 
-    checkCudaErrors(cudaDeviceSynchronize());
+    // checkCudaErrors(cudaDeviceSynchronize());
+	checkCudaErrors(cudaMemcpy(fw,d_fw,sizeof(CUCPX)*f_size,cudaMemcpyDeviceToHost));
 	
-	int nf3 = h_plan->num_w;
+	//int nf3 = h_plan->num_w;
 	printf("Method %d (nupt driven) %ld NU pts to #%d U pts in %.3g s\n",
 			h_plan->opts.gpu_method,M,nf1*nf2*nf3,kernel_time);
 	
 	
-	/*
-
+	
+		
+	
 	std::cout<<"[result-input]"<<std::endl;
 	for(int k=0; k<nf3; k++){
 		for(int j=0; j<nf2; j++){
@@ -208,9 +189,10 @@ int main(int argc, char* argv[]){
 			}
 			std::cout<<std::endl;
 		}
-		std::cout<<"----------------------------------------------------------------"<<std::endl;
+		std::cout<<std::endl;
 	}
-	*/
+	std::cout<<"----------------------------------------------------------------"<<std::endl;
+	
 	checkCudaErrors(cudaFree(d_x));
 	checkCudaErrors(cudaFree(d_y));
 	checkCudaErrors(cudaFree(d_z));

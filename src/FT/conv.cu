@@ -26,6 +26,11 @@ void val_kernel_vec(PCS *ker, const PCS x, const double w, const double es_c,
 	}
 }
 
+// __global__ void print_res(CUCPX *fw){
+// 	int idx = threadIdx.x + blockDim.x * blockIdx.x;
+// 	printf("the value of %d is %2.2g\n",idx,fw[idx].x);
+// }
+
 // 2D for w-stacking. 1D + 2D for improved WS will consume more memory
 __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M, 
 	const int ns, int nf1, int nf2, PCS es_c, PCS es_beta, int pirange, INT_M* cell_loc)
@@ -85,7 +90,7 @@ __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M,
 				atomicAdd(&fw[outidx].y, c[idx].y*kervalue);
 			}
 		}
-		if((idx/blockDim.x+1)*blockDim.x<M){__syncthreads();}
+		//if((idx/blockDim.x+1)*blockDim.x<M){__syncthreads();}
 	}
 	
 }
@@ -151,14 +156,21 @@ void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw, int M,
 					outidx = ix+iy*nf1+iz*nf1*nf2;
 
 					temp1=ker1[xx-xstart];
+					if(temp1==0||temp2==0||temp3==0){
+						printf("the kernel value is 0, k1 %2.2g, k2 %2.2g, k3 %2.2g, idx %d\n", temp1, temp2, temp3, idx);
+						break;
+					}
 					PCS kervalue=temp1*temp2*temp3;
-
+					if(c[idx].x==0){
+						printf("FT coefficent is 0\n");
+						break;
+					}
 					atomicAdd(&fw[outidx].x, c[idx].x*kervalue);
 					atomicAdd(&fw[outidx].y, c[idx].y*kervalue);
 				}
 			}
 		}
-		if((idx/blockDim.x+1)*blockDim.x<M){ __syncthreads(); }
+		//if((idx/blockDim.x+1)*blockDim.x<M){ __syncthreads(); }
 	}
 }
 

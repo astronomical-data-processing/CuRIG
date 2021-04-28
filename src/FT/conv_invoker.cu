@@ -96,7 +96,7 @@ void get_max_min(PCS *x, int num, PCS *h_res){
 }
 */
 
-int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan)
+int setup_plan(int N1, int N2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan)
 {
   /* different dim will have different setting
     ----plan setting, and related memory allocation----
@@ -111,9 +111,10 @@ int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c
   plan->kv.w = d_w;
   plan->kv.vis = d_c;
 
+  int upsampfac = plan->copts.upsampfac;
   //int ier;
-  plan->nf1 = nf1;
-  plan->nf2 = nf2;
+  plan->nf1 = N1*upsampfac;
+  plan->nf2 = N2*upsampfac;
 
   /*
   //get number of w
@@ -128,7 +129,7 @@ int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c
     n_scale = -sqrt(abs(1. - l_max * l_max - m_max * m_max)) - 1.;
   plan->num_w =  abs(n_scale)/(0.25) * (max-min) + plan->copts.kw;
   */
-  plan->num_w = 2 * nf1;
+  plan->num_w = plan->nf1;
 
   plan->M = M;
   //plan->maxbatchsize = 1;
@@ -170,12 +171,17 @@ int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c
 
     dim3 grid;
     dim3 block;
+    // printf("gpu_method %d\n",plan->opts.gpu_method);
     if (plan->opts.gpu_method == 0)
     {
       block.x = 256;
       grid.x = (M - 1) / block.x + 1;
       conv_3d_nputsdriven<<<grid, block>>>(plan->kv.u, plan->kv.v, plan->kv.w, plan->kv.vis, plan->fw, plan->M,
                                            plan->copts.kw, nf1, nf2, nf3, plan->copts.ES_c, plan->copts.ES_beta, plan->copts.pirange, plan->cell_loc);
+      checkCudaErrors(cudaDeviceSynchronize());
+      // if(1){
+      //   print_res<<<grid,block>>>(plan->fw);
+      // }
     }
 
     return 0;
@@ -192,10 +198,13 @@ int setup_plan(int nf1, int nf2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c
     int nf2 = plan->nf2;
     int nf3 = plan->num_w;
     int M = plan->M;
+    // printf("w_term_method %d\n",plan->w_term_method);
     if (plan->w_term_method == 0)
     {
       ws_conv(nf1, nf2, nf3, M, plan);
     }
+    
+
     if (plan->w_term_method == 1)
     {
       //get nupts location in grid cells
