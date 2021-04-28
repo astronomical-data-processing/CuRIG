@@ -122,7 +122,7 @@ check:
 checkconv: libtest convtest
 	@echo "Running conv/interp only tests..."
 	@echo "conv 3D.............................................."
-	bin/conv_test 0 1 20 20
+	bin/conv_test 0 1 5 5
 
 
 # --------------------------------------------- end of check tasks ---------

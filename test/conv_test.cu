@@ -112,7 +112,7 @@ int main(int argc, char* argv[]){
 			return 1;
 	}
 
-	printf("generated data, x[1] %2.2g, y[1] %2.2g , z[1] %2.2g, c[1] %2.2g\n",x[1] , y[1], z[1], c[1].real());
+	//printf("generated data, x[1] %2.2g, y[1] %2.2g , z[1] %2.2g, c[1] %2.2g\n",x[1] , y[1], z[1], c[1].real());
     //data transfer
 	checkCudaErrors(cudaMemcpy(d_x,x,M*sizeof(PCS),cudaMemcpyHostToDevice)); //u
 	checkCudaErrors(cudaMemcpy(d_y,y,M*sizeof(PCS),cudaMemcpyHostToDevice)); //v
@@ -124,9 +124,13 @@ int main(int argc, char* argv[]){
 	
     // opts and copts setting
     h_plan->opts.gpu_conv_only = 1;
-    h_plan->opts.gpu_method = method;
+    h_plan->opts.gpu_gridding_method = method;
 	h_plan->opts.gpu_kerevalmeth = kerevalmeth;
+	h_plan->opts.gpu_sort = 1;
+	// h_plan->copts.pirange = 1;
+	// some plan setting
 	h_plan->w_term_method = w_term_method;
+	
 
     int ier = setup_conv_opts(h_plan->copts, tol, sigma, kerevalmeth); //check the arguements
 
@@ -136,13 +140,15 @@ int main(int argc, char* argv[]){
 	
     ier = setup_plan(N1, N2, M, d_x, d_y, d_z, d_c, h_plan); //cautious the number of plane using N1 N2 to get nf1 nf2
 
-	printf("the num of w %d\n",h_plan->num_w);
+	//printf("the num of w %d\n",h_plan->num_w);
 	int nf1 = h_plan->nf1;
 	int nf2 = h_plan->nf2;
 	int nf3 = h_plan->num_w;
 	int f_size = nf1*nf2*nf3;
 	fw = (CPX *)malloc(sizeof(CPX)*f_size);
 	checkCudaErrors(cudaMalloc(&d_fw,f_size*sizeof(CUCPX)));
+
+	h_plan->fw = d_fw;
     //checkCudaErrors(cudaMallocHost(&fw,nf1*nf2*h_plan->num_w*sizeof(CPX))); //malloc after plan setting
     //checkCudaErrors(cudaMalloc( &d_fw,( nf1*nf2*(h_plan->num_w)*sizeof(CUCPX) ) ) ); //check
 
@@ -174,7 +180,7 @@ int main(int argc, char* argv[]){
 	
 	//int nf3 = h_plan->num_w;
 	printf("Method %d (nupt driven) %ld NU pts to #%d U pts in %.3g s\n",
-			h_plan->opts.gpu_method,M,nf1*nf2*nf3,kernel_time);
+			h_plan->opts.gpu_gridding_method,M,nf1*nf2*nf3,kernel_time/1000);
 	
 	
 	

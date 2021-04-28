@@ -81,6 +81,7 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth)
     betaoverns = gamma * PI * (1 - 1 / (2 * upsampfac)); // formula based on cutoff
   }
   opts.ES_beta = betaoverns * (PCS)kw; // set the kernel beta parameter
+  printf("the value of beta %.3f\n",opts.ES_beta);
   //fprintf(stderr,"setup_spreader: sigma=%.6f, chose ns=%d beta=%.6f\n",(double)upsampfac,ns,(double)opts.ES_beta); // user hasn't set debug yet
   return ier;
 }
@@ -136,13 +137,13 @@ int setup_plan(int N1, int N2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, 
 
   plan->byte_now = 0;
   // No extra memory is needed in nuptsdriven method (case 1)
-  switch (plan->opts.gpu_method)
+  switch (plan->opts.gpu_gridding_method)
   {
   case 0:
   {
     if (plan->opts.gpu_sort)
     {
-      CHECK(cudaMalloc(&plan->cell_loc, sizeof(INT_M) * M));
+      CHECK(cudaMalloc(&plan->cell_loc, sizeof(INT_M) * M)); //need some where to be free
     }
   }
   case 1:
@@ -172,10 +173,11 @@ int setup_plan(int N1, int N2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, 
     dim3 grid;
     dim3 block;
     // printf("gpu_method %d\n",plan->opts.gpu_method);
-    if (plan->opts.gpu_method == 0)
+    if (plan->opts.gpu_gridding_method == 0)
     {
       block.x = 256;
       grid.x = (M - 1) / block.x + 1;
+      //for debug
       conv_3d_nputsdriven<<<grid, block>>>(plan->kv.u, plan->kv.v, plan->kv.w, plan->kv.vis, plan->fw, plan->M,
                                            plan->copts.kw, nf1, nf2, nf3, plan->copts.ES_c, plan->copts.ES_beta, plan->copts.pirange, plan->cell_loc);
       checkCudaErrors(cudaDeviceSynchronize());
@@ -207,6 +209,7 @@ int setup_plan(int N1, int N2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, 
 
     if (plan->w_term_method == 1)
     {
+      //test malloc
       //get nupts location in grid cells
       improved_ws_conv(nf1, nf2, nf3, M, plan);
     }
