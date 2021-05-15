@@ -49,15 +49,15 @@ struct curafft_plan
 
 	//suppose the N_u = N_l
 	int M; //NU
-	int nf1; // UPTS
+	int nf1; // UPTS after upsampling
 	int nf2;
 	int num_w; //number of w after gridding
-	int ms;
+	int ms; // number of Fourier modes
 	int mt;
 	//int mu;
 	int ntransf;
 	int iflag;
-	//int maxbatchsize; =1
+	int batchsize;
 	
 
 	//int totalnumsubprob;

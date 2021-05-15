@@ -22,11 +22,11 @@ int exec_inverse(curafft_plan *plan){
 
     // 2. cufft
     int direction = plan->iflag;
-    // cautious, a batch of fft, bath size is num_w
+    // cautious, a batch of fft, bath size is num_w when memory is sufficent.
     CUFFT_EXEC(plan->fftplan, plan->fw, plan->fw, direction);
 
+    // 3. dft on w (or 1 dimensional nufft type3)
 
-    // 3. deconvolution
-
+    // 4. deconvolution (correction)
 
 }

@@ -20,7 +20,7 @@
 
 
 int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_method, double sigma, int iflag,
-    int ntransf, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan)
+    int batchsize, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan)
 {
     /*
         N1, N2 - number of Fouier modes
@@ -28,7 +28,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
         kerevalmeth - gridding kernel evaluation method
         sigma - upsampling factor
         iflag - flag for fourier transform indicate the direction, CUFFT_INVERSE = 1, FORWARD = -1
-        ntransf - number of transform
+        batchsize - number of batch in  cufft (used for handling piece by piece)
         M - number of nputs (visibility)
         d_u, d_v, d_w - wavelengths in different dimensions
         d_c - value of visibility
@@ -70,7 +70,8 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     int fftsign = (iflag>=0) ? 1 : -1;
 
 	plan->iflag = fftsign;
-	plan->ntransf = ntransf;
+    if (batchsize == 0) batchsize = min(4,plan->num_w);
+	plan->batchsize = batchsize;
 
     if(plan->type == 1)
 		plan->copts.direction = 1; //inverse
@@ -109,6 +110,8 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     // check, multi cufft for different w ??? how to set
 	// cufftCreate(&fftplan);
 	// cufftPlan2d(&fftplan,n[0],n[1],CUFFT_TYPE);
+    // the bach size sets as the num of w when memory is sufficent. Alternative way, set as a smaller number when memory is insufficient.
+    // and handle this piece by piece 
 	cufftPlanMany(&fftplan,2,n,inembed,1,inembed[0]*inembed[1],
 		inembed,1,inembed[0]*inembed[1],CUFFT_TYPE,plan->num_w); //need to check and revise
     plan->fftplan = fftplan; 

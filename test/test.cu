@@ -1,4 +1,4 @@
-#include "nufft.cuh"
+#include "dft.cuh"
 #include <iostream>
 #include <thrust/complex.h>
 using namespace thrust;
