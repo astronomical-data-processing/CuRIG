@@ -14,14 +14,35 @@ using namespace std::complex_literals;
 ///conv improved WS, method 0 correctness cheak
 
 int main(int argc, char* argv[]){
-	//improved WS stacking 1,
+    // suppose there is just one channel
+    // range of uvw [-lamda/2,lamda]， rescale with factor resolution / fov compatible with l
+    // l and m need to be converted into pixels
+    // Input: nrow, nchan, nxdirty, nydirty, fov, epsilon, nthreads
+    
+    /* -----------Step1: Baseline setting--------------
+    uvw, nrow = M, shift, mask, f_over_c (fixed due to single channel)
+    
+    shift = 0;
+    while ((idx_t(1) << shift) < nchan)
+      ++shift;
+    mask = (idx_t(1) << shift) - 1;          ????
+    */
+
+
+    /* ----------Step2: Setup conv opts---------------
+        add deg_per_pix = fov / resolution and correction related variables
+    */
+
+
+
+  //improved WS stacking 1,
 	//gpu_method == 0, nupts driven
-    int N1, N2;
+  int N1, N2;
 	PCS sigma = 2.0;
 	int M;
 	if (argc<5) {
 		fprintf(stderr,
-			"Usage: conv3d method nupts_distr nf1 nf2 nf3 [maxsubprobsize [M [tol [kerevalmeth [sort]]]]]\n"
+			"Usage: spread3d method nupts_distr nf1 nf2 nf3 [maxsubprobsize [M [tol [kerevalmeth [sort]]]]]\n"
 			"Arguments:\n"
 			"  method: One of\n"
 			"    0: nupts driven,\n"
@@ -65,24 +86,21 @@ int main(int argc, char* argv[]){
 
     // fov and 1 pixel corresonding to pix_deg degree
 
-	N1 = 5; N2 = 5; M = 25; //for correctness checking
+	//N1 = 5; N2 = 5; M = 25; //for correctness checking
 	//int ier;
 	PCS *x, *y, *z;
-	CPX *c, *fw;
+	CPX *c, *fk;
 	x = (PCS *)malloc(M*sizeof(PCS)); //Allocates page-locked memory on the host.
 	y = (PCS *)malloc(M*sizeof(PCS));
 	z = (PCS *)malloc(M*sizeof(PCS));
 	c = (CPX *)malloc(M*sizeof(CPX));
 
-	//cudaMallocHost(&fw,nf1*nf2*nf3*sizeof(CPX)); //malloc after plan setting
-
 	PCS *d_x, *d_y, *d_z;
-	CUCPX *d_c, *d_fw;
+	CUCPX *d_c, *d_fk;
 	checkCudaErrors(cudaMalloc(&d_x,M*sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_y,M*sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_z,M*sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_c,M*sizeof(CUCPX)));
-	//checkCudaErrors(cudaMalloc(&d_fw,8*nf1*nf2*nf1*sizeof(CUCPX)));
 
     //generating data
     int nupts_distribute = 0;
@@ -113,36 +131,6 @@ int main(int argc, char* argv[]){
 			std::cerr << "not valid nupts distr" << std::endl;
 			return 1;
 	}
-	x[0] = - PI/2; y[0] = - PI/2; z[0] = - PI/2;
-	x[1] = - PI/2; y[1] = - PI/3; z[1] = - PI/2;
-	x[2] = - PI/2; y[2] = 0; z[2] = - PI/2;
-	x[3] = - PI/2; y[3] = PI/3; z[3] = - PI/2;
-	x[4] = - PI/2; y[4] = PI/2; z[4] = - PI/2;
-
-	x[5] = - PI/3; y[5] = - PI/2; z[5] = PI/2;
-	x[6] = - PI/3; y[6] = - PI/3; z[6] = PI/2;
-	x[7] = - PI/3; y[7] = 0; 	  z[7] = PI/2;
-	x[8] = - PI/3; y[8] = PI/3;   z[8] = PI/2;
-	x[9] = - PI/3; y[9] = PI/2;   z[9] = PI/2;
-
-	x[10] = 0; y[10] = - PI/2; z[10] = -PI/2;
-	x[11] = 0; y[11] = - PI/3; z[11] = -PI/2;
-	x[12] = 0; y[12] = 0; 	   z[12] = -PI/2;
-	x[13] = 0; y[13] = PI/3;   z[13] = -PI/2;
-	x[14] = 0; y[14] = PI/2;   z[14] = -PI/2;
-
-	x[15] = PI/3; y[15] = - PI/2; z[15] = PI/2;
-	x[16] = PI/3; y[16] = - PI/3; z[16] = PI/2;
-	x[17] = PI/3; y[17] = 0; 	  z[17] = PI/2;
-	x[18] = PI/3; y[18] = PI/3;   z[18] = PI/2;
-	x[19] = PI/3; y[19] = PI/2;   z[19] = PI/2;
-
-	x[20] = PI/2; y[20] = - PI/2; z[20] = - PI/2;
-	x[21] = PI/2; y[21] = - PI/3; z[21] = - PI/2;
-	x[22] = PI/2; y[22] = 0; 	  z[22] = - PI/2;
-	x[23] = PI/2; y[23] = PI/3;   z[23] = - PI/2;
-	x[24] = PI/2; y[24] = PI/2;   z[24] = - PI/2;
-
 
 	//printf("generated data, x[1] %2.2g, y[1] %2.2g , z[1] %2.2g, c[1] %2.2g\n",x[1] , y[1], z[1], c[1].real());
     //data transfer
@@ -151,27 +139,26 @@ int main(int argc, char* argv[]){
 	checkCudaErrors(cudaMemcpy(d_z,z,M*sizeof(PCS),cudaMemcpyHostToDevice)); //w
 	checkCudaErrors(cudaMemcpy(d_c,c,M*sizeof(CUCPX),cudaMemcpyHostToDevice));
 
-    curafft_plan *h_plan = new curafft_plan();
-    memset(h_plan, 0, sizeof(curafft_plan));
+  curafft_plan *h_plan = new curafft_plan();
+  memset(h_plan, 0, sizeof(curafft_plan));
 	
-    // opts and copts setting
-    h_plan->opts.gpu_conv_only = 1;
-    h_plan->opts.gpu_gridding_method = method;
+  // opts and copts setting
+  h_plan->opts.gpu_conv_only = 1;
+  h_plan->opts.gpu_gridding_method = method;
 	h_plan->opts.gpu_kerevalmeth = kerevalmeth;
 	h_plan->opts.gpu_sort = 1;
-	h_plan->opts.upsampfac = sigma;
 	// h_plan->copts.pirange = 1;
 	// some plan setting
 	h_plan->w_term_method = w_term_method;
 	
 
-    int ier = setup_conv_opts(h_plan->copts, tol, sigma, kerevalmeth); //check the arguements
+  int ier = setup_conv_opts(h_plan->copts, tol, sigma, kerevalmeth); //check the arguements
 
 	if(ier!=0)printf("setup_error\n");
     
-    // plan setting
+  // plan setting
 	
-    ier = setup_plan(N1, N2, M, d_x, d_y, d_z, d_c, h_plan); //cautious the number of plane using N1 N2 to get nf1 nf2
+  ier = setup_plan(N1, N2, M, d_x, d_y, d_z, d_c, h_plan); //cautious the number of plane using N1 N2 to get nf1 nf2
 
 	//printf("the num of w %d\n",h_plan->num_w);
 	int nf1 = h_plan->nf1;
@@ -180,13 +167,11 @@ int main(int argc, char* argv[]){
 	int nf3 = h_plan->num_w; //correctness checking
 	printf("the kw is %d\n", h_plan->copts.kw);
 	int f_size = nf1*nf2*nf3;
-	fw = (CPX *)malloc(sizeof(CPX)*f_size);
-	checkCudaErrors(cudaMalloc(&d_fw,f_size*sizeof(CUCPX)));
+  //need to revise
+	fk = (CPX *)malloc(sizeof(CPX)*f_size);
+	checkCudaErrors(cudaMalloc(&d_fk,f_size*sizeof(CUCPX)));
 
-	h_plan->fw = d_fw;
-    //checkCudaErrors(cudaMallocHost(&fw,nf1*nf2*h_plan->num_w*sizeof(CPX))); //malloc after plan setting
-    //checkCudaErrors(cudaMalloc( &d_fw,( nf1*nf2*(h_plan->num_w)*sizeof(CUCPX) ) ) ); //check
-
+	h_plan->fk = d_fk;
 
 	std::cout<<std::scientific<<std::setprecision(3);//setprecision not define
 
@@ -211,8 +196,9 @@ int main(int argc, char* argv[]){
     cudaEventElapsedTime(&kernel_time, cuda_start, cuda_end);
 
 
-    // checkCudaErrors(cudaDeviceSynchronize());
-	checkCudaErrors(cudaMemcpy(fw,d_fw,sizeof(CUCPX)*f_size,cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaDeviceSynchronize());
+  // need to revise
+	checkCudaErrors(cudaMemcpy(fk,d_fk,sizeof(CUCPX)*f_size,cudaMemcpyDeviceToHost));
 	
 	//int nf3 = h_plan->num_w;
 	printf("Method %d (nupt driven) %ld NU pts to #%d U pts in %.3g s\n",
@@ -221,7 +207,7 @@ int main(int argc, char* argv[]){
 	
 	
 		
-	
+	/*
 	std::cout<<"[result-input]"<<std::endl;
 	for(int k=0; k<nf3; k++){
 		for(int j=0; j<nf2; j++){
@@ -234,19 +220,23 @@ int main(int argc, char* argv[]){
 		std::cout<<std::endl;
 	}
 	std::cout<<"----------------------------------------------------------------"<<std::endl;
-	
+	*/
 	checkCudaErrors(cudaFree(d_x));
 	checkCudaErrors(cudaFree(d_y));
 	checkCudaErrors(cudaFree(d_z));
 	checkCudaErrors(cudaFree(d_c));
-	checkCudaErrors(cudaFree(d_fw));
+	checkCudaErrors(cudaFree(d_fk));
 	
 	checkCudaErrors(cudaDeviceReset());
 	free(x);
 	free(y);
 	free(z);
 	free(c);
-	free(fw);
+	free(fk);
 	
 	return 0;
+
+  
+
+  return 0;
 }

@@ -3,7 +3,7 @@
 
 
 #include "curafft_plan.h"
-
+#include "conv.h"
 
 #define CONV_THREAD_NUM 32
 

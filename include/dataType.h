@@ -23,7 +23,7 @@ using namespace std::complex_literals;
   #define PCS double
   #define CUCPX cuDoubleComplex
   #define CUFFT_TYPE CUFFT_Z2Z
-  #define CUFFT_EX cufftExecZ2Z
+  #define CUFFT_EXEC cufftExecZ2Z
 #endif
 
 #define CPX COMPLEX(PCS)
@@ -57,16 +57,16 @@ using namespace std::complex_literals;
 #define COMPLEXIFY(X) X complex
 #endif
 
-#undef FLT
+#undef PCS
 #undef CPX
 
 // Precision-independent real and complex types for interfacing...
 // (note these cannot be typedefs since we want dual-precision library)
 #ifdef SINGLE
-  #define FLT float
+  #define PCS float
 #else
-  #define FLT double
+  #define PCS double
 #endif
 
-#define CPX COMPLEXIFY(FLT)
+#define CPX COMPLEXIFY(PCS)
 */

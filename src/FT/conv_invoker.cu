@@ -17,10 +17,25 @@ Invoke conv related kernel
 #include <thrust/reduce.h>
 #include "conv_invoker.h"
 #include "conv.h"
+#include "utils.h"
 
+int get_num_cells(int ms, conv_opts copts)
+// type 1 & 2 recipe for how to set 1d size of upsampled array, nf, given opts
+// and requested number of Fourier modes ms.
+{
+  int nf = (int)(copts.upsampfac*ms);
+  if (nf<2*copts.kw) *nf=2*copts.kw; // otherwise spread fails
+  if (nf<1e11){                                // otherwise will fail anyway
+      nf = next235beven(nf, 1);
+  }
+  return nf;
+}
 
 int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth)
 {
+  /*
+    setup conv related components
+  */
   if (upsampfac != 2.0)
   { // nonstandard sigma
     if (kerevalmeth == 1)
@@ -56,7 +71,7 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth)
   int kw = std::ceil(-log10(eps / (PCS)10.0));                  // 1 digit per power of ten
   if (upsampfac != 2.0)                                         // override ns for custom sigma
     kw = std::ceil(-log(eps) / (PI * sqrt(1 - 1 / upsampfac))); // formula, gamma=1
-  kw = max(2, kw);                                              // we don't have ns=1 version yet
+  kw = max(2, kw);                                              
   if (kw > MAX_KERNEL_WIDTH)
   { // clip to match allocated arrays
     fprintf(stderr, "%s warning: at upsampfac=%.3g, tol=%.3g would need kernel width ns=%d; clipping to max %d, better to revise sigma and tol.\n", __func__,
@@ -87,7 +102,7 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth)
 }
 
 /*
-void get_max_min(PCS *x, int num, PCS *h_res){
+void get_num_w(PCS *x, int num, PCS *h_res){
   PCS *d_res;
   CHECK(cudaMalloc((void **)&d_res,sizeof(PCS)*2));
   reduce_max_min<<<(num-1)/BLOCKSIZE+1,BLOCKSIZE>>>(x,num,d_res);
@@ -105,7 +120,7 @@ int setup_plan(int N1, int N2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, 
         M - number of NUPTS (num of vis)
         d_u, d_v, d_w - location
         d_c - value
-    */
+  */
   int ier = 0;
   plan->kv.u = d_u;
   plan->kv.v = d_v;
@@ -114,11 +129,12 @@ int setup_plan(int N1, int N2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, 
 
   int upsampfac = plan->copts.upsampfac;
   //int ier;
-  plan->nf1 = N1*upsampfac;
-  plan->nf2 = N2*upsampfac;
-
+  //get number of cells
+  plan->nf1 = get_num_cells(N1,plan->copts);
+  plan->nf2 = get_num_cells(N2,plan->copts);
+  
+  // get ncell of w
   /*
-  //get number of w
   int num_w = 0;
   //reduce to get maximum and minimum, h_res[0] max, [1] min
   PCS *h_res = (PCS *)malloc(sizeof(int)*2);
@@ -139,79 +155,105 @@ int setup_plan(int N1, int N2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, 
   // No extra memory is needed in nuptsdriven method (case 1)
   switch (plan->opts.gpu_gridding_method)
   {
-  case 0:
-  {
-    if (plan->opts.gpu_sort)
+    case 0:
     {
-      CHECK(cudaMalloc(&plan->cell_loc, sizeof(INT_M) * M)); //need some where to be free
+      if (plan->opts.gpu_sort)
+      {
+        CHECK(cudaMalloc(&plan->cell_loc, sizeof(INT_M) * M)); //need some where to be free
+      }
     }
-  }
-  case 1:
-  {
-    if (plan->opts.gpu_sort)
+    case 1:
     {
-      CHECK(cudaMalloc(&plan->cell_loc, sizeof(INT_M) * M));
+      //shared memroy method
     }
+    case 2:
+    {
+      //multi pass
+    }
+    break;
+    
+    default:
+      std::cerr << "err: invalid method " << std::endl;
   }
-  break;
-  
-  default:
-    std::cerr << "err: invalid method " << std::endl;
+
+  if(!plan->opts.gpu_conv_only){
+		checkCudaErrors(cudaMalloc(&plan->fw, plan->nf1*plan->nf2*plan->num_w*sizeof(CUCPX)));
+		checkCudaErrors(cudaMalloc(&plan->fwkerhalf1,(nf1/2+1)*sizeof(PCS)));
+    checkCudaErrors(cudaMalloc(&plan->fwkerhalf2,(nf2/2+1)*sizeof(PCS)));
+    if(w_term_method)
+          checkCudaErrors(cudaMalloc(&plan->fwkerhalf3,(nf3/2+1)*sizeof(PCS)));
+    cudaStream_t* streams =(cudaStream_t*) malloc(plan->opts.gpu_nstreams*
+      sizeof(cudaStream_t));
+    for(int i=0; i<plan->opts.gpu_nstreams; i++)
+      checkCudaErrors(cudaStreamCreate(&streams[i]));
+    plan->streams = streams;
+	}
+
+  return ier;
+}
+
+
+int curafft_free(curafft_plan *plan){
+  int ier = 0;
+  if(plan->opts.gpu_sort){
+    CHECK(cudaFree(plan->cell_loc));
   }
   return ier;
 }
 
-  int ws_conv(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
+int ws_conv(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
+{
+  return 0;
+}
+
+int improved_ws_conv(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
+{
+  //add content
+
+  dim3 grid;
+  dim3 block;
+  // printf("gpu_method %d\n",plan->opts.gpu_method);
+  if (plan->opts.gpu_gridding_method == 0)
   {
-    return 0;
+    block.x = 256;
+    grid.x = (M - 1) / block.x + 1;
+    //for debug
+  conv_3d_nputsdriven<<<grid, block>>>(plan->kv.u, plan->kv.v, plan->kv.w, plan->kv.vis, plan->fw, plan->M,
+                                         plan->copts.kw, nf1, nf2, nf3, plan->copts.ES_c, plan->copts.ES_beta, plan->copts.pirange, plan->cell_loc);
+  checkCudaErrors(cudaDeviceSynchronize());
+  // if(1){
+    //   print_res<<<grid,block>>>(plan->fw);
+  // }
+ }
+
+  return 0;
+}
+
+int curafft_conv(curafft_plan * plan)
+{
+  /*
+  ---- convolution opertion ----
+  */
+
+  int ier = 0;
+  int nf1 = plan->nf1;
+  int nf2 = plan->nf2;
+  int nf3 = plan->num_w;
+  int M = plan->M;
+  // printf("w_term_method %d\n",plan->w_term_method);
+  if (plan->w_term_method == 0)
+  {
+    ws_conv(nf1, nf2, nf3, M, plan);
+    //free gpu memory like cell_loc
   }
-
-  int improved_ws_conv(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
-  {
-    //add content
-
-    dim3 grid;
-    dim3 block;
-    // printf("gpu_method %d\n",plan->opts.gpu_method);
-    if (plan->opts.gpu_gridding_method == 0)
-    {
-      block.x = 256;
-      grid.x = (M - 1) / block.x + 1;
-      //for debug
-      conv_3d_nputsdriven<<<grid, block>>>(plan->kv.u, plan->kv.v, plan->kv.w, plan->kv.vis, plan->fw, plan->M,
-                                           plan->copts.kw, nf1, nf2, nf3, plan->copts.ES_c, plan->copts.ES_beta, plan->copts.pirange, plan->cell_loc);
-      checkCudaErrors(cudaDeviceSynchronize());
-      // if(1){
-      //   print_res<<<grid,block>>>(plan->fw);
-      // }
-    }
-
-    return 0;
-  }
-
-  int curafft_conv(curafft_plan * plan)
-  {
-    /*
-    ---- convolution opertion ----
-    */
-
-    int ier = 0;
-    int nf1 = plan->nf1;
-    int nf2 = plan->nf2;
-    int nf3 = plan->num_w;
-    int M = plan->M;
-    // printf("w_term_method %d\n",plan->w_term_method);
-    if (plan->w_term_method == 0)
-    {
-      ws_conv(nf1, nf2, nf3, M, plan);
-    }
     
 
-    if (plan->w_term_method == 1)
-    {
-      //test malloc
-      //get nupts location in grid cells
-      improved_ws_conv(nf1, nf2, nf3, M, plan);
-    }
-    return ier;
+  if (plan->w_term_method == 1)
+  {
+    //test malloc
+    //get nupts location in grid cells
+    improved_ws_conv(nf1, nf2, nf3, M, plan);
+    //free gpu memory like cell_loc
   }
+  return ier;
+}

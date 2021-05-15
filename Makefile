@@ -1,8 +1,5 @@
 # CURAFFT Makefile
 
-
-
-
 CC   ?= gcc
 CXX  ?= g++
 NVCC ?= nvcc
@@ -44,7 +41,7 @@ LIBS += -lm -lcudart -lstdc++ -lnvToolsExt -lcufft -lcuda
 # Include header files
 INC += -I include
 
-#??
+
 LIBNAME=libcurafft
 DYNAMICLIB=lib/$(LIBNAME).so
 STATICLIB=lib-static/$(LIBNAME).a

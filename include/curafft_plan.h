@@ -18,7 +18,7 @@ struct conv_opts{
     options for convolutional gridding process
     kw - w, the kernel width (number of grid cells)
     direction - 1 means inverse NU->U, 0 means forward interpolate U->NU //changed
-    pirange - 0: coords in [0,N), 1 coords in [-pi,pi), for scaling
+    pirange - 0: coords in [0,N), 1 coords in [-pi,pi), 2 coords in [-lamda/2,lamda) * resolution / fov for scaling
     upsampfac - sigma, upsampling factor, default 2.0
     ES_beta
     ES_halfwidth
@@ -46,7 +46,7 @@ struct curafft_plan
 	cudaStream_t *streams;
 
     //int type;
-	
+
 	//suppose the N_u = N_l
 	int M; //NU
 	int nf1; // UPTS
@@ -56,6 +56,7 @@ struct curafft_plan
 	int mt;
 	//int mu;
 	int ntransf;
+	int iflag;
 	//int maxbatchsize; =1
 	
 
@@ -63,7 +64,7 @@ struct curafft_plan
 	int byte_now; //always be set to be 0
 	PCS *fwkerhalf1; //used for not just spread only
 	PCS *fwkerhalf2;
-	//PCS *fwkerhalf3;
+	PCS *fwkerhalf3;
 
 	visibility kv;
 	int w_term_method; // 0 for w-stacking, 1 for improved w-stacking
@@ -74,8 +75,8 @@ struct curafft_plan
 	//int iflag;
 
 
-	CUCPX *fw; // output
-	CUCPX *fk;
+	CUCPX *fw; // conv res
+	CUCPX *fk; // fft res
 
 	int *idxnupts;//length: #nupts, index of the nupts in the bin-sorted order (size is M) abs location in bin
 	int *sortidx; //length: #nupts, order inside the bin the nupt belongs to (size is M) local position in bin

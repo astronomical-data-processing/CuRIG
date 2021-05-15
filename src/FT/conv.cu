@@ -127,6 +127,7 @@ void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw, int M,
 	for(idx=blockDim.x*blockIdx.x+threadIdx.x; idx<M; idx+=blockDim.x*gridDim.x){
 		
 		//value of x and w, rescale to [0,N) and get the locations
+		// if pirange = 2 need to change
 		temp1 = ((x[idx]<0?(x[idx]+PI):x[idx]) * M_1_2PI * nf1); 
 		temp2 = ((y[idx]<0?(y[idx]+PI):y[idx]) * M_1_2PI * nf2);
 		temp3 = ((z[idx]<0?(z[idx]+PI):z[idx]) * M_1_2PI * nf3);
@@ -184,7 +185,7 @@ void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw, int M,
 
 
 /*
-FLT evaluate_kernel(FLT x, const SPREAD_OPTS &opts)
+PCS evaluate_kernel(PCS x, const conv_opts &opts)
 /* ES ("exp sqrt") kernel evaluation at single real argument:
       phi(x) = exp(beta.sqrt(1 - (2x/n_s)^2)),    for |x| < nspread/2
    related to an asymptotic approximation to the Kaiser--Bessel, itself an
