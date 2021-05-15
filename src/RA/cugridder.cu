@@ -18,6 +18,7 @@
 #include "conv_invoker.h"
 #include "utils.h"
 
+// the bin sort should be completed at gridder_settting
 
 int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_method, double sigma, int iflag,
     int batchsize, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan)
@@ -60,7 +61,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
 
     // plan setting
     plan->w_term_method = w_term_method;
-    // cufft stream malloc in setup_plan
+    // cuda stream malloc in setup_plan
     setup_plan(N1, N2, M, d_u, d_v, d_w, d_c, plan);
     // plan->dim = dim;
 	plan->ms = N1;
@@ -113,7 +114,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     // the bach size sets as the num of w when memory is sufficent. Alternative way, set as a smaller number when memory is insufficient.
     // and handle this piece by piece 
 	cufftPlanMany(&fftplan,2,n,inembed,1,inembed[0]*inembed[1],
-		inembed,1,inembed[0]*inembed[1],CUFFT_TYPE,plan->num_w); //need to check and revise
+		inembed,1,inembed[0]*inembed[1],CUFFT_TYPE,plan->num_w); //need to check and revise (the partial conv will be differnt)
     plan->fftplan = fftplan; 
     
 

@@ -194,6 +194,7 @@ int setup_plan(int N1, int N2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, 
 
 
 int curafft_free(curafft_plan *plan){
+  //free gpu memory like cell_loc
   int ier = 0;
   if(plan->opts.gpu_sort){
     CHECK(cudaFree(plan->cell_loc));
@@ -208,7 +209,6 @@ int ws_conv(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
 
 int improved_ws_conv(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
 {
-  //add content
 
   dim3 grid;
   dim3 block;
@@ -218,13 +218,17 @@ int improved_ws_conv(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
     block.x = 256;
     grid.x = (M - 1) / block.x + 1;
     //for debug
-  conv_3d_nputsdriven<<<grid, block>>>(plan->kv.u, plan->kv.v, plan->kv.w, plan->kv.vis, plan->fw, plan->M,
-                                         plan->copts.kw, nf1, nf2, nf3, plan->copts.ES_c, plan->copts.ES_beta, plan->copts.pirange, plan->cell_loc);
-  checkCudaErrors(cudaDeviceSynchronize());
-  // if(1){
-    //   print_res<<<grid,block>>>(plan->fw);
-  // }
- }
+
+    // if the image resolution is small, the memory is sufficiently large for output after conv. 
+    conv_3d_nputsdriven<<<grid, block>>>(plan->kv.u, plan->kv.v, plan->kv.w, plan->kv.vis, plan->fw, plan->M,
+                                          plan->copts.kw, nf1, nf2, nf3, plan->copts.ES_c, plan->copts.ES_beta, plan->copts.pirange, plan->cell_loc);
+    
+
+    checkCudaErrors(cudaDeviceSynchronize());
+    // if(1){
+      //   print_res<<<grid,block>>>(plan->fw);
+    // }
+  }
 
   return 0;
 }
@@ -244,7 +248,6 @@ int curafft_conv(curafft_plan * plan)
   if (plan->w_term_method == 0)
   {
     ws_conv(nf1, nf2, nf3, M, plan);
-    //free gpu memory like cell_loc
   }
     
 
@@ -253,7 +256,16 @@ int curafft_conv(curafft_plan * plan)
     //test malloc
     //get nupts location in grid cells
     improved_ws_conv(nf1, nf2, nf3, M, plan);
-    //free gpu memory like cell_loc
   }
   return ier;
+}
+
+int curaff_partial_conv(){
+  
+  // improved WS
+  // invoke the partial 3d conv, calcualte the conv result and saved the result to plan->fw
+  // directly invoke, not packed into function
+
+
+  // WS
 }

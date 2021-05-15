@@ -15,7 +15,15 @@ FORWARD: type 2
 #include "conv_invoker.h"
 
 int exec_inverse(curafft_plan *plan){
+    /*
+    Two different execution flows
+    */
 
+
+    ///curafft_partial_conv workflow for insufficient memory
+
+
+    /// curafft_conv workflow for enough memory
     checkCudaErrors(cudaMemset(plan->fw,0,plan->num_w*plan->nf1*plan->nf2*sizeof(CUCPX)));// this is needed
     // 1. convlution
     curafft_conv(plan);
