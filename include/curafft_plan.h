@@ -52,12 +52,13 @@ struct curafft_plan
 	int nf1; // UPTS after upsampling
 	int nf2;
 	int num_w; //number of w after gridding
-	int ms; // number of Fourier modes
-	int mt;
+	int ms; // number of Fourier modes N1
+	int mt; // N2
 	//int mu;
 	int ntransf;
 	int iflag;
 	int batchsize;
+	int execute_flow;//may be useless
 	
 
 	//int totalnumsubprob;
@@ -68,11 +69,6 @@ struct curafft_plan
 
 	visibility kv;
 	int w_term_method; // 0 for w-stacking, 1 for improved w-stacking
-	//PCS *kx;
-	//PCS *ky;
-	//PCS *kz;
-	//CUCPX *c;
-	//int iflag;
 
 
 	CUCPX *fw; // conv res

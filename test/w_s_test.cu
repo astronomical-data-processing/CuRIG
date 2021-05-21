@@ -166,7 +166,7 @@ int main(int argc, char* argv[]){
 	h_plan->num_w = 2;
 	int nf3 = h_plan->num_w; //correctness checking
 	printf("the kw is %d\n", h_plan->copts.kw);
-	int f_size = nf1*nf2*nf3;
+	int f_size = N1*N2;
   //need to revise
 	fk = (CPX *)malloc(sizeof(CPX)*f_size);
 	checkCudaErrors(cudaMalloc(&d_fk,f_size*sizeof(CUCPX)));

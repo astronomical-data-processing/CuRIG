@@ -2,7 +2,6 @@
 Invoke conv related kernel
 */
 
-//#include "../memtransfer.h"
 #include <math.h>
 #include <stdlib.h>
 #include <cuda.h>
