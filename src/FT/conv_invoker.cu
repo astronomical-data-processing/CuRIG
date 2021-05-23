@@ -1,5 +1,6 @@
 /*
 Invoke conv related kernel
+Issue: Revise for batch
 */
 
 #include <math.h>
