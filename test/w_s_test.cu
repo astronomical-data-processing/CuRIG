@@ -144,7 +144,7 @@ int main(int argc, char* argv[]){
 	
   // opts and copts setting
   h_plan->opts.gpu_conv_only = 1;
-  h_plan->opts.gpu_gridding_method = method;
+  h_plan->opts.gpu_gridder_method = method;
 	h_plan->opts.gpu_kerevalmeth = kerevalmeth;
 	h_plan->opts.gpu_sort = 1;
 	// h_plan->copts.pirange = 1;
@@ -202,7 +202,7 @@ int main(int argc, char* argv[]){
 	
 	//int nf3 = h_plan->num_w;
 	printf("Method %d (nupt driven) %ld NU pts to #%d U pts in %.3g s\n",
-			h_plan->opts.gpu_gridding_method,M,nf1*nf2*nf3,kernel_time/1000);
+			h_plan->opts.gpu_gridder_method,M,nf1*nf2*nf3,kernel_time/1000);
 	
 	
 	

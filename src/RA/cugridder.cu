@@ -53,7 +53,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     plan->opts.gpu_binsizez = -1;
     plan->opts.gpu_kerevalmeth = kerevalmeth;
     plan->opts.gpu_conv_only = 0;
-    plan->opts.gpu_gridding_method = method;
+    plan->opts.gpu_gridder_method = method;
 
     int ier = setup_conv_opts(plan->copts, tol, sigma, kerevalmeth); //check the arguements
 

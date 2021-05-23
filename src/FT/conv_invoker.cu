@@ -152,7 +152,7 @@ int setup_plan(int N1, int N2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, 
 
   plan->byte_now = 0;
   // No extra memory is needed in nuptsdriven method (case 1)
-  switch (plan->opts.gpu_gridding_method)
+  switch (plan->opts.gpu_gridder_method)
   {
     case 0:
     {
@@ -212,7 +212,7 @@ int improved_ws_conv(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
   dim3 grid;
   dim3 block;
   // printf("gpu_method %d\n",plan->opts.gpu_method);
-  if (plan->opts.gpu_gridding_method == 0)
+  if (plan->opts.gpu_gridder_method == 0)
   {
     block.x = 256;
     grid.x = (M - 1) / block.x + 1;
