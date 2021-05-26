@@ -3,17 +3,23 @@ invoke deconv related kernels
 */
 #include "deconv_invoker.h"
 
-int nupt_deconv(){
+int 2d_nupt_deconv(){
     int ier = 0;
     // niffty + cufinufft
     
     return ier;
 }
 
-int sorted_deconv(){
+int 2d_sorted_deconv(){
     int ier = 0;
 
     
+    return ier;
+}
+
+int w_term_correction(){
+    int ier = 0;
+
     return ier;
 }
 
