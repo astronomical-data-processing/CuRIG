@@ -13,6 +13,7 @@ FORWARD: type 2
 
 #include "curafft_plan.h"
 #include "conv_invoker.h"
+#include "deconv_invoker.h"
 #include "dft.h"
 
 int exec_inverse(curafft_plan *plan){
@@ -35,9 +36,10 @@ int exec_inverse(curafft_plan *plan){
         // keep the N1*N2*num_w. ignore the outputs that are out of range 
 
         // 3. dft on w (or 1 dimensional nufft type3)
-        w_term_dft_invoker(plan);
+        curadft_invoker(plan);
         
         // 4. deconvolution (correction)
+        curafft_deconv(plan);
         
     }
     else if(plan->execute_flow==2){

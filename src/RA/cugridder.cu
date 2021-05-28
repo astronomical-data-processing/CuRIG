@@ -88,6 +88,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     if(w_term_method){
         // improved_ws
         fwkerhalf3 = (PCS*)malloc(sizeof(PCS)*(nf3/2+1));
+        //need to revise
         onedim_fseries_kernel(nf3, fwkerhalf3, plan->spopts);
     }
 
