@@ -3,5 +3,5 @@
 
 #include "curafft_plan.h"
 
-void w_term_dft_invoker(curafft_plan *plan);
+void curadft_invoker(curafft_plan *plan);
 #endif

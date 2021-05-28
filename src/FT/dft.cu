@@ -30,7 +30,7 @@ __global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int N1, int N2, int batc
     }
 }
 
-void w_term_dft_invoker(curafft_plan *plan){
+void curadft_invoker(curafft_plan *plan){
     /*
         Input: 
             fw - the res after 2D-FT towards each w
