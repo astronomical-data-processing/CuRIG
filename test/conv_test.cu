@@ -26,7 +26,6 @@ int main(int argc, char* argv[]){
 			"  method: One of\n"
 			"    0: nupts driven,\n"
 			"    2: sub-problem, or\n"
-			"    4: block gather (each nf must be multiple of 8).\n"
             "  w_term_method: \n"
             "    0: w-stacking\n"
             "    1: improved w-stacking\n"
