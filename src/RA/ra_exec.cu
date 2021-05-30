@@ -18,6 +18,7 @@ FORWARD: type 2
 
 int exec_inverse(curafft_plan *plan){
     /*
+    Currently, just for improved W stacking
     Two different execution flows
         Flow1: the data size is small and memory is sufficent for whole conv
         Flow2: the data size is large, the data is divided into parts 

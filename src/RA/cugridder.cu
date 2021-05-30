@@ -16,19 +16,21 @@
 #include <cufft.h>
 
 #include "conv_invoker.h"
+#include "ra_exec.h"
 #include "utils.h"
 
 // the bin sort should be completed at gridder_settting
 
-int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_method, double sigma, int iflag,
+int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_method, int direction, double sigma, int iflag,
     int batchsize, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan)
 {
     /*
         N1, N2 - number of Fouier modes
         method - gridding method
         kerevalmeth - gridding kernel evaluation method
+        direction - 1 CUFFT_INVERSE, 0 CUFFT_FORWARD
         sigma - upsampling factor
-        iflag - flag for fourier transform indicate the direction, CUFFT_INVERSE = 1, FORWARD = -1
+        iflag - flag for fourier transform
         batchsize - number of batch in  cufft (used for handling piece by piece)
         M - number of nputs (visibility)
         d_u, d_v, d_w - wavelengths in different dimensions
@@ -74,13 +76,10 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     if (batchsize == 0) batchsize = min(4,plan->num_w);
 	plan->batchsize = batchsize;
 
-    if(plan->type == 1)
-		plan->copts.direction = 1; //inverse
-	if(plan->type == 0)
-		plan->copts.direction = 0; //forward
+    plan->copts.direction = direction; // 1 inverse, 0 forward
 
     fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*(nf1/2+1));
-    onedim_fseries_kernel(nf1, fwkerhalf1, plan->spopts);//?
+    onedim_fseries_kernel(nf1, fwkerhalf1, plan->spopts); // used for correction
     
     fwkerhalf2 = (PCS*)malloc(sizeof(PCS)*(nf2/2+1));
     onedim_fseries_kernel(nf2, fwkerhalf2, plan->spopts);
@@ -93,8 +92,6 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     }
 
     // copy to device 
-    
-
     checkCudaErrors(cudaMemcpy(plan->fwkerhalf1,fwkerhalf1,(nf1/2+1)*
 		sizeof(PCS),cudaMemcpyHostToDevice));
 	
@@ -136,6 +133,33 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
 }
 
 
-int gridder_exectuion(CUCPX* d_c, CUCPX* d_fk, curafft_plan* plan){
+int gridder_exectuion(curafft_plan* plan){
+    /*
+    Execute conv, fft, dft, correction for different direction (gridding or degridding)
+    */
+    int ier=0;
+    // Mult-GPU support: set the CUDA Device ID:
+        // int orig_gpu_device_id;
+        // cudaGetDevice(& orig_gpu_device_id);
+        // cudaSetDevice(d_plan->opts.gpu_device_id);
 
+	int direction = plan->copts.direction;
+    if (direction == 1){
+        ier = exec_inverse(plan);
+    }
+    else{
+        // forward not implement yet
+        ier = 0;
+    }
+	
+
+    // Multi-GPU support: reset the device ID
+    // cudaSetDevice(orig_gpu_device_id);
+    return ier;
+}
+
+int gridder_destroy(){
+    // free memory
+    int ier=0;
+    return ier;
 }
