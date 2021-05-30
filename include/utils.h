@@ -32,11 +32,13 @@
 
 #define BLOCKSIZE 1024
 
+#define SPEEDOFLIGHT 299792458.0
+
 //random11 and rand01
 // Random numbers: crappy unif random number generator in [0,1):
 //#define rand01() (((PCS)(rand()%RAND_MAX))/RAND_MAX)
 #define rand01() ((PCS)rand()/RAND_MAX)
-// unif[-1,1]:
+// unif[-1,1):
 #define randm11() (2*rand01() - (PCS)1.0)
 
 int next235beven(int n, int b)
