@@ -19,6 +19,11 @@
 #include "ra_exec.h"
 #include "utils.h"
 
+
+int gridder_plan(){
+    
+}
+
 // the bin sort should be completed at gridder_settting
 
 int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_method, int direction, double sigma, int iflag,

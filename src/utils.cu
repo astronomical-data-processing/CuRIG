@@ -1,6 +1,35 @@
 #include <cuda_runtime.h>
 #include <cuda.h>
 #include <stdio.h>
+#include <thrust/device_ptr.h>
+#include "dataType.h"
+
+void prefix_scan(PCS *d_arr, PCS *d_res, int n, int flag){
+    /*
+        n - number of elements
+        flag - 1 inclusive, 0 exclusive
+        Will the output at d_res
+        thrust::inclusive_scan(d_arr, d_arr + n, d_res);???
+    */
+    thrust::device_ptr<PCS> d_ptr(d_arr); // not convert
+	thrust::device_ptr<PCS> d_result(d_res);
+    if(flag)
+    thrust::inclusive_scan(d_ptr, d_ptr + n, d_result);
+    else
+	thrust::exclusive_scan(d_ptr, d_ptr + n, d_result);
+}
+
+void get_max_min(PCS &max, PCS &min, PCS *d_array, int n){
+    /*
+        Get the maximum and minimum values of array by thrust
+        Will be fast with one invokation getting max and min?
+    */
+    thrust::device_ptr<PCS> d_ptr = thrust::device_pointer_cast(d_array);
+    PCS *temp = thrust::max_element(d_ptr, d_ptr+n);
+    max = *temp;
+    temp = thrust::min_element(d_ptr, d_ptr+n);
+    min = *temp;
+}
 
 void GPU_info(){
     /*
