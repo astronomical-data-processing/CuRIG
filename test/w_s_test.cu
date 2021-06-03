@@ -105,12 +105,12 @@ int main(int argc, char *argv[])
 	//N1 = 5; N2 = 5; M = 25; //for correctness checking
 	//int ier;
 	PCS *u, *v, *w;
-	CPX *ms, *fk;
+	CPX *fk;
 	CPX *vis;
+	PCS *wgt; //currently no mask
 	u = (PCS *)malloc(nrow * sizeof(PCS)); //Allocates page-locked memory on the host.
 	v = (PCS *)malloc(nrow * sizeof(PCS));
 	w = (PCS *)malloc(nrow * sizeof(PCS));
-	ms = (CPX *)malloc(nrow * sizeof(CPX));
 	vis = (CPX *)malloc(nrow * sizeof(CPX));
 	PCS *d_u, *d_v, *d_w;
 	CUCPX *d_vis, *d_fk;
@@ -125,8 +125,9 @@ int main(int argc, char *argv[])
 		u[i] = M_PI * randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT); //will change for different freq?
 		v[i] = M_PI * randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
 		w[i] = M_PI * randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
-		ms[i].real(randm11() / 0.5);
-		ms[i].imag(randm11() / 0.5);
+		vis[i].real(randm11() / 0.5);
+		vis[i].imag(randm11() / 0.5);
+		wgt[i] = 1;
 	}
 	// ignore the tdirty
 	// how to convert ms to vis
