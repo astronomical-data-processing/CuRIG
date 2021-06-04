@@ -1,9 +1,8 @@
-#include "common.h"
-#include "curafft_plan.h"
 #include <math.h>
 #include <stdio.h>
 #include <vector>
-
+#include "common.h"
+#include "curafft_plan.h"
 #ifdef __cplusplus
 extern "C" {
   #include "legendre_rule_fast.h"
@@ -51,7 +50,7 @@ void onedim_fseries_kernel(int nf, PCS *fwkerhalf, conv_opts opts)
   Barnett 2/7/17. openmp (since slow vs fftw in 1D large-N case) 3/3/18
  */
 {
-  PCS J2 = opts.nspread/2.0;            // J/2, half-width of ker z-support
+  PCS J2 = opts.kw/2.0;            // J/2, half-width of ker z-support
   // # quadr nodes in z (from 0 to J/2; reflections will be added)...
   int q=(int)(2 + 3.0*J2);  // not sure why so large? cannot exceed MAX_NQUAD
   PCS f[MAX_NQUAD]; double z[2*1],w[2*MAX_NQUAD];

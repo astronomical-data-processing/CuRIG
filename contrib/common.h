@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #include "dataType.h"
+#include "utils_fp.h"
 #include "utils.h"
 // revise
 // #include "spreadinterp.h"
@@ -32,6 +33,8 @@
   #define MY_OMP_SET_NUM_THREADS(x)
   #define MY_OMP_SET_NESTED(x)
 #endif
+
+struct conv_opts;
 
 // common.cpp provides...
 
