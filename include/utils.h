@@ -6,7 +6,9 @@
 #include <cuda_runtime.h>
 #include <cuda.h>
 #include <stdio.h>
+#include <thrust/extrema.h>
 #include <thrust/device_ptr.h>
+#include <thrust/scan.h>
 
 #include "dataType.h"
 
@@ -79,9 +81,10 @@ void prefix_scan(PCS *d_arr, PCS *d_res, int n, int flag)
         thrust::inclusive_scan(d_arr, d_arr + n, d_res);???
     */
   thrust::device_ptr<PCS> d_ptr(d_arr); // not convert
-  if(d_arr != d_res)thrust::device_ptr<PCS> d_result(d_res);
+  thrust::thrust::device_ptr<PCS> d_result(d_res);
+
   if (flag)
-    thrust::inclusive_scan(d_ptr, d_ptr + n, d_result);
+    thrust::inclusive_scan(d_ptr, d_ptr + n, d_result); // error may
   else
     thrust::exclusive_scan(d_ptr, d_ptr + n, d_result);
 }
@@ -93,10 +96,9 @@ void get_max_min(PCS &max, PCS &min, PCS *d_array, int n)
         Will be fast with one invokation getting max and min?
     */
   thrust::device_ptr<PCS> d_ptr = thrust::device_pointer_cast(d_array);
-  PCS *temp = thrust::max_element(d_ptr, d_ptr + n);
-  max = *temp;
-  temp = thrust::min_element(d_ptr, d_ptr + n);
-  min = *temp;
+  max = *(thrust::max_element(d_ptr, d_ptr + n)); //revise
+ 
+  min = *(thrust::min_element(d_ptr, d_ptr + n)); //revise
 }
 
 void GPU_info()
@@ -110,7 +112,7 @@ void GPU_info()
     cudaMalloc(&h_max_test3,sizeof(float)*1024*1024*1000));
     cudaFree(h_max_test);
     */
-  printf("%s Starting... \n");
+  printf("Starting... \n");
   int deviceCount = 0;
   cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
   if (error_id != cudaSuccess)

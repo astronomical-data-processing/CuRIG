@@ -24,7 +24,7 @@ int get_num_cells(int ms, conv_opts copts)
 // and requested number of Fourier modes ms.
 {
   int nf = (int)(copts.upsampfac*ms);
-  if (nf<2*copts.kw) *nf=2*copts.kw; // otherwise spread fails
+  if (nf<2*copts.kw) nf=2*copts.kw; // otherwise spread fails
   if (nf<1e11){                                // otherwise will fail anyway
       nf = next235beven(nf, 1);
   }
@@ -178,15 +178,17 @@ int setup_plan(int N1, int N2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, 
 
   if(!plan->opts.gpu_conv_only){
 		checkCudaErrors(cudaMalloc(&plan->fw, plan->nf1*plan->nf2*plan->num_w*sizeof(CUCPX)));
-		checkCudaErrors(cudaMalloc(&plan->fwkerhalf1,(nf1/2+1)*sizeof(PCS)));
-    checkCudaErrors(cudaMalloc(&plan->fwkerhalf2,(nf2/2+1)*sizeof(PCS)));
-    if(w_term_method)
-          checkCudaErrors(cudaMalloc(&plan->fwkerhalf3,(nf3/2+1)*sizeof(PCS)));
+		checkCudaErrors(cudaMalloc(&plan->fwkerhalf1,(plan->nf1/2+1)*sizeof(PCS)));
+    checkCudaErrors(cudaMalloc(&plan->fwkerhalf2,(plan->nf2/2+1)*sizeof(PCS)));
+    if(plan->w_term_method)
+          checkCudaErrors(cudaMalloc(&plan->fwkerhalf3,(plan->num_w/2+1)*sizeof(PCS)));
+    /* For multi GPU
     cudaStream_t* streams =(cudaStream_t*) malloc(plan->opts.gpu_nstreams*
       sizeof(cudaStream_t));
     for(int i=0; i<plan->opts.gpu_nstreams; i++)
       checkCudaErrors(cudaStreamCreate(&streams[i]));
     plan->streams = streams;
+    */
 	}
 
   return ier;
@@ -268,4 +270,5 @@ int curaff_partial_conv(){
 
 
   // WS
+  return 0;
 }

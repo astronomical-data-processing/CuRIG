@@ -16,12 +16,22 @@
 #include <cufft.h>
 
 #include "conv_invoker.h"
+#include "curafft_plan.h"
 #include "ra_exec.h"
 #include "utils.h"
 
 
-int gridder_plan(){
+int gridder_plan(curafft_plan *plan){
     
+    // determain number of w 
+    int upsampling_fac = plan->copts.upsampfac;
+    PCS n_lm = sqrt(1 - l_max^2 + m_max^2);
+    PCS w_max, w_min;
+    PCS delta_w = 1/(2*upsampling_fac*abs(n_lm-1));
+
+    get_max_min(w_max, w_min, plan->kv.w, plan->M);
+    PCS w_0 = w_min - delta_w * (plan->copts.kw - 1);
+    plan->num_w = (w_max - w_min)/delta_w + plan->copts.kw;
 }
 
 // the bin sort should be completed at gridder_settting
@@ -41,7 +51,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
         d_u, d_v, d_w - wavelengths in different dimensions
         d_c - value of visibility
 
-        ****issue, degrid
+        ****issue, degridding
     */
     int ier = 0;
     

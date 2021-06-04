@@ -14,7 +14,7 @@ FORWARD: type 2
 #include "curafft_plan.h"
 #include "conv_invoker.h"
 #include "deconv_invoker.h"
-#include "dft.h"
+#include "cuft.h"
 
 int exec_inverse(curafft_plan *plan){
     /*
