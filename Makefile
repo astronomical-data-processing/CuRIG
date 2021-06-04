@@ -49,15 +49,16 @@ STATICLIB=lib-static/$(LIBNAME).a
 BINDIR=bin
 
 HEADERS = include/curafft_opts.h include/curafft_plan.h include/dataType.h include/utils.h \
-	include/conv_invoker.h include/conv.h src/FT/matrix.cuh include/dft.h include/visibility.h
+	include/conv_invoker.h include/conv.h src/FT/matrix.cuh include/dft.h include/visibility.h \
+	contrib/common.h contrib/legendre_rule_fast.h
 #later put some file into the contrib
-#CONTRIBOBJS=contrib/dirft2d.o contrib/common.o contrib/spreadinterp.o contrib/utils_fp.o
+CONTRIBOBJS=contrib/common.o contrib/legendre_rule_fast.o
 
 # We create three collections of objects:
 #  Double (_64), Single (_32), and floating point agnostic (no suffix)
 # add contrib/legendre_rule_fast.o to curafftobjs later
 CURAFFTOBJS=src/utils.o
-CURAFFTOBJS_64=src/FT/conv_invoker.o src/FT/conv.o
+CURAFFTOBJS_64=src/FT/conv_invoker.o src/FT/conv.o $(CONTRIBOBJS)
 
 #ignore single precision first
 # $(CONTRIBOBJS)
@@ -87,12 +88,14 @@ default: all
 all: libtest convtest
 
 # testers for the lib (does not execute)
-libtest: lib $(BINDIR)/conv_test 
+libtest: lib $(BINDIR)/conv_test \
+	$(BINDIR)/utils_test
 
 # low-level (not-library) testers (does not execute)
 convtest: $(BINDIR)/conv_test 
-#	$(BINDIR)/interp_test
 
+
+utiltest: $(BINDIR)/utils_test
 
 $(BINDIR)/%: test/%.o $(CURAFFTOBJS_64) $(CURAFFTOBJS)
 	mkdir -p $(BINDIR)
@@ -104,9 +107,9 @@ lib: $(STATICLIB) $(DYNAMICLIB)
 $(STATICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64)
 	mkdir -p lib-static
 	ar rcs $(STATICLIB) $^
-$(DYNAMICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64)
+$(DYNAMICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CONTRIBOBJS)
 	mkdir -p lib
-	$(NVCC) -shared $(NVCCFLAGS) $^ -o $(DYNAMICLIB) $(LIBS)
+	$(NVCC) -shared $(NVCCFLAGS) $^ -o $(DYNAMICLIB) $(LIBS) $(CONTRIBOBJS)
 
 
 # --------------------------------------------- start of check tasks ---------
@@ -121,6 +124,9 @@ checkconv: libtest convtest
 	@echo "conv 3D.............................................."
 	bin/conv_test 0 1 5 5
 
+checkutils: utiltest
+	@echo "Utilities checking..."
+	bin/utils_test
 
 # --------------------------------------------- end of check tasks ---------
 
