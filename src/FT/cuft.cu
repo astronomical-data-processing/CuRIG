@@ -1,5 +1,6 @@
 /*
-Direct Fourier Transform for each x and y towards w
+1. nufft plan setting
+2. 1D - dft for w term
 */
 #include <math.h>
 #include <stdlib.h>
@@ -11,7 +12,7 @@ Direct Fourier Transform for each x and y towards w
 #include <assert.h>
 #include <cuComplex.h>
 #include "utils.h"
-#include "dft.h"
+#include "cuft.h"
 
 __global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int N1, int N2, int batchsize){
     int idx;
