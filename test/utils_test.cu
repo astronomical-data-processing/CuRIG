@@ -17,7 +17,7 @@ int main(int argc, char* argv[]){
         printf("%.3g ", arr[i]);
     }
     printf("\n");
-    checkCudaErrors(cudaMalloc((void **)d_arr, sizeof(PCS)*n));
+    checkCudaErrors(cudaMalloc((void **)&d_arr, sizeof(PCS)*n));
     checkCudaErrors(cudaMemcpy(d_arr, arr, sizeof(PCS)*n, cudaMemcpyHostToDevice));
 
     /*-------------get_max_min test------------*/
