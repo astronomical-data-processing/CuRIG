@@ -110,12 +110,12 @@ $(BINDIR)/%: test/%.o $(CURAFFTOBJS_64) $(CURAFFTOBJS)
 # user-facing library...
 lib: $(STATICLIB) $(DYNAMICLIB)
  # add $(CONTRIBOBJS) to static and dynamic later
-$(STATICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64)
+$(STATICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CONTRIBOBJS)
 	mkdir -p lib-static
 	ar rcs $(STATICLIB) $^
 $(DYNAMICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CONTRIBOBJS)
 	mkdir -p lib
-	$(NVCC) -shared $(NVCCFLAGS) $^ -o $(DYNAMICLIB) $(LIBS) $(CONTRIBOBJS)
+	$(NVCC) -shared $(NVCCFLAGS) $^ -o $(DYNAMICLIB) $(LIBS)
 
 
 # --------------------------------------------- start of check tasks ---------
