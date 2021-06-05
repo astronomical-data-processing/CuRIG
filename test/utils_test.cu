@@ -1,10 +1,11 @@
 #include <iostream>
 #include <iomanip>
 #include <math.h>
+#include <cuda.h>
 #include <helper_cuda.h>
 #include <thrust/complex.h>
 #include <algorithm>
-
+#include "utils.h"
 #include "utils.cuh"
 
 int main(int argc, char* argv[]){
@@ -17,7 +18,7 @@ int main(int argc, char* argv[]){
         printf("%.3g ", arr[i]);
     }
     printf("\n");
-    checkCudaErrors(cudaMalloc((void **)d_arr), sizeof(PCS)*n);
+    checkCudaErrors(cudaMalloc((void **)d_arr, sizeof(PCS)*n));
     checkCudaErrors(cudaMemcpy(d_arr, arr, sizeof(PCS)*n, cudaMemcpyHostToDevice));
 
     /*-------------get_max_min test------------*/

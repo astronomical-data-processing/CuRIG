@@ -48,6 +48,7 @@
   #define SET_NF_TYPE12 set_nf_type12
 #endif
 
+#define ARRAYWIDCEN_GROWFRAC 0.1
 
 // ahb's low-level array helpers
 PCS relerrtwonorm(int n, CPX* a, CPX* b);

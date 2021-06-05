@@ -73,6 +73,12 @@ CURAFFTOBJS_64=src/FT/conv_invoker.o src/FT/conv.o $(CONTRIBOBJS)
 %.o: %.cu $(HEADERS)
 	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
+src/%.o: src/%.cpp $(HEADERS)
+	$(CXX) -c $(CXXFLAGS) $(INC) $< -o $@
+
+src/%.o: src/%.c $(HEADERS)
+	$(CC) -c $(CFLAGS) $(INC) $< -o $@
+
 src/%.o: src/%.cu $(HEADERS)
 	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
