@@ -19,7 +19,6 @@
 #include "curafft_plan.h"
 #include "ra_exec.h"
 #include "utils.h"
-#include "utils.cuh"
 
     // ushift = supp*(-0.5)+1+nu;
     //   vshift = supp*(-0.5)+1+nv;
