@@ -1,8 +1,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <vector>
-#include "common.h"
+#include "utils_fp.h"
 #include "curafft_plan.h"
+#include "common.h"
 #ifdef __cplusplus
 extern "C" {
   #include "legendre_rule_fast.h"
@@ -55,7 +56,7 @@ void onedim_fseries_kernel(int nf, PCS *fwkerhalf, conv_opts opts)
   int q=(int)(2 + 3.0*J2);  // not sure why so large? cannot exceed MAX_NQUAD
   PCS f[MAX_NQUAD]; double z[2*1],w[2*MAX_NQUAD];
   legendre_compute_glr(2*q,z,w);        // only half the nodes used, eg on (0,1)
-  complex<double> a[MAX_NQUAD];
+  std::complex<double> a[MAX_NQUAD];
   for (int n=0;n<q;++n) {               // set up nodes z_n and vals f_n
     z[n] *= J2;                         // rescale nodes
     f[n] = J2*(PCS)w[n] * evaluate_kernel((PCS)z[n], opts); // vals & quadr wei
@@ -70,13 +71,13 @@ void onedim_fseries_kernel(int nf, PCS *fwkerhalf, conv_opts opts)
   {
     int t = MY_OMP_GET_THREAD_NUM();
     if (t<nt) {                         // could be nt < actual # threads
-      complex<double> aj[MAX_NQUAD];           // phase rotator for this thread
+      std::complex<double> aj[MAX_NQUAD];           // phase rotator for this thread
       for (int n=0;n<q;++n)
 	aj[n] = pow(a[n],(PCS)brk[t]);       // init phase factors for chunk
       for (int j=brk[t];j<brk[t+1];++j) {       // loop along output array
 	PCS x = 0.0;                       // accumulator for answer at this j
 	for (int n=0;n<q;++n) {
-	  x += f[n] * 2*real(aj[n]);       // include the negative freq
+	  x += f[n] * 2*std::real(aj[n]);       // include the negative freq
 	  aj[n] *= a[n];                   // wind the phases
 	}
 	fwkerhalf[j] = x;

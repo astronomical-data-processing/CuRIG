@@ -18,7 +18,8 @@ __global__ int deconv_2d(int N1, int N2, CUCPX* plan->fw, CUCPX* plan->fk, PCS* 
 
 int w_term_correction(){
     int ier = 0;
-    // con not simply use fwkerhalf
+    // can not simply use fwkerhalf
+    
 
     return ier;
 }

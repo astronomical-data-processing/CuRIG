@@ -50,9 +50,9 @@ BINDIR=bin
 
 HEADERS = include/curafft_opts.h include/curafft_plan.h include/dataType.h include/utils.h \
 	include/conv_invoker.h include/conv.h src/FT/matrix.cuh include/cuft.h include/visibility.h \
-	contrib/common.h contrib/legendre_rule_fast.h
+	contrib/common.h contrib/legendre_rule_fast.h contrib/utils_fp.h
 #later put some file into the contrib
-CONTRIBOBJS=contrib/common.o contrib/legendre_rule_fast.o
+CONTRIBOBJS=contrib/common.o contrib/legendre_rule_fast.o contrib/utils_fp.o
 
 # We create three collections of objects:
 #  Double (_64), Single (_32), and floating point agnostic (no suffix)

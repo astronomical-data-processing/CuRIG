@@ -16,8 +16,7 @@
 
 #include <complex>          // C++ type complex
 #include <cuComplex.h>
-#include "dataTypes.h"
-
+#include "dataType.h"
 
 #undef EPSILON
 #undef IMA
@@ -28,7 +27,7 @@
 #undef SET_NF_TYPE12
 
 // Compile-flag choice of single or double (default) precision:
-// (Note in the other codes, FLT is "double" or "float", CPX same but complex)
+// (Note in the other codes, PCS is "double" or "float", CPX same but complex)
 #ifdef SINGLE
   // machine epsilon for rounding
   #define EPSILON (float)6e-08
@@ -41,7 +40,7 @@
 #else
   // machine epsilon for rounding
   #define EPSILON (double)1.1e-16
-  #define IMA complex<double>(0.0,1.0)
+  #define IMA std::complex<double>(0.0,1.0)
   #define FABS(x) fabsf(x)
   #define CUCPX cuDoubleComplex
   #define CUFFT_TYPE CUFFT_Z2Z
@@ -51,13 +50,13 @@
 
 
 // ahb's low-level array helpers
-FLT relerrtwonorm(BIGINT n, CPX* a, CPX* b);
-FLT errtwonorm(BIGINT n, CPX* a, CPX* b);
-FLT twonorm(BIGINT n, CPX* a);
-FLT infnorm(BIGINT n, CPX* a);
-void arrayrange(BIGINT n, FLT* a, FLT *lo, FLT *hi);
-void indexedarrayrange(BIGINT n, BIGINT* i, FLT* a, FLT *lo, FLT *hi);
-void arraywidcen(BIGINT n, FLT* a, FLT *w, FLT *c);
+PCS relerrtwonorm(int n, CPX* a, CPX* b);
+PCS errtwonorm(int n, CPX* a, CPX* b);
+PCS twonorm(int n, CPX* a);
+PCS infnorm(int n, CPX* a);
+void arrayrange(int n, PCS* a, PCS *lo, PCS *hi);
+void indexedarrayrange(int n, int* i, PCS* a, PCS *lo, PCS *hi);
+void arraywidcen(int n, PCS* a, PCS *w, PCS *c);
 
 
 

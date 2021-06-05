@@ -5,7 +5,7 @@
 #include <thrust/complex.h>
 #include <algorithm>
 
-#include "utils.h"
+#include "utils.cuh"
 
 int main(int argc, char* argv[]){
 

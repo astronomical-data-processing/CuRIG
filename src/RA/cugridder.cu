@@ -19,18 +19,38 @@
 #include "curafft_plan.h"
 #include "ra_exec.h"
 #include "utils.h"
+#include "utils.cuh"
+
+    // ushift = supp*(-0.5)+1+nu;
+    //   vshift = supp*(-0.5)+1+nv;
+    //   maxiu0 = (nu+nsafe)-supp;
+    //   maxiv0 = (nv+nsafe)-supp;
+    //   vlim = min(nv/2, size_t(nv*bl.Vmax()*pixsize_y+0.5*supp+1));
+    //   uv_side_fast = true;???
 
 
 int gridder_plan(curafft_plan *plan){
     
     // determain number of w 
-    int upsampling_fac = plan->copts.upsampfac;
+    // ignore shift
+    int lshift = 0, mshift = 0;
+    PCS xpixelsize = 1.0;
+    PCS ypixelsize = 1.0;
+    int N1 = plan->ms; int N2 = plan->mt;
+    PCS l_min = lshift - 0.5*xpixelsize * N1;
+    PCS l_max = l_min + xpixelsize * (N1-1);
+    
+    PCS m_min = mshift - 0.5*ypixelsize * N2;
+    PCS m_max = m_min + ypixelsize * (N2-1);
+
+    double upsampling_fac = plan->copts.upsampfac;
     PCS n_lm = sqrt(1 - l_max^2 + m_max^2);
+    // nshift = (no_nshift||(!do_wgridding)) ? 0. : -0.5*(nm1max+nm1min);
     PCS w_max, w_min;
     PCS delta_w = 1/(2*upsampling_fac*abs(n_lm-1));
 
     get_max_min(w_max, w_min, plan->kv.w, plan->M);
-    PCS w_0 = w_min - delta_w * (plan->copts.kw - 1);
+    PCS w_0 = w_min - delta_w * (plan->copts.kw - 1); //int??
     plan->num_w = (w_max - w_min)/delta_w + plan->copts.kw;
 }
 
