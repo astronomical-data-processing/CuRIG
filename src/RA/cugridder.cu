@@ -112,27 +112,24 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
 
     plan->copts.direction = direction; // 1 inverse, 0 forward
 
-    fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*(nf1/2+1));
-    onedim_fseries_kernel(nf1, fwkerhalf1, plan->spopts); // used for correction
+    PCS *fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*(plan->nf1/2+1));
+    onedim_fseries_kernel(plan->nf1, fwkerhalf1, plan->copts); // used for correction
     
-    fwkerhalf2 = (PCS*)malloc(sizeof(PCS)*(nf2/2+1));
-    onedim_fseries_kernel(nf2, fwkerhalf2, plan->spopts);
-    
-    if(w_term_method){
-        // improved_ws
-        fwkerhalf3 = (PCS*)malloc(sizeof(PCS)*(nf3/2+1));
-        //need to revise
-        onedim_fseries_kernel(nf3, fwkerhalf3, plan->spopts);
-    }
+    PCS *fwkerhalf2 = (PCS*)malloc(sizeof(PCS)*(plan->nf2/2+1));
+    onedim_fseries_kernel(plan->nf2, fwkerhalf2, plan->copts);
 
     // copy to device 
-    checkCudaErrors(cudaMemcpy(plan->fwkerhalf1,fwkerhalf1,(nf1/2+1)*
+    checkCudaErrors(cudaMemcpy(plan->fwkerhalf1,fwkerhalf1,(plan->nf1/2+1)*
 		sizeof(PCS),cudaMemcpyHostToDevice));
 	
-	checkCudaErrors(cudaMemcpy(plan->fwkerhalf2,fwkerhalf2,(nf2/2+1)*
+	checkCudaErrors(cudaMemcpy(plan->fwkerhalf2,fwkerhalf2,(plan->nf2/2+1)*
 		sizeof(PCS),cudaMemcpyHostToDevice));
 	if(w_term_method)
-		checkCudaErrors(cudaMemcpy(plan->fwkerhalf3,fwkerhalf3,(nf3/2+1)*
+		// improved_ws
+        PCS *fwkerhalf3 = (PCS*)malloc(sizeof(PCS)*(plan->nf3/2+1));
+        //need to revise
+        onedim_fseries_kernel(plan->num_w, fwkerhalf3, plan->copts);
+        checkCudaErrors(cudaMemcpy(plan->fwkerhalf3,fwkerhalf3,(plan->num_w/2+1)*
 			sizeof(PCS),cudaMemcpyHostToDevice));
     
 

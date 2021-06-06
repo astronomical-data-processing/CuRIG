@@ -48,6 +48,8 @@ struct curafft_plan
     //int type;
 
 	//suppose the N_u = N_l
+	int dim; //dimension support for 1,2,3D
+	int mode_flag; // FFTW (0) style or CMCL-compatible mode ordering (1)
 	int M; //NU
 	int nf1; // UPTS after upsampling
 	int nf2;
