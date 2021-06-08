@@ -29,8 +29,7 @@
     //   uv_side_fast = true;???
 
 
-int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, PCS *d_u, PCS *d_v, PCS *d_w, PCS *d_c,
-        PCS *freq, PCS *weight, conv_opts copt, ragridder_plan *plan){
+int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, conv_opts copt, ragridder_plan *plan){
     plan->fov = fov;
     plan->width = N1;
     plan->height = N2;
@@ -109,7 +108,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     gridder_plan->channel = channel;
     gridder_plan->w_term_method = w_term_method;
     gridder_plan->speedoflight = SPEEDOFLIGHT;
-    setup_gridder_plan(N1,N2,fov,0,0,d_u,d_v,d_w,d_c,d_freq,d_weight,plan->copts,gridder_plan);
+    setup_gridder_plan(N1,N2,fov,0,0,plan->copts,gridder_plan);
 
     int nf1 = get_num_cells(N1,plan->copts);
     int nf2 = get_num_cells(N2,plan->copts);
@@ -210,8 +209,17 @@ int gridder_exectuion(curafft_plan* plan){
     return ier;
 }
 
-int gridder_destroy(){
+int gridder_destroy(curafft_plan *plan, ragridder_plan *gridder_plan){
     // free memory
     int ier=0;
+    curafft_free(plan);
+    free(gridder_plan->dirty_image);
+    free(gridder_plan->kv.u);
+    free(gridder_plan->kv.v);
+    free(gridder_plan->kv.w);
+    free(gridder_plan->kv.vis);
+    free(gridder_plan->kv.frequency);
+    free(gridder_plan->kv.weight);
+    // free(gridder_plan->kv.flag);
     return ier;
 }

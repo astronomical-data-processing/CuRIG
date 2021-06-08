@@ -46,6 +46,7 @@ struct ragridder_plan
     int width;
     int height;
     int channel;
+    int nrow;
     int w_term_method; // 0 for w-stacking, 1 for improved w-stacking
 };
 

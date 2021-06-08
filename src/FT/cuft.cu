@@ -30,7 +30,7 @@ int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, C
     plan->kv.vis = d_c;
 
     int upsampfac = plan->copts.upsampfac;
-    
+
     plan->nf1 = nf1;
     plan->nf2 = nf2;
     plan->nf3 = nf3;
@@ -132,7 +132,27 @@ int curafft_free(curafft_plan *plan)
     int ier = 0;
     if (plan->opts.gpu_sort)
     {
-        CHECK(cudaFree(plan->cell_loc));
+        checkCudaErrors(cudaFree(plan->cell_loc));
     }
+    checkCudaErrors(cudaFree(plan->fw));
+    checkCudaErrors(cudaFree(plan->fk));
+    checkCudaErrors(cudaFree(plan->d_u));
+    checkCudaErrors(cudaFree(plan->d_v));
+    checkCudaErrors(cudaFree(plan->d_w));
+    checkCudaErrors(cudaFree(plan->d_c));
+
+    switch (plan->dim)
+    {
+    case 3:
+        checkCudaErrors(cudaFree(plan->fwkerhalf3));
+    case 2:
+        checkCudaErrors(cudaFree(plan->fwkerhalf2));
+    case 1:
+        checkCudaErrors(cudaFree(plan->fwkerhalf1));
+
+    default:
+        break;
+    }
+
     return ier;
 }
