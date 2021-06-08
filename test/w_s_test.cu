@@ -9,6 +9,8 @@ using namespace thrust;
 using namespace std::complex_literals;
 
 #include "conv_invoker.h"
+#include "ragridder_plan.h"
+#include "cugridder.h"
 #include "utils.h"
 
 ///conv improved WS, method 0 correctness cheak
@@ -122,9 +124,9 @@ int main(int argc, char *argv[])
 	// generating data
 	for (int i = 0; i < nrow; i++)
 	{
-		u[i] = M_PI * randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT); //will change for different freq?
-		v[i] = M_PI * randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
-		w[i] = M_PI * randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
+		u[i] = randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT); //will change for different freq?
+		v[i] = randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
+		w[i] = randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
 		vis[i].real(randm11() / 0.5);
 		vis[i].imag(randm11() / 0.5);
 		wgt[i] = 1;
@@ -141,6 +143,14 @@ int main(int argc, char *argv[])
 	checkCudaErrors(cudaMemcpy(d_w, w, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //w
 	checkCudaErrors(cudaMemcpy(d_vis, vis, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice));
 
+	// plan setting
+	curafft_plan *plan;
+	ragridder_plan *gridder_plan;
+	
+	gridder_setting();
+
+	//fk(image) malloc and set
+
 	/* -----------Step1: Baseline setting--------------
 	skip negative v
     uvw, nrow = M, shift, mask, f_over_c (fixed due to single channel)
@@ -154,8 +164,9 @@ int main(int argc, char *argv[])
 		f_over_c[i] = freq[i]/SPEEDOFLIGHT;
 	}
 
-	// getWgtIndices ???
 	/* ----------Step2: cugridder------------*/
+
+
 
 	return 0;
 }
