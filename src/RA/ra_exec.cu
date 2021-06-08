@@ -26,7 +26,7 @@ int exec_inverse(curafft_plan *plan){
 
     if(plan->execute_flow==1){
         /// curafft_conv workflow for enough memory
-        checkCudaErrors(cudaMemset(plan->fw,0,plan->num_w*plan->nf1*plan->nf2*sizeof(CUCPX)));
+        checkCudaErrors(cudaMemset(plan->fw,0,plan->nf3*plan->nf1*plan->nf2*sizeof(CUCPX)));
         // 1. convlution
         curafft_conv(plan);
 
@@ -41,6 +41,8 @@ int exec_inverse(curafft_plan *plan){
         
         // 4. deconvolution (correction)
         curafft_deconv(plan);
+
+        curafft_free(plan);
         
     }
     else if(plan->execute_flow==2){

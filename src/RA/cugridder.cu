@@ -16,6 +16,7 @@
 #include <cufft.h>
 
 #include "conv_invoker.h"
+#include "ragridder_plan.h"
 #include "curafft_plan.h"
 #include "ra_exec.h"
 #include "utils.h"
@@ -28,35 +29,41 @@
     //   uv_side_fast = true;???
 
 
-int gridder_plan(curafft_plan *plan){
-    
+int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, PCS *d_u, PCS *d_v, PCS *d_w, PCS *d_c,
+        PCS *freq, PCS *weight, conv_opts copt, ragridder_plan *plan){
+    plan->fov = fov;
+    plan->width = N1;
+    plan->height = N2;
     // determain number of w 
     // ignore shift
-    int lshift = 0, mshift = 0;
-    PCS xpixelsize = 1.0;
-    PCS ypixelsize = 1.0;
-    int N1 = plan->ms; int N2 = plan->mt;
+    plan->pixelsize_x = fov / 180.0 * PI / (PCS)N1;
+    plan->pixelsize_y = fov / 180.0 * PI / (PCS)N2;
+    PCS xpixelsize = plan->pixelsize_x;
+    PCS ypixelsize = plan->pixelsize_y;
     PCS l_min = lshift - 0.5*xpixelsize * N1;
     PCS l_max = l_min + xpixelsize * (N1-1);
     
     PCS m_min = mshift - 0.5*ypixelsize * N2;
     PCS m_max = m_min + ypixelsize * (N2-1);
 
-    double upsampling_fac = plan->copts.upsampfac;
-    PCS n_lm = sqrt(1 - l_max^2 + m_max^2);
+    double upsampling_fac = copt.upsampfac;
+    PCS n_lm = sqrt(1 - l_max^2 + m_max^2); //change
     // nshift = (no_nshift||(!do_wgridding)) ? 0. : -0.5*(nm1max+nm1min);
     PCS w_max, w_min;
     PCS delta_w = 1/(2*upsampling_fac*abs(n_lm-1));
 
     get_max_min(w_max, w_min, plan->kv.w, plan->M);
-    PCS w_0 = w_min - delta_w * (plan->copts.kw - 1); //int??
-    plan->num_w = (w_max - w_min)/delta_w + plan->copts.kw;
+    plan->w_max = w_max;
+    plan->w_min = w_min;
+    PCS w_0 = w_min - delta_w * (copts.kw - 1); // first plane
+    plan->w_0 = w_0;
+    plan->num_w = (w_max - w_min)/delta_w + copts.kw; // another plan
 }
 
 // the bin sort should be completed at gridder_settting
 
 int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_method, int direction, double sigma, int iflag,
-    int batchsize, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan)
+    int batchsize, int M, PCS fov, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan, ragridder_plan *gridder_plan)
 {
     /*
         N1, N2 - number of Fouier modes
@@ -75,7 +82,9 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     int ier = 0;
     
     plan = new curafft_plan();
-    memset(plan, 0, sizeof(curafft_plan));
+    gridder_plan = new ragridder_plan();
+    memset(plan, 0, sizeof(*plan));
+    memset(gridder_plan, 0, sizeof(*gridder_plan));
 
     // fov and other astro related setting +++
 
@@ -96,9 +105,18 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
 	if(ier!=0)printf("setup_error\n");
 
     // plan setting
-    plan->w_term_method = w_term_method;
     // cuda stream malloc in setup_plan
-    setup_plan(N1, N2, M, d_u, d_v, d_w, d_c, plan);
+    gridder_plan->channel = channel;
+    gridder_plan->w_term_method = w_term_method;
+    gridder_plan->speedoflight = SPEEDOFLIGHT;
+    setup_gridder_plan(N1,N2,fov,0,0,d_u,d_v,d_w,d_c,d_freq,d_weight,plan->copts,gridder_plan);
+
+    int nf1 = get_num_cells(N1,plan->copts);
+    int nf2 = get_num_cells(N2,plan->copts);
+    int nf3 = gridder_plan->num_w;
+    setup_plan(nf1, nf2, nf3, M, d_u, d_v, d_w, d_c, plan);
+    if(w_term_method) plan->dim = 3;
+    else plan->dim =2;
     // plan->dim = dim;
 	plan->ms = N1;
 	plan->mt = N2;
@@ -111,6 +129,9 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
 	plan->batchsize = batchsize;
 
     plan->copts.direction = direction; // 1 inverse, 0 forward
+
+    // fw allocation
+    checkCudaErrors(cudaMalloc((void**)&plan->fw,sizeof(CUCPX)*nf1*nf2*nf3));
 
     PCS *fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*(plan->nf1/2+1));
     onedim_fseries_kernel(plan->nf1, fwkerhalf1, plan->copts); // used for correction
@@ -145,7 +166,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     // the bach size sets as the num of w when memory is sufficent. Alternative way, set as a smaller number when memory is insufficient.
     // and handle this piece by piece 
 	cufftPlanMany(&fftplan,2,n,inembed,1,inembed[0]*inembed[1],
-		onembed,1,onembed[0]*onembed[1],CUFFT_TYPE,plan->num_w); //need to check and revise (the partial conv will be differnt)
+		onembed,1,onembed[0]*onembed[1],CUFFT_TYPE,plan->nf3); //need to check and revise (the partial conv will be differnt)
     plan->fftplan = fftplan; 
     
 

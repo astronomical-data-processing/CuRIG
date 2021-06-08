@@ -127,7 +127,7 @@ int curafft_deconv(curafft_plan *plan){
             N2 = plan->mt;
             N3 = plan->mu;
             nf2 = plan->nf2;
-            nf3 = plan->num_w;
+            nf3 = plan->nf3;
             nmodes = N1*N2*N3;
             deconv_3d<<<(nmodes-1)/blocksize, blocksize>>>(N1, N2, N3, nf1, nf2, nf3, plan->fw,plan->fk,
         plan->fwkerhalf1, plan->fwkerhalf2, plan->fwkerhalf3, flag);

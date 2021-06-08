@@ -31,6 +31,56 @@ void val_kernel_vec(PCS *ker, const PCS x, const double w, const double es_c,
 // 	printf("the value of %d is %2.2g\n",idx,fw[idx].x);
 // }
 
+__global__ void conv_1d_nputsdriven(PCS *x, CUCPX *c, CUCPX *fw, int M, 
+	const int ns, int nf1, PCS es_c, PCS es_beta, int pirange, INT_M* cell_loc)
+{
+	/*
+		x - range [-pi,pi)
+		c - complex number
+		fw - result
+		M - number of nupts
+		ns - kernel width
+		nf1 - upts after upsampling
+		es_ - gridding kernel related factors
+		pirange - 1
+		cell_loc - location of nupts in grid cells
+	*/
+	//need to revise 
+	int xstart,xend;
+	int ix;
+	int outidx;
+	PCS ker1[MAX_KERNEL_WIDTH];
+
+	PCS temp1;
+	int idx;
+	//__shared__ CUCPX s_c[blockDim.x];
+	//assert(pirange==1);// check
+
+	for(idx = blockIdx.x * blockDim.x + threadIdx.x;idx<M;idx+=gridDim.x*blockDim.x){
+		
+		//value of x and w, rescale to [0,N) and get the locations
+		temp1 = ((x[idx]<0?(x[idx]+PI):x[idx]) * M_1_2PI * nf1); 
+		if(cell_loc!=NULL){
+			cell_loc[idx].x = (int)(temp1);	//need to save?
+		}
+		//s_c[idx] = c[idx];
+		//change rescaled to cell_loc
+		xstart = ceil(temp1 - ns/2.0);
+		xend = floor(temp1 + ns/2.0);
+		
+		PCS x_1=(PCS)xstart-temp1; //cell
+		val_kernel_vec(ker1,x_1,ns,es_c,es_beta);
+			for(int xx=xstart; xx<=xend; xx++){
+				ix = xx < 0 ? xx+nf1 : (xx>nf1-1 ? xx-nf1 : xx);
+				outidx = ix;
+				PCS kervalue=ker1[xx-xstart];
+				atomicAdd(&fw[outidx].x, c[idx].x*kervalue);
+				atomicAdd(&fw[outidx].y, c[idx].y*kervalue);
+			}
+		//if((idx/blockDim.x+1)*blockDim.x<M){__syncthreads();}
+	}
+}
+
 // 2D for w-stacking. 1D + 2D for improved WS will consume more memory
 __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M, 
 	const int ns, int nf1, int nf2, PCS es_c, PCS es_beta, int pirange, INT_M* cell_loc)

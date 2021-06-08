@@ -101,115 +101,28 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth)
   return ier;
 }
 
-/*
-void get_num_w(PCS *x, int num, PCS *h_res){
-  PCS *d_res;
-  CHECK(cudaMalloc((void **)&d_res,sizeof(PCS)*2));
-  reduce_max_min<<<(num-1)/BLOCKSIZE+1,BLOCKSIZE>>>(x,num,d_res);
-  CHECK(cudaDeviceS...);
-  CHECK(cudaMemcpy(h_res,d_res,sizeof(PCS)*2),cudaMemcpyDeviceToHost);
-  cudaFree(d_res);
-}
-*/
+// int ws_conv(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
+// {
+//   return 0;
+// }
 
-int setup_plan(int N1, int N2, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan)
-{
-  /* different dim will have different setting
-    ----plan setting, and related memory allocation----
-        nf1, nf2 - number of UPTS (resolution of image)
-        M - number of NUPTS (num of vis)
-        d_u, d_v, d_w - location
-        d_c - value
-  */
-  int ier = 0;
-  plan->kv.u = d_u;
-  plan->kv.v = d_v;
-  plan->kv.w = d_w;
-  plan->kv.vis = d_c;
-
-  int upsampfac = plan->copts.upsampfac;
-  //int ier;
-  //get number of cells
-  plan->nf1 = get_num_cells(N1,plan->copts);
-  plan->nf2 = get_num_cells(N2,plan->copts);
-  
-  // get ncell of w
-  /*
-  int num_w = 0;
-  //reduce to get maximum and minimum, h_res[0] max, [1] min
-  PCS *h_res = (PCS *)malloc(sizeof(int)*2);
-  PCS max = h_res[0];
-  PCS min = h_res[1];
-  free(h_res);
-  PCS n_scale = sqrt(max(1. - l_max * l_max - m_max * m_max, 0.)) - 1.;
-  if (l_max * l_max + m_max * m_max > 1.)
-    n_scale = -sqrt(abs(1. - l_max * l_max - m_max * m_max)) - 1.;
-  plan->num_w =  abs(n_scale)/(0.25) * (max-min) + plan->copts.kw;
-  */
-  plan->num_w = plan->nf1;
-
-  plan->M = M;
-  //plan->maxbatchsize = 1;
-
-  plan->byte_now = 0;
-  // No extra memory is needed in nuptsdriven method (case 1)
-  switch (plan->opts.gpu_gridder_method)
+int conv_1d_invoker(int nf1, int M, curafft_plan *plan){
+  dim3 grid;
+  dim3 block;
+  if (plan->opts.gpu_gridder_method == 0)
   {
-    case 0:
-    {
-      if (plan->opts.gpu_sort)
-      {
-        CHECK(cudaMalloc(&plan->cell_loc, sizeof(INT_M) * M)); //need some where to be free
-      }
-    }
-    case 1:
-    {
-      //shared memroy method
-    }
-    case 2:
-    {
-      //multi pass
-    }
-    break;
+    block.x = 256;
+    grid.x = (M - 1) / block.x + 1;
+
+    // if the image resolution is small, the memory is sufficiently large for output after conv. 
+    conv_1d_nputsdriven<<<grid, block>>>(plan->d_u, plan->d_c, plan->fw, plan->M,
+                                          plan->copts.kw, nf1, plan->copts.ES_c, plan->copts.ES_beta, plan->copts.pirange, plan->cell_loc);
     
-    default:
-      std::cerr << "err: invalid method " << std::endl;
+    checkCudaErrors(cudaDeviceSynchronize());
   }
-
-  if(!plan->opts.gpu_conv_only){
-		checkCudaErrors(cudaMalloc(&plan->fw, plan->nf1*plan->nf2*plan->num_w*sizeof(CUCPX)));
-		checkCudaErrors(cudaMalloc(&plan->fwkerhalf1,(plan->nf1/2+1)*sizeof(PCS)));
-    checkCudaErrors(cudaMalloc(&plan->fwkerhalf2,(plan->nf2/2+1)*sizeof(PCS)));
-    if(plan->w_term_method)
-          checkCudaErrors(cudaMalloc(&plan->fwkerhalf3,(plan->num_w/2+1)*sizeof(PCS)));
-    /* For multi GPU
-    cudaStream_t* streams =(cudaStream_t*) malloc(plan->opts.gpu_nstreams*
-      sizeof(cudaStream_t));
-    for(int i=0; i<plan->opts.gpu_nstreams; i++)
-      checkCudaErrors(cudaStreamCreate(&streams[i]));
-    plan->streams = streams;
-    */
-	}
-
-  return ier;
 }
 
-
-int curafft_free(curafft_plan *plan){
-  //free gpu memory like cell_loc
-  int ier = 0;
-  if(plan->opts.gpu_sort){
-    CHECK(cudaFree(plan->cell_loc));
-  }
-  return ier;
-}
-
-int ws_conv(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
-{
-  return 0;
-}
-
-int improved_ws_conv(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
+int conv_2d_invoker(int nf1, int nf2, int M, curafft_plan *plan)
 {
 
   dim3 grid;
@@ -222,14 +135,34 @@ int improved_ws_conv(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
     //for debug
 
     // if the image resolution is small, the memory is sufficiently large for output after conv. 
-    conv_3d_nputsdriven<<<grid, block>>>(plan->kv.u, plan->kv.v, plan->kv.w, plan->kv.vis, plan->fw, plan->M,
+    conv_2d_nputsdriven<<<grid, block>>>(plan->d_u, plan->d_v, plan->d_c, plan->fw, plan->M,
+                                          plan->copts.kw, nf1, nf2, plan->copts.ES_c, plan->copts.ES_beta, plan->copts.pirange, plan->cell_loc);
+    
+
+    checkCudaErrors(cudaDeviceSynchronize());
+  }
+
+  return 0;
+}
+
+int conv_3d_invoker(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
+{
+
+  dim3 grid;
+  dim3 block;
+  // printf("gpu_method %d\n",plan->opts.gpu_method);
+  if (plan->opts.gpu_gridder_method == 0)
+  {
+    block.x = 256;
+    grid.x = (M - 1) / block.x + 1;
+    //for debug
+
+    // if the image resolution is small, the memory is sufficiently large for output after conv. 
+    conv_3d_nputsdriven<<<grid, block>>>(plan->d_u, plan->d_v, plan->d_w, plan->d_c, plan->fw, plan->M,
                                           plan->copts.kw, nf1, nf2, nf3, plan->copts.ES_c, plan->copts.ES_beta, plan->copts.pirange, plan->cell_loc);
     
 
     checkCudaErrors(cudaDeviceSynchronize());
-    // if(1){
-      //   print_res<<<grid,block>>>(plan->fw);
-    // }
   }
 
   return 0;
@@ -244,21 +177,24 @@ int curafft_conv(curafft_plan * plan)
   int ier = 0;
   int nf1 = plan->nf1;
   int nf2 = plan->nf2;
-  int nf3 = plan->num_w;
+  int nf3 = plan->nf3;
   int M = plan->M;
   // printf("w_term_method %d\n",plan->w_term_method);
-  if (plan->w_term_method == 0)
+  switch (plan->dim)
   {
-    ws_conv(nf1, nf2, nf3, M, plan);
+  case 1:
+    conv_1d_invoker(n1, M, plan);
+    break;
+  case 2:
+    conv_2d_invoker(nf1, nf2, M, plan);
+    break;
+  case 3:
+    conv_3d_invoker(nf1, nf2, nf3, M, plan);
+  default:
+    ier = 1; // error
+    break;
   }
-    
 
-  if (plan->w_term_method == 1)
-  {
-    //test malloc
-    //get nupts location in grid cells
-    improved_ws_conv(nf1, nf2, nf3, M, plan);
-  }
   return ier;
 }
 
