@@ -48,15 +48,19 @@ struct curafft_plan
     //int type;
 
 	//suppose the N_u = N_l
+	PCS *d_u;
+	PCS *d_v;
+	PCS *d_w;
+	PCS *d_c;
 	int dim; //dimension support for 1,2,3D
 	int mode_flag; // FFTW (0) style or CMCL-compatible mode ordering (1)
 	int M; //NU
 	int nf1; // UPTS after upsampling
 	int nf2;
-	int num_w; //number of w after gridding
+	int nf3; //number of w after gridding
 	int ms; // number of Fourier modes N1
 	int mt; // N2
-	//int mu;
+	int mu; // N3
 	int ntransf;
 	int iflag;
 	int batchsize;
@@ -68,10 +72,6 @@ struct curafft_plan
 	PCS *fwkerhalf1; //used for not just spread only
 	PCS *fwkerhalf2;
 	PCS *fwkerhalf3;
-
-	visibility kv;
-	int w_term_method; // 0 for w-stacking, 1 for improved w-stacking
-
 
 	CUCPX *fw; // conv res
 	CUCPX *fk; // fft res
