@@ -16,7 +16,7 @@ struct visibility
     PCS* v;
     PCS* w;
 
-    CUCPX* vis;
+    CPX* vis;
     PCS* weight;
     bool* flag;
 
@@ -42,7 +42,7 @@ struct ragridder_plan
     PCS dw;
     PCS w_0;
     int speedoflight;
-    PCS *dirty_image;
+    CPX *dirty_image;
     int width;
     int height;
     int channel;

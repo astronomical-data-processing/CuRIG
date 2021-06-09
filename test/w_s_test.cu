@@ -8,8 +8,8 @@
 using namespace thrust;
 using namespace std::complex_literals;
 
-#include "conv_invoker.h"
 #include "ragridder_plan.h"
+#include "conv_invoker.h"
 #include "cugridder.h"
 #include "utils.h"
 
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 		fov - field of view
 		epsilon - tolerance
 	*/
-
+	int ier = 0;
 	if (argc < 5)
 	{
 		fprintf(stderr,
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 	//N1 = 5; N2 = 5; M = 25; //for correctness checking
 	//int ier;
 	PCS *u, *v, *w;
-	CPX *fk;
+	CUCPX *fk;
 	CPX *vis;
 	PCS *wgt; //currently no mask
 	u = (PCS *)malloc(nrow * sizeof(PCS)); //Allocates page-locked memory on the host.
@@ -143,13 +143,7 @@ int main(int argc, char *argv[])
 	checkCudaErrors(cudaMemcpy(d_w, w, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //w
 	checkCudaErrors(cudaMemcpy(d_vis, vis, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice));
 
-	// plan setting
-	curafft_plan *plan;
-	ragridder_plan *gridder_plan;
 	
-	gridder_setting();
-
-	//fk(image) malloc and set
 
 	/* -----------Step1: Baseline setting--------------
 	skip negative v
@@ -165,8 +159,47 @@ int main(int argc, char *argv[])
 	}
 
 	/* ----------Step2: cugridder------------*/
+	// plan setting
+	curafft_plan *plan;
 
+	ragridder_plan *gridder_plan;
+	
+	gridder_plan->kv.u = u;
+	gridder_plan->kv.v = v;
+	gridder_plan->kv.w = w;
+	gridder_plan->kv.frequency = freq;
+	gridder_plan->kv.vis = vis;
+	gridder_plan->kv.weight = wgt;
 
+	int direction = 1; //inverse
 
+	ier = gridder_setting(nxdirty,nydirty,method,kerevalmeth,w_term_method,direction,sigma,0,1,nrow,fov,d_u,d_v,d_w,d_vis
+		,plan,gridder_plan);
+	if(ier == 1){
+		printf("errors in gridder setting\n");
+		return ier;
+	}
+	// fk(image) malloc and set
+	checkCudaErrors(cudaMalloc((void**)&fk,sizeof(CUCPX)*nydirty*nxdirty));
+	plan->fk = fk;
+
+	gridder_plan->dirty_image = (CPX *)malloc(sizeof(CPX)*nxdirty*nydirty*nchan);
+	
+	// how to use weight flag and frequency
+	for(int i=0; i<nchan; i++){
+		ier = gridder_exectuion(plan);
+		if(ier == 1){
+			printf("errors in gridder execution\n");
+			return ier;
+		}
+		checkCudaErrors(cudaMemcpy(gridder_plan->dirty_image+i*nxdirty*nydirty, fk, sizeof(CUCPX)*nydirty*nxdirty,
+			cudaMemcpyDeviceToHost));
+	}
+
+	ier = gridder_destroy(plan, gridder_plan);
+	if(ier == 1){
+		printf("errors in gridder destroy\n");
+		return ier;
+	}
 	return 0;
 }
