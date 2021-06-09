@@ -14,7 +14,7 @@
 #include "utils.h"
 #include "cuft.h"
 
-int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan)
+int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, PCS *max, PCS *min, curafft_plan *plan)
 {
     /* different dim will have different setting
     ----plan setting, and related memory allocation----
@@ -36,6 +36,11 @@ int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, C
     plan->nf3 = nf3;
 
     plan->M = M;
+    for(int i=0; i<3; i++){
+        plan->max[i] = max[i];
+        plan->min[i] = min[i];
+    }
+    
     //plan->maxbatchsize = 1;
 
     plan->byte_now = 0;

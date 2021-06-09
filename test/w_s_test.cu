@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 		u[i] = randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT); //will change for different freq?
 		v[i] = randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
 		w[i] = randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
-		vis[i].real(randm11() / 0.5);
+		vis[i].real(randm11() / 0.5); // nrow vis per channel, weight?
 		vis[i].imag(randm11() / 0.5);
 		wgt[i] = 1;
 	}
@@ -141,7 +141,6 @@ int main(int argc, char *argv[])
 	checkCudaErrors(cudaMemcpy(d_u, u, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //u
 	checkCudaErrors(cudaMemcpy(d_v, v, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //v
 	checkCudaErrors(cudaMemcpy(d_w, w, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //w
-	checkCudaErrors(cudaMemcpy(d_vis, vis, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice));
 
 	
 
@@ -173,7 +172,7 @@ int main(int argc, char *argv[])
 
 	int direction = 1; //inverse
 
-	ier = gridder_setting(nxdirty,nydirty,method,kerevalmeth,w_term_method,direction,sigma,0,1,nrow,fov,d_u,d_v,d_w,d_vis
+	ier = gridder_setting(nxdirty,nydirty,method,kerevalmeth,w_term_method,direction,sigma,0,1,nrow,fov,nchan,d_u,d_v,d_w,d_vis
 		,plan,gridder_plan);
 	if(ier == 1){
 		printf("errors in gridder setting\n");
@@ -187,6 +186,11 @@ int main(int argc, char *argv[])
 	
 	// how to use weight flag and frequency
 	for(int i=0; i<nchan; i++){
+		// add those to precomp
+		// u, v, w * f_over_c, plan max and min set * f_over_c
+		// memory transfer (vis belong to this channel and weight)
+		checkCudaErrors(cudaMemcpy(d_vis, vis, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice)); //
+		// vis * flag * weight
 		ier = gridder_exectuion(plan);
 		if(ier == 1){
 			printf("errors in gridder execution\n");
@@ -201,5 +205,7 @@ int main(int argc, char *argv[])
 		printf("errors in gridder destroy\n");
 		return ier;
 	}
-	return 0;
+
+
+	return ier;
 }

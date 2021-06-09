@@ -29,10 +29,11 @@
     //   uv_side_fast = true;???
 
 
-int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, conv_opts copt, ragridder_plan *plan){
+int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow, conv_opts copt, ragridder_plan *plan){
     plan->fov = fov;
     plan->width = N1;
     plan->height = N2;
+    plan->nrow = nrow;
     // determain number of w 
     // ignore shift
     plan->pixelsize_x = fov / 180.0 * PI / (PCS)N1;
@@ -48,31 +49,40 @@ int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, conv_opt
     double upsampling_fac = copt.upsampfac;
     PCS n_lm = sqrt(1 - l_max^2 + m_max^2); //change
     // nshift = (no_nshift||(!do_wgridding)) ? 0. : -0.5*(nm1max+nm1min);
-    PCS w_max, w_min;
+    PCS max, min;
     PCS delta_w = 1/(2*upsampling_fac*abs(n_lm-1));
 
-    get_max_min(w_max, w_min, plan->kv.w, plan->M);
-    plan->w_max = w_max;
-    plan->w_min = w_min;
-    PCS w_0 = w_min - delta_w * (copts.kw - 1); // first plane
+    get_max_min(max, min, plan->kv.u, plan->nrow);
+    plan->u_max = max;
+    plan->u_min = min;
+    get_max_min(max, min, plan->kv.v, plan->nrow);
+    plan->v_max = max;
+    plan->v_min = min;
+
+    get_max_min(max, min, plan->kv.w, plan->nrow);
+    plan->w_max = max;
+    plan->w_min = min;
+    PCS w_0 = plan->w_min - delta_w * (copts.kw - 1); // first plane
     plan->w_0 = w_0;
-    plan->num_w = (w_max - w_min)/delta_w + copts.kw; // another plan
+    plan->num_w = (plan->w_max - plan->w_min)/delta_w + copts.kw; // another plan
 }
 
 // the bin sort should be completed at gridder_settting
 
-int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_method, int direction, double sigma, int iflag,
-    int batchsize, int M, PCS fov, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan, ragridder_plan *gridder_plan)
+int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_method, PCS tol, int direction, double sigma, int iflag,
+    int batchsize, int M, int channel, PCS fov, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan, ragridder_plan *gridder_plan)
 {
     /*
         N1, N2 - number of Fouier modes
         method - gridding method
         kerevalmeth - gridding kernel evaluation method
+        tol - tolerance (epsilon)
         direction - 1 CUFFT_INVERSE, 0 CUFFT_FORWARD
         sigma - upsampling factor
         iflag - flag for fourier transform
         batchsize - number of batch in  cufft (used for handling piece by piece)
         M - number of nputs (visibility)
+        channel - number of channels
         d_u, d_v, d_w - wavelengths in different dimensions
         d_c - value of visibility
 
@@ -82,8 +92,8 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     
     plan = new curafft_plan();
     gridder_plan = new ragridder_plan();
-    memset(plan, 0, sizeof(*plan));
-    memset(gridder_plan, 0, sizeof(*gridder_plan));
+    memset(plan, 0, sizeof(curafft_plan));
+    memset(gridder_plan, 0, sizeof(ragridder_plan));
 
     // fov and other astro related setting +++
 
@@ -99,7 +109,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     plan->opts.gpu_conv_only = 0;
     plan->opts.gpu_gridder_method = method;
 
-    int ier = setup_conv_opts(plan->copts, tol, sigma, kerevalmeth); //check the arguements
+    int ier = setup_conv_opts(plan->copts, tol, sigma, 0, direction, kerevalmeth); //check the arguements
 
 	if(ier!=0)printf("setup_error\n");
 
@@ -108,12 +118,23 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     gridder_plan->channel = channel;
     gridder_plan->w_term_method = w_term_method;
     gridder_plan->speedoflight = SPEEDOFLIGHT;
-    setup_gridder_plan(N1,N2,fov,0,0,plan->copts,gridder_plan);
+    setup_gridder_plan(N1,N2,fov,0,0,M,plan->copts,gridder_plan);
 
     int nf1 = get_num_cells(N1,plan->copts);
     int nf2 = get_num_cells(N2,plan->copts);
     int nf3 = gridder_plan->num_w;
-    setup_plan(nf1, nf2, nf3, M, d_u, d_v, d_w, d_c, plan);
+    
+    PCS max[3];
+    PCS min[3];
+    if(!plan->copts.pirange){
+        max[0] = gridder_plan->u_max;
+        max[1] = gridder_plan->v_max;
+        max[2] = gridder_plan->w_0;
+        min[0] = gridder_plan->u_max;
+        min[1] = gridder_plan->u_max;
+        min[2] = gridder_plan->u_max;
+    } // can set later (before execution)
+    setup_plan(nf1, nf2, nf3, M, d_u, d_v, d_w, d_c, max, min, plan);
     if(w_term_method) plan->dim = 3;
     else plan->dim =2;
     // plan->dim = dim;
@@ -167,7 +188,6 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
 	cufftPlanMany(&fftplan,2,n,inembed,1,inembed[0]*inembed[1],
 		onembed,1,onembed[0]*onembed[1],CUFFT_TYPE,plan->nf3); //need to check and revise (the partial conv will be differnt)
     plan->fftplan = fftplan; 
-    
 
     // set up bin size +++ (for other methods) and related malloc based on gpu method
     // assign memory for index after sorting (can be done in setup_plan)
@@ -184,7 +204,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
 }
 
 
-int gridder_exectuion(curafft_plan* plan){
+int gridder_exectuion(curafft_plan* plan, ragridder_plan* gridder_plan){
     /*
     Execute conv, fft, dft, correction for different direction (gridding or degridding)
     */

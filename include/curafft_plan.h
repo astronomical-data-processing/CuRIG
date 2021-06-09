@@ -26,7 +26,7 @@ struct conv_opts{
   */
   int kw;   //kernel width // also need to take factors in improved ws into consideration
   int direction;
-  int pirange;
+  PCS pirange; // [-pi,pi)
   PCS upsampfac;
   // ES kernel specific...
   PCS ES_beta;
@@ -66,6 +66,8 @@ struct curafft_plan
 	int batchsize;
 	int execute_flow;//may be useless
 	
+	PCS max[3];
+	PCS min[3];
 
 	//int totalnumsubprob;
 	int byte_now; //always be set to be 0

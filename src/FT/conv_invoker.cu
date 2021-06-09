@@ -31,7 +31,7 @@ int get_num_cells(int ms, conv_opts copts)
   return nf;
 }
 
-int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth)
+int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int pirange, int direction, int kerevalmeth)
 {
   /*
     setup conv related components
@@ -54,8 +54,8 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int kerevalmeth)
   }
 
   // defaults... (user can change after this function called)
-  opts.direction = 1; // user should always set to 1 or 2 as desired
-  opts.pirange = 1;   // user also should always set this
+  opts.direction = direction; // user should always set to 1 or 2 as desired
+  opts.pirange = pirange;   // user also should always set this
   opts.upsampfac = upsampfac;
 
   // as in FINUFFT v2.0, allow too-small-eps by truncating to eps_mach...
@@ -116,7 +116,8 @@ int conv_1d_invoker(int nf1, int M, curafft_plan *plan){
 
     // if the image resolution is small, the memory is sufficiently large for output after conv. 
     conv_1d_nputsdriven<<<grid, block>>>(plan->d_u, plan->d_c, plan->fw, plan->M,
-                                          plan->copts.kw, nf1, plan->copts.ES_c, plan->copts.ES_beta, plan->copts.pirange, plan->cell_loc);
+                                          plan->copts.kw, nf1, plan->copts.ES_c, plan->copts.ES_beta, 
+                                          plan->copts.pirange, plan->max, plan->min, plan->cell_loc);
     
     checkCudaErrors(cudaDeviceSynchronize());
   }
@@ -136,7 +137,8 @@ int conv_2d_invoker(int nf1, int nf2, int M, curafft_plan *plan)
 
     // if the image resolution is small, the memory is sufficiently large for output after conv. 
     conv_2d_nputsdriven<<<grid, block>>>(plan->d_u, plan->d_v, plan->d_c, plan->fw, plan->M,
-                                          plan->copts.kw, nf1, nf2, plan->copts.ES_c, plan->copts.ES_beta, plan->copts.pirange, plan->cell_loc);
+                                          plan->copts.kw, nf1, nf2, plan->copts.ES_c, plan->copts.ES_beta, 
+                                          plan->copts.pirange, plan->max, plan->min, plan->cell_loc);
     
 
     checkCudaErrors(cudaDeviceSynchronize());
@@ -159,7 +161,8 @@ int conv_3d_invoker(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
 
     // if the image resolution is small, the memory is sufficiently large for output after conv. 
     conv_3d_nputsdriven<<<grid, block>>>(plan->d_u, plan->d_v, plan->d_w, plan->d_c, plan->fw, plan->M,
-                                          plan->copts.kw, nf1, nf2, nf3, plan->copts.ES_c, plan->copts.ES_beta, plan->copts.pirange, plan->cell_loc);
+                                          plan->copts.kw, nf1, nf2, nf3, plan->copts.ES_c, plan->copts.ES_beta,
+                                          plan->copts.pirange, plan->max, plan->min, plan->cell_loc);
     
 
     checkCudaErrors(cudaDeviceSynchronize());

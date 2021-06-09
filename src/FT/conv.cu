@@ -32,17 +32,17 @@ void val_kernel_vec(PCS *ker, const PCS x, const double w, const double es_c,
 // }
 
 __global__ void conv_1d_nputsdriven(PCS *x, CUCPX *c, CUCPX *fw, int M, 
-	const int ns, int nf1, PCS es_c, PCS es_beta, int pirange, INT_M* cell_loc)
+	const int ns, int nf1, PCS es_c, PCS es_beta, int pirange, PCS *max, PCS *min, INT_M* cell_loc)
 {
 	/*
-		x - range [-pi,pi)
+		x - input location, range: [-pi,pi) or [min,max)
 		c - complex number
 		fw - result
 		M - number of nupts
 		ns - kernel width
 		nf1 - upts after upsampling
 		es_ - gridding kernel related factors
-		pirange - 1
+		pirange - in pi range or not
 		cell_loc - location of nupts in grid cells
 	*/
 	//need to revise 
@@ -56,10 +56,10 @@ __global__ void conv_1d_nputsdriven(PCS *x, CUCPX *c, CUCPX *fw, int M,
 	//__shared__ CUCPX s_c[blockDim.x];
 	//assert(pirange==1);// check
 
-	for(idx = blockIdx.x * blockDim.x + threadIdx.x;idx<M;idx+=gridDim.x*blockDim.x){
+	for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx<M; idx+=gridDim.x*blockDim.x){
 		
-		//value of x and w, rescale to [0,N) and get the locations
-		temp1 = ((x[idx]<0?(x[idx]+PI):x[idx]) * M_1_2PI * nf1); 
+		//value of x, rescale to [0,N) and get the locations
+		temp1 = RESCALE(x[idx],n1,pirange,max[0],min[0]);
 		if(cell_loc!=NULL){
 			cell_loc[idx].x = (int)(temp1);	//need to save?
 		}
@@ -83,10 +83,10 @@ __global__ void conv_1d_nputsdriven(PCS *x, CUCPX *c, CUCPX *fw, int M,
 
 // 2D for w-stacking. 1D + 2D for improved WS will consume more memory
 __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M, 
-	const int ns, int nf1, int nf2, PCS es_c, PCS es_beta, int pirange, INT_M* cell_loc)
+	const int ns, int nf1, int nf2, PCS es_c, PCS es_beta, int pirange, PCS *max, PCS *min, INT_M* cell_loc)
 {
 	/*
-		x, y - range [-pi,pi)
+		x, y - range [-pi,pi) or [min,max)
 		c - complex number
 		fw - result
 		M - number of nupts
@@ -111,8 +111,8 @@ __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M,
 	for(idx = blockIdx.x * blockDim.x + threadIdx.x;idx<M;idx+=gridDim.x*blockDim.x){
 		
 		//value of x and w, rescale to [0,N) and get the locations
-		temp1 = ((x[idx]<0?(x[idx]+PI):x[idx]) * M_1_2PI * nf1); 
-		temp2 = ((y[idx]<0?(y[idx]+PI):y[idx]) * M_1_2PI * nf2);
+		temp1 = RESCALE(x[idx],n1,pirange,max[0],min[0]);
+		temp2 = RESCALE(y[idx],n2,pirange,max[1],min[1]);
 		if(cell_loc!=NULL){
 			cell_loc[idx].x = (int)(temp1);	//need to save?
 			cell_loc[idx].y = (int)(temp2); //change to int2
@@ -147,10 +147,10 @@ __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M,
 
 __global__
 void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw, int M,
-	const int ns, int nf1, int nf2, int nf3, PCS es_c, PCS es_beta, int pirange, INT_M* cell_loc)
+	const int ns, int nf1, int nf2, int nf3, PCS es_c, PCS es_beta, int pirange, PCS *max, PCS *min, INT_M* cell_loc)
 {
 	/*
-		x, y, z - range [-pi,pi)
+		x, y, z - range [-pi,pi) or [min,max)
 		c - complex number
 		fw - result
 		M - number of nupts
@@ -176,11 +176,10 @@ void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw, int M,
 	
 	for(idx=blockDim.x*blockIdx.x+threadIdx.x; idx<M; idx+=blockDim.x*gridDim.x){
 		
-		//value of x and w, rescale to [0,N) and get the locations
-		// if pirange = 2 need to change
-		temp1 = ((x[idx]<0?(x[idx]+PI):x[idx]) * M_1_2PI * nf1); 
-		temp2 = ((y[idx]<0?(y[idx]+PI):y[idx]) * M_1_2PI * nf2);
-		temp3 = ((z[idx]<0?(z[idx]+PI):z[idx]) * M_1_2PI * nf3);
+		//value of x, rescale to [0,N) and get the locations
+		temp1 = RESCALE(x[idx],n1,pirange,max[0],min[0]);
+		temp2 = RESCALE(y[idx],n2,pirange,max[1],min[1]);
+		temp3 = RESCALE(z[idx],n3,pirange,max[2],min[2]);
 		
 		// add if cell = NULL skip
 		if(cell_loc!=NULL){
