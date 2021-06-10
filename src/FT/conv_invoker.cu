@@ -117,7 +117,7 @@ int conv_1d_invoker(int nf1, int M, curafft_plan *plan){
     // if the image resolution is small, the memory is sufficiently large for output after conv. 
     conv_1d_nputsdriven<<<grid, block>>>(plan->d_u, plan->d_c, plan->fw, plan->M,
                                           plan->copts.kw, nf1, plan->copts.ES_c, plan->copts.ES_beta, 
-                                          plan->copts.pirange, plan->max, plan->min, plan->cell_loc);
+                                          plan->copts.pirange, plan->cell_loc);
     
     checkCudaErrors(cudaDeviceSynchronize());
   }
@@ -138,7 +138,7 @@ int conv_2d_invoker(int nf1, int nf2, int M, curafft_plan *plan)
     // if the image resolution is small, the memory is sufficiently large for output after conv. 
     conv_2d_nputsdriven<<<grid, block>>>(plan->d_u, plan->d_v, plan->d_c, plan->fw, plan->M,
                                           plan->copts.kw, nf1, nf2, plan->copts.ES_c, plan->copts.ES_beta, 
-                                          plan->copts.pirange, plan->max, plan->min, plan->cell_loc);
+                                          plan->copts.pirange, plan->cell_loc);
     
 
     checkCudaErrors(cudaDeviceSynchronize());
@@ -162,7 +162,7 @@ int conv_3d_invoker(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
     // if the image resolution is small, the memory is sufficiently large for output after conv. 
     conv_3d_nputsdriven<<<grid, block>>>(plan->d_u, plan->d_v, plan->d_w, plan->d_c, plan->fw, plan->M,
                                           plan->copts.kw, nf1, nf2, nf3, plan->copts.ES_c, plan->copts.ES_beta,
-                                          plan->copts.pirange, plan->max, plan->min, plan->cell_loc);
+                                          plan->copts.pirange, plan->cell_loc);
     
 
     checkCudaErrors(cudaDeviceSynchronize());

@@ -93,7 +93,7 @@ __global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int N1, int N2, int batc
     for (idx == threadIdx.x + blockIdx.x * blockDim.x; idx < N1 * N2; idx += gridDim.x * blockDim.x)
     {
         CUCPX omega;
-        double z_t_2pi = 2 * PI * (z); //revise how to get z
+        double z_t_2pi = 2 * PI * (z); //revise how to get z !!!! + 1/n_ml
         int i = 0;
         omega.x = cos(z_t_2pi * i);
         omega.y = sin(z_t_2pi * i);
@@ -102,7 +102,7 @@ __global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int N1, int N2, int batc
         {
             omega.x = cos(z_t_2pi * i);
             omega.y = sin(z_t_2pi * i);
-            fw[idx] += fw[idx + i * nf1 * nf2] * omega;
+            fw[idx] += fw[idx + i * nf1 * nf2] * omega; // not fw
         }
     }
 }

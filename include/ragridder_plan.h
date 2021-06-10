@@ -39,10 +39,6 @@ struct ragridder_plan
     PCS w_max;
     PCS w_min;
     int num_w;
-    PCS u_max;
-    PCS u_min;
-    PCS v_max;
-    PCS v_min;
     PCS w_0;
     int speedoflight;
     CPX *dirty_image;

@@ -65,9 +65,6 @@ struct curafft_plan
 	int iflag;
 	int batchsize;
 	int execute_flow;//may be useless
-	
-	PCS max[3];
-	PCS min[3];
 
 	//int totalnumsubprob;
 	int byte_now; //always be set to be 0

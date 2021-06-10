@@ -52,13 +52,6 @@ int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow
     PCS max, min;
     PCS delta_w = 1/(2*upsampling_fac*abs(n_lm-1));
 
-    get_max_min(max, min, plan->kv.u, plan->nrow);
-    plan->u_max = max;
-    plan->u_min = min;
-    get_max_min(max, min, plan->kv.v, plan->nrow);
-    plan->v_max = max;
-    plan->v_min = min;
-
     get_max_min(max, min, plan->kv.w, plan->nrow);
     plan->w_max = max;
     plan->w_min = min;
@@ -124,17 +117,8 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     int nf2 = get_num_cells(N2,plan->copts);
     int nf3 = gridder_plan->num_w;
     
-    PCS max[3];
-    PCS min[3];
-    if(!plan->copts.pirange){
-        max[0] = gridder_plan->u_max;
-        max[1] = gridder_plan->v_max;
-        max[2] = gridder_plan->w_0;
-        min[0] = gridder_plan->u_max;
-        min[1] = gridder_plan->u_max;
-        min[2] = gridder_plan->u_max;
-    } // can set later (before execution)
-    setup_plan(nf1, nf2, nf3, M, d_u, d_v, d_w, d_c, max, min, plan);
+    
+    setup_plan(nf1, nf2, nf3, M, d_u, d_v, d_w, d_c, plan);
     if(w_term_method) plan->dim = 3;
     else plan->dim =2;
     // plan->dim = dim;
