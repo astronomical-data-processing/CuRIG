@@ -28,7 +28,7 @@ int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, C
     plan->kv.v = d_v;
     plan->kv.w = d_w;
     plan->kv.vis = d_c;
-
+    plan->mode_flag = 1; //CMCL mode
     int upsampfac = plan->copts.upsampfac;
 
     plan->nf1 = nf1;
@@ -36,11 +36,7 @@ int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, C
     plan->nf3 = nf3;
 
     plan->M = M;
-    for(int i=0; i<3; i++){
-        plan->max[i] = max[i];
-        plan->min[i] = min[i];
-    }
-    
+
     //plan->maxbatchsize = 1;
 
     plan->byte_now = 0;
@@ -87,33 +83,53 @@ int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, C
     return ier;
 }
 
-__global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int N1, int N2, int batchsize)
+__global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int N1, int N2, PCS xpixelsize, PCS ypixelsize, int flag, int batchsize)
 {
     int idx;
     for (idx == threadIdx.x + blockIdx.x * blockDim.x; idx < N1 * N2; idx += gridDim.x * blockDim.x)
     {
         CUCPX omega;
-        double z_t_2pi = 2 * PI * (z); //revise how to get z !!!! + 1/n_ml
-        int i = 0;
-        omega.x = cos(z_t_2pi * i);
-        omega.y = sin(z_t_2pi * i);
-        fw[idx] = fw[id] * omega;
-        for (i = 1; i < batchsize; i++)
+        int row = idx / N1;
+        int col = idx % N1;
+        int idx_fw = 0;
+        int w1 = 0;
+        int w2 = 0;
+        if (flag == 1)
         {
+            w1 = row >= N1 / 2 ? row - N1 / 2 : nf1 + row - N1 / 2;
+            w2 = col >= N2 / 2 ? col - N2 / 2 : nf2 + col - N2 / 2;
+        }
+        else
+        {
+            w1 = row >= N1 / 2 ? nf1 + row - N1 / 2 : row;
+            w2 = col >= N2 / 2 ? nf2 + col - N2 / 2 : col;
+        }
+        idx_fw = w1 + w2 * nf1;
+        CUCPX temp;
+        temp.x = 0;
+        temp.y = 0;
+        PCS z = sqrt(1 - (row * xpixelsize) * *2 - (col * ypixelsize) * *2) - 1; // revise for >1
+        double z_t_2pi = 2 * PI * (z);
+        for (int i = 0; i < batchsize; i++)
+        {
+            //for partial computing, the i should add a shift
             omega.x = cos(z_t_2pi * i);
             omega.y = sin(z_t_2pi * i);
-            fw[idx] += fw[idx + i * nf1 * nf2] * omega; // not fw
+            //
+            temp += fw[idx_fw] * omega;
         }
+        fw[idx_fw] = temp;
     }
 }
 
-void curadft_invoker(curafft_plan *plan)
+void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize)
 {
     /*
+        Specified for radio astronomy
         Input: 
             fw - the res after 2D-FT towards each w
         Output:
-            fw - after dft (part/whole based on batchsize) or save to fk
+            fw - after dft (part/whole based on batchsize)
     */
     int nf1 = plan->nf1;
     int nf2 = plan->nf2;
@@ -122,11 +138,12 @@ void curadft_invoker(curafft_plan *plan)
     int N2 = plan->mt;
 
     int batchsize = plan->batchsize;
+    int flag = plan->mode_flag;
     int num_threads = 1024;
 
     dim3 block(num_threads)
         dim3 grid((N1 * N2 - 1) / num_thread + 1);
-    w_term_dft<<<grid, block>>>(fw, nf1, nf2, N1, N2, batchsize);
+    w_term_dft<<<grid, block>>>(fw, nf1, nf2, N1, N2, xpixelsize, ypixelsize, flag, batchsize);
     checkCudaErrors(cudaDeviceSynchronize());
     return;
 }

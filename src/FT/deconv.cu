@@ -16,7 +16,7 @@ __global__ void deconv_1d(int N1, int nf1, CUCPX *fw, CUCPX *fk, PCS *fwkerhalf1
         fw - fft result
         fk - final result after deconv
         fwkerhalf - half of Fourier tranform (integal) of kernel fucntion, size - N/2+1
-        flag - FFTW style or CMCL
+        flag - FFTW style (other) or CMCL (1)
     */
     int idx;
     int nmodes = N1;

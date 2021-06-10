@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 	// how to use weight flag and frequency
 	for(int i=0; i<nchan; i++){
 		// add those to precomp
-		// u, v, w * f_over_c, plan max and min set * f_over_c
+		// u, v, w * f_over_c, plan set * f_over_c
 		// memory transfer (vis belong to this channel and weight)
 		checkCudaErrors(cudaMemcpy(d_vis, vis, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice)); //
 		// vis * flag * weight

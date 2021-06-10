@@ -21,13 +21,6 @@
 #include "ra_exec.h"
 #include "utils.h"
 
-    // ushift = supp*(-0.5)+1+nu;
-    //   vshift = supp*(-0.5)+1+nv;
-    //   maxiu0 = (nu+nsafe)-supp;
-    //   maxiv0 = (nv+nsafe)-supp;
-    //   vlim = min(nv/2, size_t(nv*bl.Vmax()*pixsize_y+0.5*supp+1));
-    //   uv_side_fast = true;???
-
 
 int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow, conv_opts copt, ragridder_plan *plan){
     plan->fov = fov;
@@ -200,7 +193,7 @@ int gridder_exectuion(curafft_plan* plan, ragridder_plan* gridder_plan){
 
 	int direction = plan->copts.direction;
     if (direction == 1){
-        ier = exec_inverse(plan);
+        ier = exec_inverse(plan, gridder_plan);
     }
     else{
         // forward not implement yet
@@ -217,6 +210,7 @@ int gridder_destroy(curafft_plan *plan, ragridder_plan *gridder_plan){
     // free memory
     int ier=0;
     curafft_free(plan);
+    free(plan);
     free(gridder_plan->dirty_image);
     free(gridder_plan->kv.u);
     free(gridder_plan->kv.v);
@@ -225,5 +219,6 @@ int gridder_destroy(curafft_plan *plan, ragridder_plan *gridder_plan){
     free(gridder_plan->kv.frequency);
     free(gridder_plan->kv.weight);
     // free(gridder_plan->kv.flag);
+    free(gridder_plan);
     return ier;
 }

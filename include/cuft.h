@@ -4,5 +4,5 @@
 
 #include "curafft_plan.h"
 int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan);
-void curadft_invoker(curafft_plan *plan);
+void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize);
 #endif
