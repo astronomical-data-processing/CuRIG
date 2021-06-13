@@ -15,6 +15,7 @@ FORWARD: type 2
 #include "conv_invoker.h"
 #include "deconv_invoker.h"
 #include "ragridder_plan.h"
+#include "ra_exec.h"
 #include "cuft.h"
 
 int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
@@ -30,6 +31,8 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
     {
             /// curafft_conv workflow for enough memory
             checkCudaErrors(cudaMemset(plan->fw, 0, plan->nf3 * plan->nf1 * plan->nf2 * sizeof(CUCPX)));
+
+            
             // 1. convlution
             curafft_conv(plan);
 

@@ -8,9 +8,11 @@
 using namespace thrust;
 using namespace std::complex_literals;
 
+
 #include "ragridder_plan.h"
 #include "conv_invoker.h"
 #include "cugridder.h"
+#include "precomp.h"
 #include "utils.h"
 
 ///conv improved WS, method 0 correctness cheak
@@ -169,6 +171,7 @@ int main(int argc, char *argv[])
 	gridder_plan->kv.frequency = freq;
 	gridder_plan->kv.vis = vis;
 	gridder_plan->kv.weight = wgt;
+	gridder_plan->kv.pirange = 0;
 
 	int direction = 1; //inverse
 
@@ -182,15 +185,18 @@ int main(int argc, char *argv[])
 	checkCudaErrors(cudaMalloc((void**)&fk,sizeof(CUCPX)*nydirty*nxdirty));
 	plan->fk = fk;
 
-	gridder_plan->dirty_image = (CPX *)malloc(sizeof(CPX)*nxdirty*nydirty*nchan);
+	gridder_plan->dirty_image = (CPX *)malloc(sizeof(CPX)*nxdirty*nydirty*nchan); //
 	
 	// how to use weight flag and frequency
 	for(int i=0; i<nchan; i++){
-		// add those to precomp
-		// u, v, w * f_over_c, plan set * f_over_c
+		// pre_setting
+		// 1. u, v, w * f_over_c
+		// 2. /pixelsize(*2pi)
+		// 3. * rescale ratio
+		pre_setting(d_u, d_v, d_w, d_vis, gridder_plan);
 		// memory transfer (vis belong to this channel and weight)
 		checkCudaErrors(cudaMemcpy(d_vis, vis, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice)); //
-		// vis * flag * weight
+		// shift to corresponding range
 		ier = gridder_exectuion(plan);
 		if(ier == 1){
 			printf("errors in gridder execution\n");

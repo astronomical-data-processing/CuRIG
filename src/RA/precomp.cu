@@ -4,11 +4,67 @@ Some precomputation related radio astronomy
     Vis * weight
     ...
 */
-#include <helper_cuda.h>
 #include "dataType.h"
 #include "ragridder_plan.h"
 #include "utils.h"
+#include "precomp.h"
 
+__global__ void get_effective_coordinate(PCS *u, PCS *v, PCS *w, PCS f_over_c, int pirange,int nrow){
+    /*
+        u, v, w - coordinate
+        f_over_c - frequency divide speed of light
+        pirange - 1 in [-pi,pi), 0 - [-0.5,0.5)
+        nrow - number of coordinates
+    */
+    int idx;
+    for(idx = blockDim.x * blockIdx.x + threadIdx.x; idx<nrow; idx+= gridDim.x * blockDim.x){
+        u[idx] *= f_over_c;
+        v[idx] *= f_over_c;
+        u[idx] *= f_over_c;
+        if(!pirange){
+            u[idx] *= PI;
+            v[idx] *= PI;
+            u[idx] *= PI;
+        }
+    }
+}
+
+__global__ void gridder_rescaling_complex(CUCPX *x, PCS scale_ratio, int N){
+    int idx;
+    for(idx = blockIdx.x * blockDim.x; idx<N; idx += gridDim.x * blockDim.x){
+        x[idx] *= scale_ratio;
+    }
+}
+
+__global__ void gridder_rescaling_real(PCS *x, PCS scale_ratio, int N){
+    int idx;
+    for(idx = blockIdx.x * blockDim.x; idx<N; idx += gridDim.x * blockDim.x){
+        x[idx] *= scale_ratio;
+    }
+}
+
+void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, PCS d_vis, ragridder_plan *gridder_plan){
+    PCS f_over_c = gridder_plan->kv.frequency[gridder_plan->cur_channel]/SPEEDOFLIGHT;
+    PCS xpixelsize = gridder_plan->pixelsize_x;
+    PCS ypixelsize = gridder_plan->pixelsize_y;
+    int pirange = gridder_plan->kv.pirange;
+    int nrow = gridder_plan->nrow;
+    int N = nrow;
+    int blocksize = 512;
+    // ---------get effective coordinates---------
+    get_effective_coordinate<<<(N-1)/blocksize+1, blocksize>>(d_u, d_v, d_w, f_over_c, pirange, nrow);
+    cudaCheckErrors(cudaDeviceSynchronize());
+    // ----------------rescaling-----------------
+    PCS scaling_ratio = 1.0/xpixelsize;
+    gridder_rescaling_real<<<(N-1)/blocksize+1, blocksize>>>(d_u, scaling_ratio, nrow);
+    cudaCheckErrors(cudaDeviceSynchronize());
+    scaling_ratio = 1.0/ypixelsize;
+    gridder_rescaling_real<<<(N-1)/blocksize+1, blocksize>>>(d_v, scaling_ratio, nrow);
+    cudaCheckErrors(cudaDeviceSynchronize());
+    // ------------vis * flag * weight--------+++++
+    // memory transfer (vis belong to this channel and weight)
+	checkCudaErrors(cudaMemcpy(d_vis, vis+nrow*gridder_plan->cur_channel, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice)); //
+}
 
 __global__ void explicit_gridder(int N1, int N2, int nrow, PCS *u, PCS *v, PCS *w, CUCPX *vis, 
         CUCPX *dirty, PCS f_over_c, PCS row_pix_size, PCS col_pix_size){

@@ -105,6 +105,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     gridder_plan->w_term_method = w_term_method;
     gridder_plan->speedoflight = SPEEDOFLIGHT;
     setup_gridder_plan(N1,N2,fov,0,0,M,plan->copts,gridder_plan);
+    
 
     int nf1 = get_num_cells(N1,plan->copts);
     int nf2 = get_num_cells(N2,plan->copts);
@@ -112,8 +113,9 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     
     
     setup_plan(nf1, nf2, nf3, M, d_u, d_v, d_w, d_c, plan);
+
     if(w_term_method) plan->dim = 3;
-    else plan->dim =2;
+    else plan->dim = 2;
     // plan->dim = dim;
 	plan->ms = N1;
 	plan->mt = N2;

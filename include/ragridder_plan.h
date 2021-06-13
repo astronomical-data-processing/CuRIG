@@ -22,6 +22,7 @@ struct visibility
 
     //PCS time;
     PCS* frequency;
+    int pirange;
     //int antenna_1;
     //int antenna_2;
     //PCS image_weight;
@@ -46,6 +47,7 @@ struct ragridder_plan
     int height;
     int channel;
     int nrow;
+    int cur_channel; // current channel
     int w_term_method; // 0 for w-stacking, 1 for improved w-stacking
 };
 

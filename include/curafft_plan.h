@@ -26,7 +26,7 @@ struct conv_opts{
   */
   int kw;   //kernel width // also need to take factors in improved ws into consideration
   int direction;
-  PCS pirange; // [-pi,pi)
+  int pirange; // [-pi,pi)
   PCS upsampfac;
   // ES kernel specific...
   PCS ES_beta;
