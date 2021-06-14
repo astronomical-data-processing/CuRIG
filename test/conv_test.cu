@@ -16,9 +16,9 @@ using namespace std::complex_literals;
 int main(int argc, char* argv[]){
 	//improved WS stacking 1,
 	//gpu_method == 0, nupts driven
-    int N1, N2;
+    int N1, N2; //N1 width output
 	PCS sigma = 2.0;
-	int M;
+	int M; // input
 	if (argc<5) {
 		fprintf(stderr,
 			"Usage: conv3d method nupts_distr nf1 nf2 nf3 [maxsubprobsize [M [tol [kerevalmeth [sort]]]]]\n"
@@ -154,7 +154,7 @@ int main(int argc, char* argv[]){
     memset(h_plan, 0, sizeof(curafft_plan));
 	
     // opts and copts setting
-    h_plan->opts.gpu_conv_only = 1;
+    h_plan->opts.gpu_conv_only = 1; 
     h_plan->opts.gpu_gridder_method = method;
 	h_plan->opts.gpu_kerevalmeth = kerevalmeth;
 	h_plan->opts.gpu_sort = 1;

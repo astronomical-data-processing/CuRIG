@@ -11,7 +11,11 @@
 // RESCALE is from Barnett 2/7/17.
 #define RESCALE(x,N,p) (p ? \
 		     ((x*M_1_2PI + (x<-PI ? 1.5 : (x>=PI ? -0.5 : 0.5)))*N) : \
-             x<0 ? x+N : (x>=N ? x-N : x))
+		     (x<0 ? x+N : (x>=N ? x-N : x)))
+
+// p is not ture, shift to [-pi, pi) and then rescale, p is true just rescale.
+#define SHIFT_RESCALE(x,N,p) ((p ? x : (x%M_2PI - PI)) * M_1_2PI + 0.5)*N \
+
              
 
 __global__ void conv_1d_nputsdriven(PCS *x, CUCPX *c, CUCPX *fw, int M, 

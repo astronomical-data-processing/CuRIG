@@ -50,7 +50,7 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
 
             // scaling +++++
             // /n_lm, fourier related rescale
-            //curafft_free(plan);
+
     }
     else if (plan->execute_flow == 2)
     {

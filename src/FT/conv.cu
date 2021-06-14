@@ -58,8 +58,10 @@ __global__ void conv_1d_nputsdriven(PCS *x, CUCPX *c, CUCPX *fw, int M,
 
 	for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx<M; idx+=gridDim.x*blockDim.x){
 		
-		//value of x, rescale to [0,N) and get the locations
-		temp1 = RESCALE(x[idx],n1,pirange);
+		// if not pirange, shift to pirange
+
+		//value of x, shift and rescale to [0,N) and get the locations
+		temp1 = SHIFT_RESCALE(x[idx],n1,pirange);
 		if(cell_loc!=NULL){
 			cell_loc[idx].x = (int)(temp1);	//need to save?
 		}
@@ -110,9 +112,9 @@ __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M,
 
 	for(idx = blockIdx.x * blockDim.x + threadIdx.x;idx<M;idx+=gridDim.x*blockDim.x){
 		
-		//value of x and w, rescale to [0,N) and get the locations
-		temp1 = RESCALE(x[idx],n1,pirange);
-		temp2 = RESCALE(y[idx],n2,pirange);
+		//value of x, shift and rescale to [0,N) and get the locations
+		temp1 = SHIFT_RESCALE(x[idx],n1,pirange);
+		temp2 = SHIFT_RESCALE(y[idx],n2,pirange);
 		if(cell_loc!=NULL){
 			cell_loc[idx].x = (int)(temp1);	//need to save?
 			cell_loc[idx].y = (int)(temp2); //change to int2
@@ -176,10 +178,10 @@ void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw, int M,
 	
 	for(idx=blockDim.x*blockIdx.x+threadIdx.x; idx<M; idx+=blockDim.x*gridDim.x){
 		
-		//value of x, rescale to [0,N) and get the locations
-		temp1 = RESCALE(x[idx],n1,pirange);
-		temp2 = RESCALE(y[idx],n2,pirange);
-		temp3 = RESCALE(z[idx],n3,pirange);
+		//value of x, shift and rescale to [0,N) and get the locations
+		temp1 = SHIFT_RESCALE(x[idx],n1,pirange);
+		temp2 = SHIFT_RESCALE(y[idx],n2,pirange);
+		temp3 = SHIFT_RESCALE(z[idx],n3,pirange);
 		
 		// add if cell = NULL skip
 		if(cell_loc!=NULL){
