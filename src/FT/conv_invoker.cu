@@ -118,9 +118,10 @@ int conv_1d_invoker(int nf1, int M, curafft_plan *plan){
     conv_1d_nputsdriven<<<grid, block>>>(plan->d_u, plan->d_c, plan->fw, plan->M,
                                           plan->copts.kw, nf1, plan->copts.ES_c, plan->copts.ES_beta, 
                                           plan->copts.pirange, plan->cell_loc);
-    
+
     checkCudaErrors(cudaDeviceSynchronize());
   }
+  return 0;
 }
 
 int conv_2d_invoker(int nf1, int nf2, int M, curafft_plan *plan)
@@ -186,7 +187,7 @@ int curafft_conv(curafft_plan * plan)
   switch (plan->dim)
   {
   case 1:
-    conv_1d_invoker(n1, M, plan);
+    conv_1d_invoker(nf1, M, plan);
     break;
   case 2:
     conv_2d_invoker(nf1, nf2, M, plan);

@@ -9,7 +9,9 @@
 #include "dataType.h"
 #include "curafft_opts.h"
 #include "utils.h"
-#include "visibility.h"
+#include "../contrib/common.h"
+#include "../contrib/utils_fp.h"
+
 
 #define MAX_KERNEL_WIDTH 16
 
@@ -51,7 +53,7 @@ struct curafft_plan
 	PCS *d_u;
 	PCS *d_v;
 	PCS *d_w;
-	PCS *d_c;
+	CUCPX *d_c;
 	int dim; //dimension support for 1,2,3D
 	int mode_flag; // FFTW (0) style or CMCL-compatible mode ordering (1)
 	int M; //NU

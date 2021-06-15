@@ -18,11 +18,12 @@
 #include "conv_invoker.h"
 #include "ragridder_plan.h"
 #include "curafft_plan.h"
+#include "cuft.h"
 #include "ra_exec.h"
 #include "utils.h"
 
 
-int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow, conv_opts copt, ragridder_plan *plan){
+int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow, conv_opts copts, ragridder_plan *plan){
     plan->fov = fov;
     plan->width = N1;
     plan->height = N2;
@@ -39,8 +40,8 @@ int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow
     PCS m_min = mshift - 0.5*ypixelsize * N2;
     PCS m_max = m_min + ypixelsize * (N2-1);
 
-    double upsampling_fac = copt.upsampfac;
-    PCS n_lm = sqrt(1 - l_max^2 + m_max^2); //change
+    double upsampling_fac = copts.upsampfac;
+    PCS n_lm = sqrt(1 - pow(l_max,2) + pow(m_max, 2));
     // nshift = (no_nshift||(!do_wgridding)) ? 0. : -0.5*(nm1max+nm1min);
     PCS max, min;
     PCS delta_w = 1/(2*upsampling_fac*abs(n_lm-1));
@@ -51,6 +52,8 @@ int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow
     PCS w_0 = plan->w_min - delta_w * (copts.kw - 1); // first plane
     plan->w_0 = w_0;
     plan->num_w = (plan->w_max - plan->w_min)/delta_w + copts.kw; // another plan
+
+    return 0;
 }
 
 // the bin sort should be completed at gridder_settting
@@ -95,7 +98,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     plan->opts.gpu_conv_only = 0;
     plan->opts.gpu_gridder_method = method;
 
-    int ier = setup_conv_opts(plan->copts, tol, sigma, 0, direction, kerevalmeth); //check the arguements
+    ier = setup_conv_opts(plan->copts, tol, sigma, 0, direction, kerevalmeth); //check the arguements
 
 	if(ier!=0)printf("setup_error\n");
 
@@ -124,7 +127,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     int fftsign = (iflag>=0) ? 1 : -1;
 
 	plan->iflag = fftsign;
-    if (batchsize == 0) batchsize = min(4,plan->num_w);
+    if (batchsize == 0) batchsize = min(4,gridder_plan->num_w);
 	plan->batchsize = batchsize;
 
     plan->copts.direction = direction; // 1 inverse, 0 forward
@@ -144,13 +147,15 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
 	
 	checkCudaErrors(cudaMemcpy(plan->fwkerhalf2,fwkerhalf2,(plan->nf2/2+1)*
 		sizeof(PCS),cudaMemcpyHostToDevice));
-	if(w_term_method)
+    PCS *fwkerhalf3;
+	if(w_term_method){
 		// improved_ws
-        PCS *fwkerhalf3 = (PCS*)malloc(sizeof(PCS)*(plan->nf3/2+1));
+        fwkerhalf3 = (PCS*)malloc(sizeof(PCS)*(plan->nf3/2+1));
         //need to revise
-        onedim_fseries_kernel(plan->num_w, fwkerhalf3, plan->copts);
-        checkCudaErrors(cudaMemcpy(plan->fwkerhalf3,fwkerhalf3,(plan->num_w/2+1)*
+        onedim_fseries_kernel(gridder_plan->num_w, fwkerhalf3, plan->copts);
+        checkCudaErrors(cudaMemcpy(plan->fwkerhalf3,fwkerhalf3,(gridder_plan->num_w/2+1)*
 			sizeof(PCS),cudaMemcpyHostToDevice));
+    }
     
 
     // cufft plan setting

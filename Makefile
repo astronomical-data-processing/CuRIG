@@ -48,17 +48,20 @@ STATICLIB=lib-static/$(LIBNAME).a
 
 BINDIR=bin
 
-HEADERS = include/curafft_opts.h include/curafft_plan.h include/dataType.h include/utils.h \
-	include/conv_invoker.h include/conv.h src/FT/matrix.cuh include/cuft.h include/visibility.h \
+HEADERS = include/curafft_opts.h include/curafft_plan.h include/cugridder.h \
+	include/conv_invoker.h include/conv.h include/cuft.h include/dataType.h \
+	include/deconv.h include/precomp.h include/ragridder_plan.h include/utils.h \
 	contrib/common.h contrib/legendre_rule_fast.h contrib/utils_fp.h
 #later put some file into the contrib
-CONTRIBOBJS=contrib/common.o contrib/legendre_rule_fast.o contrib/utils_fp.o
+CONTRIBOBJS=contrib/common.o contrib/utils_fp.o
 
 # We create three collections of objects:
 #  Double (_64), Single (_32), and floating point agnostic (no suffix)
 # add contrib/legendre_rule_fast.o to curafftobjs later
-CURAFFTOBJS=src/utils.o
-CURAFFTOBJS_64=src/FT/conv_invoker.o src/FT/conv.o $(CONTRIBOBJS)
+CURAFFTOBJS=src/utils.o contrib/legendre_rule_fast.o
+
+CURAFFTOBJS_64=src/FT/conv_invoker.o src/FT/conv.o src/FT/cuft.o \
+	src/RA/cugridder.o src/RA/precomp.o src/RA/ra_exec.o $(CONTRIBOBJS)
 
 #ignore single precision first
 # $(CONTRIBOBJS)
@@ -91,14 +94,14 @@ test/%.o: test/%.cu $(HEADERS)
 default: all
 
 # Build all, but run no tests. Note: CI currently uses this default...
-all: libtest convtest
+all: libtest convtest utiltest
 
 # testers for the lib (does not execute)
 libtest: lib $(BINDIR)/conv_test \
 	$(BINDIR)/utils_test
 
 # low-level (not-library) testers (does not execute)
-convtest: $(BINDIR)/conv_test 
+convtest: $(BINDIR)/conv_test
 
 
 utiltest: $(BINDIR)/utils_test
@@ -106,6 +109,8 @@ utiltest: $(BINDIR)/utils_test
 $(BINDIR)/%: test/%.o $(CURAFFTOBJS_64) $(CURAFFTOBJS)
 	mkdir -p $(BINDIR)
 	$(NVCC) $^ $(NVCCFLAGS) $(NVCC_LIBS_PATH) $(LIBS) -o $@
+
+
 
 # user-facing library...
 lib: $(STATICLIB) $(DYNAMICLIB)
