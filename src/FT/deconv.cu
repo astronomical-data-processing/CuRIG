@@ -21,9 +21,10 @@ __global__ void deconv_1d(int N1, int nf1, CUCPX *fw, CUCPX *fk, PCS *fwkerhalf1
     int idx;
     int nmodes = N1;
     int w = 0;
-    int k = idx;
+    int k;
     int idx_fw = 0;
     for(idx = blockIdx.x*blockDim.x + threadIdx.x; idx < nmodes; idx+=gridDim.x*blockDim.x){
+        k = idx;
         if(flag == 1){
             w = k >= N1/2 ? k - N1/2 : nf1 + k - N1/2; // CMCL
         }
@@ -43,13 +44,14 @@ __global__ void deconv_2d(int N1, int N2, int nf1, int nf2, CUCPX* fw, CUCPX* fk
         Should convert to -N/2 to N/2-1, then set flag = 1
      */
     int idx;
-    int nmodes = N1*N2
+    int nmodes = N1*N2;
+    int k1, k2, idx_fw, w1, w2;
     for(idx = blockIdx.x*blockDim.x + threadIdx.x; idx < nmodes; idx+=gridDim.x*blockDim.x){
-        int k1 = idx % N1;
-		int k2 = idx / N1;
-        int idx_fw = 0;
-        int w1 = 0;
-        int w2 = 0;
+        k1 = idx % N1;
+		k2 = idx / N1;
+        idx_fw = 0;
+        w1 = 0;
+        w2 = 0;
         if(flag == 1){
             w1 = k1 >= N1/2 ? k1-N1/2 : nf1+k1-N1/2;
 		    w2 = k2 >= N2/2 ? k2-N2/2 : nf2+k2-N2/2;
@@ -67,18 +69,19 @@ __global__ void deconv_2d(int N1, int N2, int nf1, int nf2, CUCPX* fw, CUCPX* fk
     }
 }
 
-__global__ void deconv_3d(int N1) (int N1, int N2, int N3, int nf1, int nf2, int nf3, CUCPX* fw, 
+__global__ void deconv_3d(int N1, int N2, int N3, int nf1, int nf2, int nf3, CUCPX* fw, 
 	CUCPX *fk, PCS *fwkerhalf1, PCS *fwkerhalf2, PCS *fwkerhalf3)
 {
     int idx;
     int nmodes = N1*N2*N3;
+    int k1, k2, k3, idx_fw, w1, w2, w3;
 	for(idx=blockDim.x*blockIdx.x+threadIdx.x; idx<nmodes; idx+=blockDim.x*
 		gridDim.x){
-		int k1 = idx % N1;
-		int k2 = (idx / N1) % N2;
-		int k3 = (idx / N1 / N2);
-        int w1=0, w2=0, w3=0;
-        int idx_fw = 0;
+		k1 = idx % N1;
+		k2 = (idx / N1) % N2;
+		k3 = (idx / N1 / N2);
+        w1=0, w2=0, w3=0;
+        idx_fw = 0;
         if(flag == 1){
             w1 = k1 >= N1/2 ? k1-N1/2 : nf1+k1-N1/2;
 		    w2 = k2 >= N2/2 ? k2-N2/2 : nf2+k2-N2/2;
@@ -89,7 +92,7 @@ __global__ void deconv_3d(int N1) (int N1, int N2, int N3, int nf1, int nf2, int
             w2 = k2 >= N2/2 ? nf2+k2-N2/2 : k2;
             w3 = k3 >= N3/2 ? nf3+k3-N3/2 : k3;
         }
-		int idx_fw = w1 + w2*nf1 + w3*nf1*nf2;
+	    idx_fw = w1 + w2*nf1 + w3*nf1*nf2;
 
 		PCS kervalue = fwkerhalf1[abs(k1-N1/2)]*fwkerhalf2[abs(k2-N2/2)]*
 			fwkerhalf3[abs(k3-N3/2)];

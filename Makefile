@@ -60,7 +60,7 @@ CONTRIBOBJS=contrib/common.o contrib/utils_fp.o
 # add contrib/legendre_rule_fast.o to curafftobjs later
 CURAFFTOBJS=src/utils.o contrib/legendre_rule_fast.o
 
-CURAFFTOBJS_64=src/FT/conv_invoker.o src/FT/conv.o src/FT/cuft.o \
+CURAFFTOBJS_64=src/FT/conv_invoker.o src/FT/conv.o src/FT/cuft.o src/FT/deconv.o \
 	src/RA/cugridder.o src/RA/precomp.o src/RA/ra_exec.o $(CONTRIBOBJS)
 
 #ignore single precision first

@@ -13,7 +13,7 @@ FORWARD: type 2
 
 #include "curafft_plan.h"
 #include "conv_invoker.h"
-#include "deconv_invoker.h"
+#include "deconv.h"
 #include "ragridder_plan.h"
 #include "ra_exec.h"
 #include "cuft.h"
@@ -26,7 +26,7 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
         Flow1: the data size is small and memory is sufficent for whole conv
         Flow2: the data size is large, the data is divided into parts 
     */
-
+    int ier=0;
     if (plan->execute_flow == 1)
     {
             /// curafft_conv workflow for enough memory
@@ -34,7 +34,7 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
 
             
             // 1. convlution
-            curafft_conv(plan);
+            ier = curafft_conv(plan);
 
             // 2. cufft
             int direction = plan->iflag;
@@ -46,7 +46,7 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
             curadft_invoker(plan, gridder_plan->pixelsize_x, gridder_plan->pixelsize_y);
 
             // 4. deconvolution (correction)
-            curafft_deconv(plan);
+            ier = curafft_deconv(plan);
 
             // scaling +++++
             // /n_lm, fourier related rescale
@@ -57,7 +57,7 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
         /// curafft_partial_conv workflow for insufficient memory
 
         // offset array with size of
-        for (int i = 0; i < plan->num_w; i += plan->batchsize)
+        for (int i = 0; i < gridder_plan->num_w; i += plan->batchsize)
         {
             //memory allocation of fw may cause error, if size is too large, decrease the batchsize.
             checkCudaErrors(cudaMemset(plan->fw, 0, plan->batchsize * plan->nf1 * plan->nf2 * sizeof(CUCPX)));
@@ -65,4 +65,5 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
             curafft_conv(plan);
         }
     }
+    return ier;
 }
