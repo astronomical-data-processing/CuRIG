@@ -66,19 +66,19 @@ int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, C
 
     if (!plan->opts.gpu_conv_only)
     {
-        int nf1 = plan->nf1;
-        int nf2 = 1;
-        int nf3 = 1;
+        int n1 = plan->nf1;
+        int n2 = 1;
+        int n3 = 1;
         checkCudaErrors(cudaMalloc(&plan->fwkerhalf1, (plan->nf1 / 2 + 1) * sizeof(PCS)));
         if(plan->dim>1){
             checkCudaErrors(cudaMalloc(&plan->fwkerhalf2, (plan->nf2 / 2 + 1) * sizeof(PCS)));
-            nf2 = plan->nf2;
+            n2 = plan->nf2;
         }
         if(plan->dim>2){
             checkCudaErrors(cudaMalloc(&plan->fwkerhalf3, (plan->nf3 / 2 + 1) * sizeof(PCS)));
-            nf3 = plan->nf3;
+            n3 = plan->nf3;
         }
-        checkCudaErrors(cudaMalloc(&plan->fw, nf1 * nf2 * nf3 * sizeof(CUCPX)));
+        checkCudaErrors(cudaMalloc(&plan->fw, n1 * n2 * n3 * sizeof(CUCPX)));
         /* For multi GPU
     cudaStream_t* streams =(cudaStream_t*) malloc(plan->opts.gpu_nstreams*
       sizeof(cudaStream_t));

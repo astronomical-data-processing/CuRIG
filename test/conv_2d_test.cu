@@ -14,21 +14,18 @@ using namespace std::complex_literals;
 ///conv improved WS, method 0 correctness cheak
 
 int main(int argc, char* argv[]){
-	//improved WS stacking 1,
+	
 	//gpu_method == 0, nupts driven
     int N1, N2; //N1 width output
 	PCS sigma = 2.0;
 	int M; // input
-	if (argc<5) {
+	if (argc<4) {
 		fprintf(stderr,
 			"Usage: conv3d method nupts_distr nf1 nf2 nf3 [maxsubprobsize [M [tol [kerevalmeth [sort]]]]]\n"
 			"Arguments:\n"
 			"  method: One of\n"
 			"    0: nupts driven,\n"
 			"    2: sub-problem, or\n"
-            "  w_term_method: \n"
-            "    0: w-stacking\n"
-            "    1: improved w-stacking\n"
 			"  N1, N2 : image size.\n"
 			"  M: The number of non-uniform points.\n"
 			"  tol: NUFFT tolerance (default 1e-6).\n"
@@ -42,24 +39,22 @@ int main(int argc, char* argv[]){
 	double w;
 	int method;
 	sscanf(argv[1],"%d",&method);
-	int w_term_method;
-	sscanf(argv[2],"%d",&w_term_method);
-	sscanf(argv[3],"%lf",&w); N1 = (int)w;  // so can read 1e6 right!
-	sscanf(argv[4],"%lf",&w); N2 = (int)w;  // so can read 1e6 right!
+	sscanf(argv[2],"%lf",&w); N1 = (int)w;  // so can read 1e6 right!
+	sscanf(argv[3],"%lf",&w); N2 = (int)w;  // so can read 1e6 right!
 	
 	M = N1 * N2;
-	if(argc>5){
-		sscanf(argv[5],"%lf",&w); M  = (int)w;  // so can read 1e6 right!
+	if(argc>4){
+		sscanf(argv[4],"%lf",&w); M  = (int)w;  // so can read 1e6 right!
 	}
 
 	PCS tol=1e-6;
-	if(argc>6){
-		sscanf(argv[6],"%lf",&w); tol  = (PCS)w;  // so can read 1e6 right!
+	if(argc>5){
+		sscanf(argv[5],"%lf",&w); tol  = (PCS)w;  // so can read 1e6 right!
 	}
 
 	int kerevalmeth=0;
-	if(argc>7){
-		sscanf(argv[7],"%d",&kerevalmeth);
+	if(argc>6){
+		sscanf(argv[6],"%d",&kerevalmeth);
 	}
 
     // fov and 1 pixel corresonding to pix_deg degree
@@ -70,16 +65,14 @@ int main(int argc, char* argv[]){
 	CPX *c, *fw;
 	x = (PCS *)malloc(M*sizeof(PCS)); //Allocates page-locked memory on the host.
 	y = (PCS *)malloc(M*sizeof(PCS));
-	z = (PCS *)malloc(M*sizeof(PCS));
 	c = (CPX *)malloc(M*sizeof(CPX));
 
 	//cudaMallocHost(&fw,nf1*nf2*nf3*sizeof(CPX)); //malloc after plan setting
 
-	PCS *d_x, *d_y, *d_z;
+	PCS *d_x, *d_y;
 	CUCPX *d_c, *d_fw;
 	checkCudaErrors(cudaMalloc(&d_x,M*sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_y,M*sizeof(PCS)));
-	checkCudaErrors(cudaMalloc(&d_z,M*sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_c,M*sizeof(CUCPX)));
 	//checkCudaErrors(cudaMalloc(&d_fw,8*nf1*nf2*nf1*sizeof(CUCPX)));
 
@@ -112,42 +105,40 @@ int main(int argc, char* argv[]){
 			std::cerr << "not valid nupts distr" << std::endl;
 			return 1;
 	}
-	x[0] = - PI/2; y[0] = - PI/2; z[0] = - PI/2;
-	x[1] = - PI/2; y[1] = - PI/3; z[1] = - PI/2;
-	x[2] = - PI/2; y[2] = 0; z[2] = - PI/2;
-	x[3] = - PI/2; y[3] = PI/3; z[3] = - PI/2;
-	x[4] = - PI/2; y[4] = PI/2; z[4] = - PI/2;
+	x[0] = - PI/2; y[0] = - PI/2;
+	x[1] = - PI/2; y[1] = - PI/3;
+	x[2] = - PI/2; y[2] = 0;
+	x[3] = - PI/2; y[3] = PI/3;
+	x[4] = - PI/2; y[4] = PI/2;
 
-	x[5] = - PI/3; y[5] = - PI/2; z[5] = PI/2;
-	x[6] = - PI/3; y[6] = - PI/3; z[6] = PI/2;
-	x[7] = - PI/3; y[7] = 0; 	  z[7] = PI/2;
-	x[8] = - PI/3; y[8] = PI/3;   z[8] = PI/2;
-	x[9] = - PI/3; y[9] = PI/2;   z[9] = PI/2;
+	x[5] = - PI/3; y[5] = - PI/2;
+	x[6] = - PI/3; y[6] = - PI/3;
+	x[7] = - PI/3; y[7] = 0;
+	x[8] = - PI/3; y[8] = PI/3;
+	x[9] = - PI/3; y[9] = PI/2;
 
-	x[10] = 0; y[10] = - PI/2; z[10] = -PI/2;
-	x[11] = 0; y[11] = - PI/3; z[11] = -PI/2;
-	x[12] = 0; y[12] = 0; 	   z[12] = -PI/2;
-	x[13] = 0; y[13] = PI/3;   z[13] = -PI/2;
-	x[14] = 0; y[14] = PI/2;   z[14] = -PI/2;
+	x[10] = 0; y[10] = - PI/2;
+	x[11] = 0; y[11] = - PI/3;
+	x[12] = 0; y[12] = 0;
+	x[13] = 0; y[13] = PI/3;
+	x[14] = 0; y[14] = PI/2;
 
-	x[15] = PI/3; y[15] = - PI/2; z[15] = PI/2;
-	x[16] = PI/3; y[16] = - PI/3; z[16] = PI/2;
-	x[17] = PI/3; y[17] = 0; 	  z[17] = PI/2;
-	x[18] = PI/3; y[18] = PI/3;   z[18] = PI/2;
-	x[19] = PI/3; y[19] = PI/2;   z[19] = PI/2;
+	x[15] = PI/3; y[15] = - PI/2;
+	x[16] = PI/3; y[16] = - PI/3;
+	x[17] = PI/3; y[17] = 0;
+	x[18] = PI/3; y[18] = PI/3;
+	x[19] = PI/3; y[19] = PI/2;
 
-	x[20] = PI/2; y[20] = - PI/2; z[20] = - PI/2;
-	x[21] = PI/2; y[21] = - PI/3; z[21] = - PI/2;
-	x[22] = PI/2; y[22] = 0; 	  z[22] = - PI/2;
-	x[23] = PI/2; y[23] = PI/3;   z[23] = - PI/2;
-	x[24] = PI/2; y[24] = PI/2;   z[24] = - PI/2;
-
+	x[20] = PI/2; y[20] = - PI/2;
+	x[21] = PI/2; y[21] = - PI/3;
+	x[22] = PI/2; y[22] = 0;
+	x[23] = PI/2; y[23] = PI/3;
+	x[24] = PI/2; y[24] = PI/2;
 
 	//printf("generated data, x[1] %2.2g, y[1] %2.2g , z[1] %2.2g, c[1] %2.2g\n",x[1] , y[1], z[1], c[1].real());
     //data transfer
-	checkCudaErrors(cudaMemcpy(d_x,x,M*sizeof(PCS),cudaMemcpyHostToDevice)); //u
-	checkCudaErrors(cudaMemcpy(d_y,y,M*sizeof(PCS),cudaMemcpyHostToDevice)); //v
-	checkCudaErrors(cudaMemcpy(d_z,z,M*sizeof(PCS),cudaMemcpyHostToDevice)); //w
+	checkCudaErrors(cudaMemcpy(d_x,x,M*sizeof(PCS),cudaMemcpyHostToDevice)); 
+	checkCudaErrors(cudaMemcpy(d_y,y,M*sizeof(PCS),cudaMemcpyHostToDevice)); 
 	checkCudaErrors(cudaMemcpy(d_c,c,M*sizeof(CUCPX),cudaMemcpyHostToDevice));
 
     curafft_plan *h_plan = new curafft_plan();
@@ -159,24 +150,23 @@ int main(int argc, char* argv[]){
 	h_plan->opts.gpu_kerevalmeth = kerevalmeth;
 	h_plan->opts.gpu_sort = 1;
 	h_plan->opts.upsampfac = sigma;
+    h_plan->dim = 2;
 	// h_plan->copts.pirange = 1;
 	// some plan setting
-	h_plan->w_term_method = w_term_method;
 	
 
-    int ier = setup_conv_opts(h_plan->copts, tol, sigma, kerevalmeth); //check the arguements
+    int ier = setup_conv_opts(h_plan->copts, tol, sigma, 1, 1, kerevalmeth); //check the arguements
 
 	if(ier!=0)printf("setup_error\n");
     
     // plan setting
-	
-    ier = setup_plan(N1, N2, M, d_x, d_y, d_z, d_c, h_plan); //cautious the number of plane using N1 N2 to get nf1 nf2
+	int nf1 = (int)sigma*N1;
+    int nf2 = (int)sigma*N2;
+    int nf3 = 1;
+    ier = setup_plan(nf1, nf2, nf3, M, d_x, d_y, NULL, d_c, h_plan); //cautious the number of plane using N1 N2 to get nf1 nf2
 
 	//printf("the num of w %d\n",h_plan->num_w);
-	int nf1 = h_plan->nf1;
-	int nf2 = h_plan->nf2;
-	h_plan->num_w = 2;
-	int nf3 = h_plan->num_w; //correctness checking
+	
 	printf("the kw is %d\n", h_plan->copts.kw);
 	int f_size = nf1*nf2*nf3;
 	fw = (CPX *)malloc(sizeof(CPX)*f_size);
@@ -236,14 +226,14 @@ int main(int argc, char* argv[]){
 	
 	checkCudaErrors(cudaFree(d_x));
 	checkCudaErrors(cudaFree(d_y));
-	checkCudaErrors(cudaFree(d_z));
+	//checkCudaErrors(cudaFree(d_z));
 	checkCudaErrors(cudaFree(d_c));
 	checkCudaErrors(cudaFree(d_fw));
 	
 	checkCudaErrors(cudaDeviceReset());
 	free(x);
 	free(y);
-	free(z);
+	//free(z);
 	free(c);
 	free(fw);
 	

@@ -97,11 +97,11 @@ default: all
 all: libtest convtest utiltest
 
 # testers for the lib (does not execute)
-libtest: lib $(BINDIR)/conv_test \
-	$(BINDIR)/utils_test
+libtest: lib $(BINDIR)/utils_test
 
 # low-level (not-library) testers (does not execute)
-convtest: $(BINDIR)/conv_test
+convtest: $(BINDIR)/conv_2d_test \
+	$(BINDIR)/conv_3d_test
 
 
 utiltest: $(BINDIR)/utils_test

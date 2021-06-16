@@ -70,7 +70,7 @@ __global__ void deconv_2d(int N1, int N2, int nf1, int nf2, CUCPX* fw, CUCPX* fk
 }
 
 __global__ void deconv_3d(int N1, int N2, int N3, int nf1, int nf2, int nf3, CUCPX* fw, 
-	CUCPX *fk, PCS *fwkerhalf1, PCS *fwkerhalf2, PCS *fwkerhalf3)
+	CUCPX *fk, PCS *fwkerhalf1, PCS *fwkerhalf2, PCS *fwkerhalf3, int flag)
 {
     int idx;
     int nmodes = N1*N2*N3;
@@ -111,14 +111,15 @@ int curafft_deconv(curafft_plan *plan){
     // int batch_size = plan->batchsize;
     int flag = plan->mode_flag;
     int blocksize = 512;
+    
     switch(dim){
-        case: 1{
+        case 1:{
             nmodes = N1;
             deconv_1d<<<(nmodes-1)/blocksize, blocksize>>>(N1, nf1, plan->fw,plan->fk,
         plan->fwkerhalf1, flag);
             break;
         }
-        case: 2{
+        case 2:{
             N2 = plan->mt;
             nf2 = plan->nf2;
             nmodes = N1*N2;
@@ -126,7 +127,7 @@ int curafft_deconv(curafft_plan *plan){
         plan->fwkerhalf1, plan->fwkerhalf2, flag);
             break;
         }
-        case: 3{
+        case 3:{
             N2 = plan->mt;
             N3 = plan->mu;
             nf2 = plan->nf2;
