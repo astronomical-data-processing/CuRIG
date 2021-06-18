@@ -105,35 +105,12 @@ int main(int argc, char* argv[]){
 			std::cerr << "not valid nupts distr" << std::endl;
 			return 1;
 	}
-	x[0] = - PI/2; y[0] = - PI/2;
-	x[1] = - PI/2; y[1] = - PI/3;
-	x[2] = - PI/2; y[2] = 0;
-	x[3] = - PI/2; y[3] = PI/3;
-	x[4] = - PI/2; y[4] = PI/2;
 
-	x[5] = - PI/3; y[5] = - PI/2;
-	x[6] = - PI/3; y[6] = - PI/3;
-	x[7] = - PI/3; y[7] = 0;
-	x[8] = - PI/3; y[8] = PI/3;
-	x[9] = - PI/3; y[9] = PI/2;
-
-	x[10] = 0; y[10] = - PI/2;
-	x[11] = 0; y[11] = - PI/3;
-	x[12] = 0; y[12] = 0;
-	x[13] = 0; y[13] = PI/3;
-	x[14] = 0; y[14] = PI/2;
-
-	x[15] = PI/3; y[15] = - PI/2;
-	x[16] = PI/3; y[16] = - PI/3;
-	x[17] = PI/3; y[17] = 0;
-	x[18] = PI/3; y[18] = PI/3;
-	x[19] = PI/3; y[19] = PI/2;
-
-	x[20] = PI/2; y[20] = - PI/2;
-	x[21] = PI/2; y[21] = - PI/3;
-	x[22] = PI/2; y[22] = 0;
-	x[23] = PI/2; y[23] = PI/3;
-	x[24] = PI/2; y[24] = PI/2;
+    double a[5] = {-PI/2, -PI/3, 0, PI/3, PI/2};
+	for(int i=0; i<25; i++){
+		x[i] = a[i/5];
+		y[i] = a[i%5];
+	}
 
 	//printf("generated data, x[1] %2.2g, y[1] %2.2g , z[1] %2.2g, c[1] %2.2g\n",x[1] , y[1], z[1], c[1].real());
     //data transfer

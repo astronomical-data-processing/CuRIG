@@ -132,8 +132,10 @@ check:
 
 checkconv: libtest convtest
 	@echo "Running conv/interp only tests..."
+	@echo "conv 2D.............................................."
+	bin/conv_2d_test 0 5 5
 	@echo "conv 3D.............................................."
-	bin/conv_test 0 1 5 5
+	bin/conv_2d_test 0 5 5 5
 
 checkutils: utiltest
 	@echo "Utilities checking..."
