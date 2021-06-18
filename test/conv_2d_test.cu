@@ -9,6 +9,7 @@ using namespace thrust;
 using namespace std::complex_literals;
 
 #include "conv_invoker.h"
+#include "cuft.h"
 #include "utils.h"
 
 ///conv improved WS, method 0 correctness cheak
@@ -57,7 +58,6 @@ int main(int argc, char* argv[]){
 		sscanf(argv[6],"%d",&kerevalmeth);
 	}
 
-    // fov and 1 pixel corresonding to pix_deg degree
 
 	N1 = 5; N2 = 5; M = 25; //for correctness checking
 	//int ier;
@@ -66,8 +66,6 @@ int main(int argc, char* argv[]){
 	x = (PCS *)malloc(M*sizeof(PCS)); //Allocates page-locked memory on the host.
 	y = (PCS *)malloc(M*sizeof(PCS));
 	c = (CPX *)malloc(M*sizeof(CPX));
-
-	//cudaMallocHost(&fw,nf1*nf2*nf3*sizeof(CPX)); //malloc after plan setting
 
 	PCS *d_x, *d_y;
 	CUCPX *d_c, *d_fw;
@@ -84,9 +82,8 @@ int main(int argc, char* argv[]){
 				for (int i = 0; i < M; i++) {
 					x[i] = M_PI*randm11();
 					y[i] = M_PI*randm11();
-					z[i] = M_PI*randm11();
-					c[i].real(1); //back to random11()
-					c[i].imag(1);
+					c[i].real(1.0); //back to random11()
+					c[i].imag(1.0);
 				}
 			}
 			break;
@@ -105,7 +102,6 @@ int main(int argc, char* argv[]){
 			std::cerr << "not valid nupts distr" << std::endl;
 			return 1;
 	}
-
     double a[5] = {-PI/2, -PI/3, 0, PI/3, PI/2};
 	for(int i=0; i<25; i++){
 		x[i] = a[i/5];
@@ -144,7 +140,7 @@ int main(int argc, char* argv[]){
 
 	//printf("the num of w %d\n",h_plan->num_w);
 	
-	printf("the kw is %d\n", h_plan->copts.kw);
+	// printf("the kw is %d\n", h_plan->copts.kw);
 	int f_size = nf1*nf2*nf3;
 	fw = (CPX *)malloc(sizeof(CPX)*f_size);
 	checkCudaErrors(cudaMalloc(&d_fw,f_size*sizeof(CUCPX)));
@@ -170,7 +166,6 @@ int main(int argc, char* argv[]){
     curafft_conv(h_plan); //add to include
 	cudaEventRecord(cuda_end);
 
-	curafft_free(h_plan);
     cudaEventSynchronize(cuda_start);
     cudaEventSynchronize(cuda_end);
 
@@ -185,7 +180,7 @@ int main(int argc, char* argv[]){
 			h_plan->opts.gpu_gridder_method,M,nf1*nf2*nf3,kernel_time/1000);
 	
 	
-	
+	curafft_free(h_plan);
 		
 	
 	std::cout<<"[result-input]"<<std::endl;
@@ -200,12 +195,6 @@ int main(int argc, char* argv[]){
 		std::cout<<std::endl;
 	}
 	std::cout<<"----------------------------------------------------------------"<<std::endl;
-	
-	checkCudaErrors(cudaFree(d_x));
-	checkCudaErrors(cudaFree(d_y));
-	//checkCudaErrors(cudaFree(d_z));
-	checkCudaErrors(cudaFree(d_c));
-	checkCudaErrors(cudaFree(d_fw));
 	
 	checkCudaErrors(cudaDeviceReset());
 	free(x);

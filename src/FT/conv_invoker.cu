@@ -96,7 +96,7 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int pirange, int di
     betaoverns = gamma * PI * (1 - 1 / (2 * upsampfac)); // formula based on cutoff
   }
   opts.ES_beta = betaoverns * (PCS)kw; // set the kernel beta parameter
-  printf("the value of beta %.3f\n",opts.ES_beta);
+  // printf("the value of beta %.3f\n",opts.ES_beta);
   //fprintf(stderr,"setup_spreader: sigma=%.6f, chose ns=%d beta=%.6f\n",(double)upsampfac,ns,(double)opts.ES_beta); // user hasn't set debug yet
   return ier;
 }

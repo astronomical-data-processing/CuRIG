@@ -115,6 +115,8 @@ __global__ void conv_2d_nputsdriven(PCS *x, PCS *y, CUCPX *c, CUCPX *fw, int M,
 		//value of x, shift and rescale to [0,N) and get the locations
 		temp1 = SHIFT_RESCALE(x[idx],nf1,pirange);
 		temp2 = SHIFT_RESCALE(y[idx],nf2,pirange);
+		// temp1 = RESCALE(x[idx],nf1,pirange);
+		// temp2 = RESCALE(y[idx],nf1,pirange);
 		if(cell_loc!=NULL){
 			cell_loc[idx].x = (int)(temp1);	//need to save?
 			cell_loc[idx].y = (int)(temp2); //change to int2

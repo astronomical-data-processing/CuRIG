@@ -135,7 +135,7 @@ checkconv: libtest convtest
 	@echo "conv 2D.............................................."
 	bin/conv_2d_test 0 5 5
 	@echo "conv 3D.............................................."
-	bin/conv_2d_test 0 5 5 5
+	bin/conv_3d_test 0 5 5 2
 
 checkutils: utiltest
 	@echo "Utilities checking..."

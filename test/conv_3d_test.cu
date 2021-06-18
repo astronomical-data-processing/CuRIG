@@ -9,6 +9,7 @@ using namespace thrust;
 using namespace std::complex_literals;
 
 #include "conv_invoker.h"
+#include "cuft.h"
 #include "utils.h"
 
 ///conv improved WS, method 0 correctness cheak
@@ -87,8 +88,8 @@ int main(int argc, char* argv[]){
 					x[i] = M_PI*randm11();
 					y[i] = M_PI*randm11();
 					z[i] = M_PI*randm11();
-					c[i].real(1); //back to random11()
-					c[i].imag(1);
+					c[i].real(1.0); //back to random11()
+					c[i].imag(1.0);
 				}
 			}
 			break;
@@ -131,6 +132,7 @@ int main(int argc, char* argv[]){
 	h_plan->opts.gpu_kerevalmeth = kerevalmeth;
 	h_plan->opts.gpu_sort = 1;
 	h_plan->opts.upsampfac = sigma;
+	 h_plan->dim = 3;
 	// h_plan->copts.pirange = 1;
 	// some plan setting
 	// h_plan->w_term_method = w_term_method;
@@ -144,9 +146,9 @@ int main(int argc, char* argv[]){
 	int nf1 = (int)N1 * sigma;
 	int nf2 = (int)N2 * sigma;
 	int nf3 = (int)N3 * sigma;
-    ier = setup_plan((nf1, nf2, nf3, M, d_x, d_y, d_z, d_c, h_plan)); //cautious the number of plane using N1 N2 to get nf1 nf2
+    ier = setup_plan(nf1, nf2, nf3, M, d_x, d_y, d_z, d_c, h_plan); //cautious the number of plane using N1 N2 to get nf1 nf2
 
-	printf("the kw is %d\n", h_plan->copts.kw);
+	// printf("the kw is %d\n", h_plan->copts.kw);
 	int f_size = nf1*nf2*nf3;
 	fw = (CPX *)malloc(sizeof(CPX)*f_size);
 	checkCudaErrors(cudaMalloc(&d_fw,f_size*sizeof(CUCPX)));
@@ -172,7 +174,6 @@ int main(int argc, char* argv[]){
     curafft_conv(h_plan); //add to include
 	cudaEventRecord(cuda_end);
 
-	curafft_free(h_plan);
     cudaEventSynchronize(cuda_start);
     cudaEventSynchronize(cuda_end);
 
@@ -188,7 +189,7 @@ int main(int argc, char* argv[]){
 	
 	
 	
-		
+	curafft_free(h_plan);
 	
 	std::cout<<"[result-input]"<<std::endl;
 	for(int k=0; k<nf3; k++){
@@ -202,12 +203,6 @@ int main(int argc, char* argv[]){
 		std::cout<<std::endl;
 	}
 	std::cout<<"----------------------------------------------------------------"<<std::endl;
-	
-	checkCudaErrors(cudaFree(d_x));
-	checkCudaErrors(cudaFree(d_y));
-	checkCudaErrors(cudaFree(d_z));
-	checkCudaErrors(cudaFree(d_c));
-	checkCudaErrors(cudaFree(d_fw));
 	
 	checkCudaErrors(cudaDeviceReset());
 	free(x);

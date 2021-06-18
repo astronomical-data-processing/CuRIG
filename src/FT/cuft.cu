@@ -165,21 +165,21 @@ int curafft_free(curafft_plan *plan)
     {
         checkCudaErrors(cudaFree(plan->cell_loc));
     }
-    checkCudaErrors(cudaFree(plan->fw));
-    checkCudaErrors(cudaFree(plan->fk));
-    checkCudaErrors(cudaFree(plan->d_u));
-    checkCudaErrors(cudaFree(plan->d_v));
-    checkCudaErrors(cudaFree(plan->d_w));
-    checkCudaErrors(cudaFree(plan->d_c));
 
     switch (plan->dim)
     {
     case 3:
         checkCudaErrors(cudaFree(plan->fwkerhalf3));
+        checkCudaErrors(cudaFree(plan->d_w));
     case 2:
         checkCudaErrors(cudaFree(plan->fwkerhalf2));
+        checkCudaErrors(cudaFree(plan->d_v));
     case 1:
         checkCudaErrors(cudaFree(plan->fwkerhalf1));
+        checkCudaErrors(cudaFree(plan->d_u));
+        checkCudaErrors(cudaFree(plan->d_c));
+        checkCudaErrors(cudaFree(plan->fw));
+        if(plan->opts.gpu_conv_only)checkCudaErrors(cudaFree(plan->fk));
 
     default:
         break;
