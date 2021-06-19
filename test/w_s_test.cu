@@ -11,6 +11,7 @@ using namespace std::complex_literals;
 
 #include "ragridder_plan.h"
 #include "conv_invoker.h"
+#include "cuft.h"
 #include "cugridder.h"
 #include "precomp.h"
 #include "utils.h"
@@ -97,7 +98,7 @@ int main(int argc, char *argv[])
 	PCS deg_per_pixely = fov / 180.0 * PI / (PCS)nydirty;
 	// chanel setting
 	PCS f0 = 1e9;
-	PCS freq = (PCS *)malloc(sizeof(PCS) * nchan);
+	PCS *freq = (PCS *)malloc(sizeof(PCS) * nchan);
 	for (int i = 0; i < nchan; i++)
 	{
 		freq[i] = f0 + i / (double)nchan * fov; //!
@@ -109,7 +110,6 @@ int main(int argc, char *argv[])
 	//N1 = 5; N2 = 5; M = 25; //for correctness checking
 	//int ier;
 	PCS *u, *v, *w;
-	CUCPX *fk;
 	CPX *vis;
 	PCS *wgt; //currently no mask
 	u = (PCS *)malloc(nrow * sizeof(PCS)); //Allocates page-locked memory on the host.
@@ -118,9 +118,9 @@ int main(int argc, char *argv[])
 	vis = (CPX *)malloc(nrow * sizeof(CPX));
 	PCS *d_u, *d_v, *d_w;
 	CUCPX *d_vis, *d_fk;
-	checkCudaErrors(cudaMalloc(&d_x, nrow * sizeof(PCS)));
-	checkCudaErrors(cudaMalloc(&d_y, nrow * sizeof(PCS)));
-	checkCudaErrors(cudaMalloc(&d_z, nrow * sizeof(PCS)));
+	checkCudaErrors(cudaMalloc(&d_u, nrow * sizeof(PCS)));
+	checkCudaErrors(cudaMalloc(&d_v, nrow * sizeof(PCS)));
+	checkCudaErrors(cudaMalloc(&d_w, nrow * sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_vis, nrow * sizeof(CUCPX)));
 
 	// generating data
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 	while ((int(1) << shift) < nchan)
 		++shift;
 	int mask = (int(1) << shift) - 1; // ???
-	PCS f_over_c = (PCS*) malloc(sizeof(PCS)*nchan);
+	PCS *f_over_c = (PCS*) malloc(sizeof(PCS)*nchan);
 	for(int i=0; i<nchan; i++){
 		f_over_c[i] = freq[i]/SPEEDOFLIGHT;
 	}
@@ -165,25 +165,29 @@ int main(int argc, char *argv[])
 
 	ragridder_plan *gridder_plan;
 	
-	gridder_plan->kv.u = u;
-	gridder_plan->kv.v = v;
-	gridder_plan->kv.w = w;
-	gridder_plan->kv.frequency = freq;
-	gridder_plan->kv.vis = vis;
-	gridder_plan->kv.weight = wgt;
-	gridder_plan->kv.pirange = 0;
+	visibility *pointer_v;
+	pointer_v = (visibility *)malloc(sizeof(visibility));
+	pointer_v->u = u;
+	pointer_v->v = v;
+	pointer_v->w = w;
+	pointer_v->vis = vis;
+	pointer_v->frequency = freq;
+	pointer_v->weight = wgt;
+	pointer_v->pirange = 0;
 
 	int direction = 1; //inverse
 
-	ier = gridder_setting(nxdirty,nydirty,method,kerevalmeth,w_term_method,direction,sigma,0,1,nrow,fov,nchan,d_u,d_v,d_w,d_vis
+	ier = gridder_setting(nxdirty,nydirty,method,kerevalmeth,w_term_method,direction,sigma,0,1,nrow,fov,nchan,pointer_v,d_u,d_v,d_w,d_vis
 		,plan,gridder_plan);
+	
+	free(pointer_v);
 	if(ier == 1){
 		printf("errors in gridder setting\n");
 		return ier;
 	}
 	// fk(image) malloc and set
-	checkCudaErrors(cudaMalloc((void**)&fk,sizeof(CUCPX)*nydirty*nxdirty));
-	plan->fk = fk;
+	checkCudaErrors(cudaMalloc((void**)&d_fk,sizeof(CUCPX)*nydirty*nxdirty));
+	plan->fk = d_fk;
 
 	gridder_plan->dirty_image = (CPX *)malloc(sizeof(CPX)*nxdirty*nydirty*nchan); //
 	
@@ -202,7 +206,7 @@ int main(int argc, char *argv[])
 			printf("errors in gridder execution\n");
 			return ier;
 		}
-		checkCudaErrors(cudaMemcpy(gridder_plan->dirty_image+i*nxdirty*nydirty, fk, sizeof(CUCPX)*nydirty*nxdirty,
+		checkCudaErrors(cudaMemcpy(gridder_plan->dirty_image+i*nxdirty*nydirty, d_fk, sizeof(CUCPX)*nydirty*nxdirty,
 			cudaMemcpyDeviceToHost));
 	}
 

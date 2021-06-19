@@ -45,7 +45,7 @@ int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow
     // nshift = (no_nshift||(!do_wgridding)) ? 0. : -0.5*(nm1max+nm1min);
     PCS max, min;
     PCS delta_w = 1/(2*upsampling_fac*abs(n_lm-1));
-
+    plan->delta_w = delta_w;
     get_max_min(max, min, plan->kv.w, plan->nrow);
     plan->w_max = max;
     plan->w_min = min;
@@ -59,7 +59,8 @@ int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow
 // the bin sort should be completed at gridder_settting
 
 int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_method, PCS tol, int direction, double sigma, int iflag,
-    int batchsize, int M, int channel, PCS fov, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan, ragridder_plan *gridder_plan)
+    int batchsize, int M, int channel, PCS fov, visibility *pointer_v, PCS *d_u, PCS *d_v, PCS *d_w,
+    CUCPX *d_c, curafft_plan *plan, ragridder_plan *gridder_plan)
 {
     /*
         N1, N2 - number of Fouier modes
@@ -72,7 +73,9 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
         batchsize - number of batch in  cufft (used for handling piece by piece)
         M - number of nputs (visibility)
         channel - number of channels
-        d_u, d_v, d_w - wavelengths in different dimensions
+        wgt - weight
+        freq - frequency
+        d_u, d_v, d_w - wavelengths in different dimensions, x is on host, d_x is on device
         d_c - value of visibility
 
         ****issue, degridding
@@ -107,6 +110,13 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     gridder_plan->channel = channel;
     gridder_plan->w_term_method = w_term_method;
     gridder_plan->speedoflight = SPEEDOFLIGHT;
+    gridder_plan->kv.u = pointer_v->u;
+    gridder_plan->kv.v = pointer_v->v;
+    gridder_plan->kv.w = pointer_v->w;
+    gridder_plan->kv.vis = pointer_v->vis;
+    gridder_plan->kv.weight = pointer_v->wgt;
+    gridder_plan->kv.frequency = pointer_v->frequency;
+    gridder_plan->kv.pirange = pointer_v->pirange;
     setup_gridder_plan(N1,N2,fov,0,0,M,plan->copts,gridder_plan);
     
 
@@ -116,7 +126,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     
     
     setup_plan(nf1, nf2, nf3, M, d_u, d_v, d_w, d_c, plan);
-
+    
     if(w_term_method) plan->dim = 3;
     else plan->dim = 2;
     // plan->dim = dim;
@@ -132,8 +142,8 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
 
     plan->copts.direction = direction; // 1 inverse, 0 forward
 
-    // fw allocation
-    checkCudaErrors(cudaMalloc((void**)&plan->fw,sizeof(CUCPX)*nf1*nf2*nf3));
+    // // fw allocation
+    // checkCudaErrors(cudaMalloc((void**)&plan->fw,sizeof(CUCPX)*nf1*nf2*nf3));
 
     PCS *fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*(plan->nf1/2+1));
     onedim_fseries_kernel(plan->nf1, fwkerhalf1, plan->copts); // used for correction
@@ -176,8 +186,6 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     // set up bin size +++ (for other methods) and related malloc based on gpu method
     // assign memory for index after sorting (can be done in setup_plan)
     // bin sorting (for other methods)
-   
-
 
     // free host fwkerhalf
     free(fwkerhalf1);

@@ -104,7 +104,10 @@ convtest: $(BINDIR)/conv_2d_test \
 	$(BINDIR)/conv_3d_test
 
 
+
 utiltest: $(BINDIR)/utils_test
+
+w_s_test: $(BINDIR)/w_s_test
 
 $(BINDIR)/%: test/%.o $(CURAFFTOBJS_64) $(CURAFFTOBJS)
 	mkdir -p $(BINDIR)
@@ -140,6 +143,10 @@ checkconv: libtest convtest
 checkutils: utiltest
 	@echo "Utilities checking..."
 	bin/utils_test
+
+checkwst: w_s_test
+	@echo "W stacking checking..."
+	bin/w_s_test
 
 # --------------------------------------------- end of check tasks ---------
 

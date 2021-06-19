@@ -41,6 +41,7 @@ struct ragridder_plan
     PCS w_min;
     int num_w;
     PCS w_0;
+    PCS delta_w;
     int speedoflight;
     CPX *dirty_image;
     int width;

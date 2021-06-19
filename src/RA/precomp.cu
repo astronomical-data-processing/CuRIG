@@ -5,6 +5,7 @@ Some precomputation related radio astronomy
     ...
 */
 #include "dataType.h"
+#include "curafft_plan.h"
 #include "ragridder_plan.h"
 #include "utils.h"
 #include "precomp.h"
@@ -44,7 +45,7 @@ __global__ void gridder_rescaling_real(PCS *x, PCS scale_ratio, int N){
     }
 }
 
-void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, ragridder_plan *gridder_plan){
+void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan, ragridder_plan *gridder_plan){
     PCS f_over_c = gridder_plan->kv.frequency[gridder_plan->cur_channel]/SPEEDOFLIGHT;
     PCS xpixelsize = gridder_plan->pixelsize_x;
     PCS ypixelsize = gridder_plan->pixelsize_y;
@@ -52,6 +53,33 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, ragridder_plan *gri
     int nrow = gridder_plan->nrow;
     int N = nrow;
     int blocksize = 512;
+    //----------w max min num_w w_0--------------
+    gridder_plan->w_max *= f_over_c;
+    gridder_plan->w_min *= f_over_c;
+    PCS w_0 = plan->w_min - gridder_plan->delta_w * (copts.kw - 1); // first plane
+    gridder_plan->w_0 = w_0;
+    int num_w = (plan->w_max - plan->w_min)/delta_w + copts.kw;
+    gridder_plan->num_w = num_w;
+    if(cur_channel!=0){
+        gridder_plan->w_max /= gridder_plan->kv.frequency[gridder_plan->cur_channel-1]/SPEEDOFLIGHT;
+        gridder_plan->w_min /= gridder_plan->kv.frequency[gridder_plan->cur_channel-1]/SPEEDOFLIGHT;
+    }
+    //----------plan reset--------------
+    plan->nf3 = num_w;
+    plan->batchsize = min(4,num_w);
+    if(gridder_plan->w_term_method){
+		// improved_ws
+        checkCudaErrors(cudaFree(plan->fwkerhalf3));
+        PCS fwkerhalf3 = (PCS*)malloc(sizeof(PCS)*(plan->nf3/2+1));
+        //need to revise
+        onedim_fseries_kernel(gridder_plan->num_w, fwkerhalf3, plan->copts);
+        checkCudaErrors(cudaMalloc((void**)plan->fwkerhalf3,sizeof(PCS)*(gridder_plan->num_w/2+1)));
+        checkCudaErrors(cudaMemcpy(plan->fwkerhalf3,fwkerhalf3,(gridder_plan->num_w/2+1)*
+			sizeof(PCS),cudaMemcpyHostToDevice));
+        free(fwkerhalf3);
+    }
+    cufftPlanMany(&plan->fftplan,2,n,inembed,1,inembed[0]*inembed[1],
+		onembed,1,onembed[0]*onembed[1],CUFFT_TYPE,plan->nf3);
     // ---------get effective coordinates---------
     get_effective_coordinate<<<(N-1)/blocksize+1, blocksize>>>(d_u, d_v, d_w, f_over_c, pirange, nrow);
     checkCudaErrors(cudaDeviceSynchronize());

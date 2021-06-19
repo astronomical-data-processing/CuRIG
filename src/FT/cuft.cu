@@ -179,7 +179,7 @@ int curafft_free(curafft_plan *plan)
         checkCudaErrors(cudaFree(plan->d_u));
         checkCudaErrors(cudaFree(plan->d_c));
         checkCudaErrors(cudaFree(plan->fw));
-        if(plan->opts.gpu_conv_only)checkCudaErrors(cudaFree(plan->fk));
+        if(!plan->opts.gpu_conv_only)checkCudaErrors(cudaFree(plan->fk));
 
     default:
         break;
