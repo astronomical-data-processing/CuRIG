@@ -83,11 +83,6 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
         ****issue, degridding
     */
     int ier = 0;
-    
-    plan = new curafft_plan();
-    gridder_plan = new ragridder_plan();
-    memset(plan, 0, sizeof(curafft_plan));
-    memset(gridder_plan, 0, sizeof(ragridder_plan));
 
     // fov and other astro related setting +++
 
@@ -168,7 +163,6 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
 			sizeof(PCS),cudaMemcpyHostToDevice));
     }
     
-
     // cufft plan setting
     cufftHandle fftplan;
     int n[] = {N2, N1};
