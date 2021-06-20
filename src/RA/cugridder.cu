@@ -126,11 +126,10 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     int nf2 = get_num_cells(N2,plan->copts);
     int nf3 = gridder_plan->num_w;
     
-    
+    if(w_term_method)plan->dim =3;
+    else plan->dim = 2;
     setup_plan(nf1, nf2, nf3, M, d_u, d_v, d_w, d_c, plan);
     
-    if(w_term_method) plan->dim = 3;
-    else plan->dim = 2;
     // plan->dim = dim;
 	plan->ms = N1;
 	plan->mt = N2;
