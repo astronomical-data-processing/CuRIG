@@ -56,11 +56,11 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
     //----------w max min num_w w_0--------------
     gridder_plan->w_max *= f_over_c;
     gridder_plan->w_min *= f_over_c;
-    PCS w_0 = plan->w_min - gridder_plan->delta_w * (copts.kw - 1); // first plane
+    PCS w_0 = gridder_plan->w_min - gridder_plan->delta_w * (plan->copts.kw - 1); // first plane
     gridder_plan->w_0 = w_0;
-    int num_w = (plan->w_max - plan->w_min)/delta_w + copts.kw;
+    int num_w = (gridder_plan->w_max - gridder_plan->w_min)/gridder_plan->delta_w + plan->copts.kw;
     gridder_plan->num_w = num_w;
-    if(cur_channel!=0){
+    if(gridder_plan->cur_channel!=0){
         gridder_plan->w_max /= gridder_plan->kv.frequency[gridder_plan->cur_channel-1]/SPEEDOFLIGHT;
         gridder_plan->w_min /= gridder_plan->kv.frequency[gridder_plan->cur_channel-1]/SPEEDOFLIGHT;
     }
@@ -70,7 +70,7 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
     if(gridder_plan->w_term_method){
 		// improved_ws
         checkCudaErrors(cudaFree(plan->fwkerhalf3));
-        PCS fwkerhalf3 = (PCS*)malloc(sizeof(PCS)*(plan->nf3/2+1));
+        PCS *fwkerhalf3 = (PCS*)malloc(sizeof(PCS)*(plan->nf3/2+1));
         //need to revise
         onedim_fseries_kernel(gridder_plan->num_w, fwkerhalf3, plan->copts);
         checkCudaErrors(cudaMalloc((void**)plan->fwkerhalf3,sizeof(PCS)*(gridder_plan->num_w/2+1)));
@@ -78,6 +78,11 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
 			sizeof(PCS),cudaMemcpyHostToDevice));
         free(fwkerhalf3);
     }
+    int N1 = plan->ms;
+    int N2 = plan->mt;
+    int n[] = {N2, N1};
+    int inembed[] = {plan->nf2, plan->nf1};
+	int onembed[] = {N2, N1};
     cufftPlanMany(&plan->fftplan,2,n,inembed,1,inembed[0]*inembed[1],
 		onembed,1,onembed[0]*onembed[1],CUFFT_TYPE,plan->nf3);
     // ---------get effective coordinates---------

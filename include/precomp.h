@@ -9,6 +9,6 @@
 
 __global__ void gridder_rescaling(CUCPX *x, PCS scale_ratio, int N);
 void explicit_gridder_invoker(ragridder_plan *gridder_plan);
-void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, PCS d_vis, curafft_plan *plan, ragridder_plan *gridder_plan);
+void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan, ragridder_plan *gridder_plan);
 
 #endif

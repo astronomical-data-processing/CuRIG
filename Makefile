@@ -88,6 +88,9 @@ src/%.o: src/%.cu $(HEADERS)
 src/FT/%.o: src/FT/%.cu $(HEADERS)
 	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
+src/RA/%.o: src/FT/%.cu $(HEADERS)
+	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
+
 test/%.o: test/%.cu $(HEADERS)
 	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
@@ -146,7 +149,7 @@ checkutils: utiltest
 
 checkwst: w_s_test
 	@echo "W stacking checking..."
-	bin/w_s_test
+	bin/w_s_test 0 1 10 10 30 10
 
 # --------------------------------------------- end of check tasks ---------
 
@@ -158,6 +161,7 @@ clean:
 	rm -f test/*.o
 	rm -f src/*.o
 	rm -f src/FT/*.o
+	rm -f src/RA/*.o
 	rm -f contrib/*.o
 	rm -rf $(BINDIR)
 	rm -rf lib

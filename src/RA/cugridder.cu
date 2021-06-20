@@ -21,9 +21,10 @@
 #include "cuft.h"
 #include "ra_exec.h"
 #include "utils.h"
+#include "cugridder.h"
 
 
-int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow, conv_opts copts, ragridder_plan *plan){
+int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow, PCS *d_w, conv_opts copts, ragridder_plan *plan){
     plan->fov = fov;
     plan->width = N1;
     plan->height = N2;
@@ -46,7 +47,8 @@ int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow
     PCS max, min;
     PCS delta_w = 1/(2*upsampling_fac*abs(n_lm-1));
     plan->delta_w = delta_w;
-    get_max_min(max, min, plan->kv.w, plan->nrow);
+    get_max_min(max, min, d_w, plan->nrow);
+
     plan->w_max = max;
     plan->w_min = min;
     PCS w_0 = plan->w_min - delta_w * (copts.kw - 1); // first plane
@@ -114,10 +116,10 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     gridder_plan->kv.v = pointer_v->v;
     gridder_plan->kv.w = pointer_v->w;
     gridder_plan->kv.vis = pointer_v->vis;
-    gridder_plan->kv.weight = pointer_v->wgt;
+    gridder_plan->kv.weight = pointer_v->weight;
     gridder_plan->kv.frequency = pointer_v->frequency;
     gridder_plan->kv.pirange = pointer_v->pirange;
-    setup_gridder_plan(N1,N2,fov,0,0,M,plan->copts,gridder_plan);
+    setup_gridder_plan(N1,N2,fov,0,0,M,d_w,plan->copts,gridder_plan);
     
 
     int nf1 = get_num_cells(N1,plan->copts);

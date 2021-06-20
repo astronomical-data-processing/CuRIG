@@ -46,18 +46,17 @@ int main(int argc, char *argv[])
 				"  nxdirty, nydirty : image size.\n"
 				"  nrow: The number of non-uniform points.\n"
 				"  fov: Field of view.\n"
-				"  nchan: number of chanels (default 1)"
+				"  nchan: number of chanels (default 1)\n"
 				"  epsilon: NUFFT tolerance (default 1e-6).\n"
 				"  kerevalmeth: Kernel evaluation method; one of\n"
 				"     0: Exponential of square root (default), or\n"
 				"     1: Horner evaluation.\n");
 		return 1;
 	}
-
 	int nxdirty, nydirty;
 	PCS sigma = 2.0; // upsampling factor
 	int nrow, nchan;
-	float fov;
+	PCS fov;
 
 	double inp;
 	int method;
@@ -103,7 +102,7 @@ int main(int argc, char *argv[])
 	{
 		freq[i] = f0 + i / (double)nchan * fov; //!
 	}
-
+	printf("1\n");//----------------------------------------------------------
 	//improved WS stacking 1,
 	//gpu_method == 0, nupts driven
 
@@ -111,7 +110,7 @@ int main(int argc, char *argv[])
 	//int ier;
 	PCS *u, *v, *w;
 	CPX *vis;
-	PCS *wgt; //currently no mask
+	PCS *wgt=NULL; //currently no mask
 	u = (PCS *)malloc(nrow * sizeof(PCS)); //Allocates page-locked memory on the host.
 	v = (PCS *)malloc(nrow * sizeof(PCS));
 	w = (PCS *)malloc(nrow * sizeof(PCS));
@@ -122,17 +121,19 @@ int main(int argc, char *argv[])
 	checkCudaErrors(cudaMalloc(&d_v, nrow * sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_w, nrow * sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_vis, nrow * sizeof(CUCPX)));
+	printf("2\n");//----------------------------------------------------------
 
 	// generating data
 	for (int i = 0; i < nrow; i++)
 	{
-		u[i] = randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT); //will change for different freq?
-		v[i] = randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
-		w[i] = randm11() / 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
-		vis[i].real(randm11() / 0.5); // nrow vis per channel, weight?
-		vis[i].imag(randm11() / 0.5);
-		wgt[i] = 1;
+		u[i] = randm11() * 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
+		v[i] = randm11() * 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
+		w[i] = randm11() * 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
+		vis[i].real(randm11() * 0.5); // nrow vis per channel, weight?
+		vis[i].imag(randm11() * 0.5);
+		// wgt[i] = 1;
 	}
+	printf("3\n");//----------------------------------------------------------
 	// ignore the tdirty
 	// how to convert ms to vis
 
@@ -144,6 +145,7 @@ int main(int argc, char *argv[])
 	checkCudaErrors(cudaMemcpy(d_v, v, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //v
 	checkCudaErrors(cudaMemcpy(d_w, w, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //w
 
+	printf("4\n");//----------------------------------------------------------
 	
 
 	/* -----------Step1: Baseline setting--------------
@@ -153,17 +155,18 @@ int main(int argc, char *argv[])
 	int shift = 0;
 	while ((int(1) << shift) < nchan)
 		++shift;
-	int mask = (int(1) << shift) - 1; // ???
+	// int mask = (int(1) << shift) - 1; // ???
 	PCS *f_over_c = (PCS*) malloc(sizeof(PCS)*nchan);
 	for(int i=0; i<nchan; i++){
 		f_over_c[i] = freq[i]/SPEEDOFLIGHT;
 	}
+	printf("5\n");//----------------------------------------------------------
 
 	/* ----------Step2: cugridder------------*/
 	// plan setting
-	curafft_plan *plan;
+	curafft_plan *plan = NULL;
 
-	ragridder_plan *gridder_plan;
+	ragridder_plan *gridder_plan = NULL;
 	
 	visibility *pointer_v;
 	pointer_v = (visibility *)malloc(sizeof(visibility));
@@ -176,8 +179,9 @@ int main(int argc, char *argv[])
 	pointer_v->pirange = 0;
 
 	int direction = 1; //inverse
+	printf("6\n");//----------------------------------------------------------
 
-	ier = gridder_setting(nxdirty,nydirty,method,kerevalmeth,w_term_method,direction,sigma,0,1,nrow,fov,nchan,pointer_v,d_u,d_v,d_w,d_vis
+	ier = gridder_setting(nxdirty,nydirty,method,kerevalmeth,w_term_method,epsilon,direction,sigma,0,1,nrow,nchan,fov,pointer_v,d_u,d_v,d_w,d_vis
 		,plan,gridder_plan);
 	
 	free(pointer_v);
@@ -190,6 +194,7 @@ int main(int argc, char *argv[])
 	plan->fk = d_fk;
 
 	gridder_plan->dirty_image = (CPX *)malloc(sizeof(CPX)*nxdirty*nydirty*nchan); //
+	printf("7\n");//----------------------------------------------------------
 	
 	// how to use weight flag and frequency
 	for(int i=0; i<nchan; i++){
@@ -197,11 +202,11 @@ int main(int argc, char *argv[])
 		// 1. u, v, w * f_over_c
 		// 2. /pixelsize(*2pi)
 		// 3. * rescale ratio
-		pre_setting(d_u, d_v, d_w, d_vis, gridder_plan);
+		pre_setting(d_u, d_v, d_w, d_vis, plan, gridder_plan);
 		// memory transfer (vis belong to this channel and weight)
 		checkCudaErrors(cudaMemcpy(d_vis, vis, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice)); //
 		// shift to corresponding range
-		ier = gridder_exectuion(plan);
+		ier = gridder_exectuion(plan,gridder_plan);
 		if(ier == 1){
 			printf("errors in gridder execution\n");
 			return ier;
@@ -209,6 +214,7 @@ int main(int argc, char *argv[])
 		checkCudaErrors(cudaMemcpy(gridder_plan->dirty_image+i*nxdirty*nydirty, d_fk, sizeof(CUCPX)*nydirty*nxdirty,
 			cudaMemcpyDeviceToHost));
 	}
+	printf("8\n");//----------------------------------------------------------
 
 	ier = gridder_destroy(plan, gridder_plan);
 	if(ier == 1){
