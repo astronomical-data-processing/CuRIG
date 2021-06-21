@@ -14,14 +14,45 @@ FORWARD: type 2
 #include "curafft_plan.h"
 #include "conv_invoker.h"
 #include "deconv.h"
+#include "precomp.h"
 #include "ragridder_plan.h"
 #include "ra_exec.h"
 #include "cuft.h"
 
+__global__ void div_n_lm(CUCPX *fk, int xpixelsize, int ypixelsize, int N1, int N2){
+    int idx;
+    PCS n_lm;
+    int row, col;
+    for(idx = blockDim.x*blockIdx.x+threadIdx.x; idx<N1*N2; idx+=gridDim.x*blockDim.x){
+        row = idx / N1;
+        col = idx % N1;
+        n_lm = sqrt(1 - pow(row*xpixelsize,2) + pow(col*ypixelsize, 2));
+        fk[idx].x /= n_lm;
+        fk[idx].y /= n_lm;
+    }
+}
+
+int curaew_scaling(curafft_plan *plan, ragridder_plan *gridder_plan){
+    // ending work
+    // 1. fourier transform related rescaling
+    int N1 = gridder_plan->width;
+    int N2 = gridder_plan->height;
+    int N = N1*N2;
+    PCS scaling_ratio = 1.0 / gridder_plan->pixelsize_x * gridder_plan->pixelsize_y;
+    int blocksize = 1024;
+    int gridsize = (N-1)/block + 1;
+    gridder_rescaling<<<gridsize,blocksize>>>(plan->fk, scaling_ratio, N);
+    checkCudaErrors(cudaDeviceSynchronize());
+    // 2. dividing n_lm
+    div_n_lm<<<gridsize,blocksize>>>(plan->fk, gridder_plan->pixelsize_x, gridder_plan->pixelsize_y, N1,N2);
+    checkCudaErrors(cudaDeviceSynchronize());
+    return 0;
+}
+
 int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
 {
     /*
-    Currently, just for improved W stacking
+    Currently, just suitable for improved W stacking
     Two different execution flows
         Flow1: the data size is small and memory is sufficent for whole conv
         Flow2: the data size is large, the data is divided into parts 
@@ -30,8 +61,6 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
     if (plan->execute_flow == 1)
     {
             /// curafft_conv workflow for enough memory
-            checkCudaErrors(cudaMemset(plan->fw, 0, plan->nf3 * plan->nf1 * plan->nf2 * sizeof(CUCPX)));
-
             
             // 1. convlution
             ier = curafft_conv(plan);
@@ -48,9 +77,10 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
             // 4. deconvolution (correction)
             ier = curafft_deconv(plan);
 
-            // scaling +++++
+            // 5. ending work - scaling
             // /n_lm, fourier related rescale
-
+            curaew_scaling(plan, gridder_plan);
+            
     }
     else if (plan->execute_flow == 2)
     {

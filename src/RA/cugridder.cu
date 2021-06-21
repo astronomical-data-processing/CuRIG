@@ -125,10 +125,9 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     else plan->dim = 2;
     setup_plan(nf1, nf2, nf3, M, d_u, d_v, d_w, d_c, plan);
     
-    // plan->dim = dim;
 	plan->ms = N1;
 	plan->mt = N2;
-	// plan->mu = nmodes[2];
+	plan->mu = 1;
 
     int fftsign = (iflag>=0) ? 1 : -1;
 
