@@ -30,13 +30,6 @@ __global__ void get_effective_coordinate(PCS *u, PCS *v, PCS *w, PCS f_over_c, i
     }
 }
 
-__global__ void gridder_rescaling_complex(CUCPX *x, PCS scale_ratio, int N){
-    int idx;
-    for(idx = blockIdx.x * blockDim.x; idx<N; idx += gridDim.x * blockDim.x){
-        x[idx].x *= scale_ratio;
-        x[idx].y *= scale_ratio;
-    }
-}
 
 __global__ void gridder_rescaling_real(PCS *x, PCS scale_ratio, int N){
     int idx;
