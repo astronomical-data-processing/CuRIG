@@ -14,7 +14,9 @@
 		     (x<0 ? x+N : (x>=N ? x-N : x)))
 
 // p is not ture, shift to [-pi, pi) and then rescale, p is true just rescale.
-#define SHIFT_RESCALE(x,N,p) ((p ? x : (x - floor(x/M_2PI)*M_2PI - PI)) * M_1_2PI + 0.5)*N \
+#define SHIFT_RESCALE(x,N,p) (  (p ? x : \
+                                     ((x - floor(x/M_2PI)*M_2PI) - ((x - floor(x/M_2PI)*M_2PI)>=PI)*M_2PI)) \
+                                * M_1_2PI + 0.5 )*N
 
              
 

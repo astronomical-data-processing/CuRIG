@@ -193,7 +193,6 @@ int main(int argc, char *argv[])
 	plan->fk = d_fk;
 
 	gridder_plan->dirty_image = (CPX *)malloc(sizeof(CPX)*nxdirty*nydirty*nchan); //
-	printf("7\n");//----------------------------------------------------------
 	
 	// how to use weight flag and frequency
 	for(int i=0; i<nchan; i++){
