@@ -73,11 +73,14 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
         PCS *fwkerhalf3 = (PCS*)malloc(sizeof(PCS)*(plan->nf3/2+1));
         //need to revise
         onedim_fseries_kernel(gridder_plan->num_w, fwkerhalf3, plan->copts);
-        checkCudaErrors(cudaMalloc((void**)&plan->fwkerhalf3,sizeof(PCS)*(gridder_plan->num_w/2+1)));
-        checkCudaErrors(cudaMemcpy(plan->fwkerhalf3,fwkerhalf3,(gridder_plan->num_w/2+1)*
+        checkCudaErrors(cudaMalloc((void**)&plan->fwkerhalf3,sizeof(PCS)*(plan->nf3/2+1)));
+        checkCudaErrors(cudaMemcpy(plan->fwkerhalf3,fwkerhalf3,(plan->nf3/2+1)*
 			sizeof(PCS),cudaMemcpyHostToDevice));
         free(fwkerhalf3);
         //fw
+        if(plan->fw!=NULL)checkCudaErrors(cudaFree(plan->fw));
+        checkCudaErrors(cudaMalloc((void**)&plan->fw,sizeof(CUCPX)*plan->nf1*plan->nf2*plan->nf3));
+        checkCudaErrors(cudaMemset(plan->fw, 0, plan->nf3 * plan->nf1 * plan->nf2 * sizeof(CUCPX)));
     }
     int N1 = plan->ms;
     int N2 = plan->mt;
