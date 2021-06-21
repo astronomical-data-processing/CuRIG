@@ -102,7 +102,6 @@ int main(int argc, char *argv[])
 	{
 		freq[i] = f0 + i / (double)nchan * fov; //!
 	}
-	printf("1\n");//----------------------------------------------------------
 	//improved WS stacking 1,
 	//gpu_method == 0, nupts driven
 
@@ -121,7 +120,6 @@ int main(int argc, char *argv[])
 	checkCudaErrors(cudaMalloc(&d_v, nrow * sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_w, nrow * sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_vis, nrow * sizeof(CUCPX)));
-	printf("2\n");//----------------------------------------------------------
 
 	// generating data
 	for (int i = 0; i < nrow; i++)
@@ -133,7 +131,6 @@ int main(int argc, char *argv[])
 		vis[i].imag(randm11() * 0.5);
 		// wgt[i] = 1;
 	}
-	printf("3\n");//----------------------------------------------------------
 	// ignore the tdirty
 	// how to convert ms to vis
 
@@ -145,7 +142,6 @@ int main(int argc, char *argv[])
 	checkCudaErrors(cudaMemcpy(d_v, v, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //v
 	checkCudaErrors(cudaMemcpy(d_w, w, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //w
 
-	printf("4\n");//----------------------------------------------------------
 	
 
 	/* -----------Step1: Baseline setting--------------
@@ -160,14 +156,13 @@ int main(int argc, char *argv[])
 	for(int i=0; i<nchan; i++){
 		f_over_c[i] = freq[i]/SPEEDOFLIGHT;
 	}
-	printf("5\n");//----------------------------------------------------------
 
 	/* ----------Step2: cugridder------------*/
 	// plan setting
 	curafft_plan *plan;
 
 	ragridder_plan *gridder_plan;
-	
+
 	plan = new curafft_plan();
     gridder_plan = new ragridder_plan();
     memset(plan, 0, sizeof(curafft_plan));
@@ -184,7 +179,6 @@ int main(int argc, char *argv[])
 	pointer_v->pirange = 0;
 
 	int direction = 1; //inverse
-	printf("6\n");//----------------------------------------------------------
 
 	ier = gridder_setting(nxdirty,nydirty,method,kerevalmeth,w_term_method,epsilon,direction,sigma,0,1,nrow,nchan,fov,pointer_v,d_u,d_v,d_w,d_vis
 		,plan,gridder_plan);
@@ -219,7 +213,6 @@ int main(int argc, char *argv[])
 		checkCudaErrors(cudaMemcpy(gridder_plan->dirty_image+i*nxdirty*nydirty, d_fk, sizeof(CUCPX)*nydirty*nxdirty,
 			cudaMemcpyDeviceToHost));
 	}
-	printf("8\n");//----------------------------------------------------------
 
 	ier = gridder_destroy(plan, gridder_plan);
 	if(ier == 1){
