@@ -19,6 +19,14 @@ FORWARD: type 2
 #include "ra_exec.h"
 #include "cuft.h"
 
+__global__ void gridder_rescaling_complex(CUCPX *x, PCS scale_ratio, int N){
+    int idx;
+    for(idx = blockIdx.x * blockDim.x; idx<N; idx += gridDim.x * blockDim.x){
+        x[idx].x *= scale_ratio;
+        x[idx].y *= scale_ratio;
+    }
+}
+
 __global__ void div_n_lm(CUCPX *fk, int xpixelsize, int ypixelsize, int N1, int N2){
     int idx;
     PCS n_lm;
@@ -41,7 +49,7 @@ int curaew_scaling(curafft_plan *plan, ragridder_plan *gridder_plan){
     PCS scaling_ratio = 1.0 / gridder_plan->pixelsize_x * gridder_plan->pixelsize_y;
     int blocksize = 1024;
     int gridsize = (N-1)/blocksize + 1;
-    gridder_rescaling<<<gridsize,blocksize>>>(plan->fk, scaling_ratio, N);
+    gridder_rescaling_complex<<<gridsize,blocksize>>>(plan->fk, scaling_ratio, N);
     checkCudaErrors(cudaDeviceSynchronize());
     // 2. dividing n_lm
     div_n_lm<<<gridsize,blocksize>>>(plan->fk, gridder_plan->pixelsize_x, gridder_plan->pixelsize_y, N1,N2);
