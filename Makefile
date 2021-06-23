@@ -106,7 +106,7 @@ libtest: lib $(BINDIR)/utils_test
 convtest: $(BINDIR)/conv_2d_test \
 	$(BINDIR)/conv_3d_test
 
-
+explicit_gridder_test: $(BINDIR)/explicit_gridder_test
 
 utiltest: $(BINDIR)/utils_test
 
@@ -150,6 +150,10 @@ checkutils: utiltest
 checkwst: w_s_test
 	@echo "W stacking checking..."
 	bin/w_s_test 0 1 10 10 30 10
+
+checkeg: explicit_gridder_test
+	@echo "Explicit gridder testing..."
+	bin/explicit_gridder_test 2 64 130 0.5
 
 # --------------------------------------------- end of check tasks ---------
 

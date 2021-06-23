@@ -26,15 +26,15 @@ int main(int argc, char *argv[])
 	/* Input: nrow, nchan, nxdirty, nydirty, fov, epsilon
 		row - number of visibility
 		nchan - number of channels
-		nxdirty, nydirty - image size
+		nxdirty, nydirty - image size (height width)
 		fov - field of view
 		epsilon - tolerance
 	*/
 	int ier = 0;
-	if (argc < 5)
+	if (argc < 7)
 	{
 		fprintf(stderr,
-				"Usage: spread3d method nupts_distr nf1 nf2 nf3 [maxsubprobsize [M [tol [kerevalmeth [sort]]]]]\n"
+				"Usage: W Stacking\n"
 				"Arguments:\n"
 				"  method: One of\n"
 				"    0: nupts driven,\n"
@@ -63,20 +63,16 @@ int main(int argc, char *argv[])
 	sscanf(argv[1], "%d", &method);
 	int w_term_method;
 	sscanf(argv[2], "%d", &w_term_method);
-	sscanf(argv[3], "%lf", &inp);
-	nxdirty = (int)inp;
-	sscanf(argv[4], "%lf", &inp);
-	nydirty = (int)inp;
-	sscanf(argv[5], "%lf", &inp);
-	nrow = (int)inp;
+	sscanf(argv[3], "%d", &nxdirty);
+	sscanf(argv[4], "%d", &nydirty);
+	sscanf(argv[5], "%d", &nrow);
 	sscanf(argv[6], "%lf", &inp);
 	fov = inp;
 
 	nchan = 1;
 	if (argc > 7)
 	{
-		sscanf(argv[7], "%lf", &inp);
-		nchan = (int)inp; // so can read 1e6 right!
+		sscanf(argv[7], "%d", &nchan);
 	}
 
 	PCS epsilon = 1e-6;
@@ -124,9 +120,9 @@ int main(int argc, char *argv[])
 	// generating data
 	for (int i = 0; i < nrow; i++)
 	{
-		u[i] = randm11() * 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
-		v[i] = randm11() * 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
-		w[i] = randm11() * 0.5 / (deg_per_pixelx * f0 / SPEEDOFLIGHT);
+		u[i] = randm11() * 0.5 / (f0 / SPEEDOFLIGHT); //xxxxx
+		v[i] = randm11() * 0.5 / (f0 / SPEEDOFLIGHT);
+		w[i] = randm11() * 0.5 / (f0 / SPEEDOFLIGHT);
 		vis[i].real(randm11() * 0.5); // nrow vis per channel, weight?
 		vis[i].imag(randm11() * 0.5);
 		// wgt[i] = 1;
@@ -180,7 +176,7 @@ int main(int argc, char *argv[])
 
 	int direction = 1; //inverse
 
-	ier = gridder_setting(nxdirty,nydirty,method,kerevalmeth,w_term_method,epsilon,direction,sigma,0,1,nrow,nchan,fov,pointer_v,d_u,d_v,d_w,d_vis
+	ier = gridder_setting(nydirty,nxdirty,method,kerevalmeth,w_term_method,epsilon,direction,sigma,0,1,nrow,nchan,fov,pointer_v,d_u,d_v,d_w,d_vis
 		,plan,gridder_plan);
 	
 	free(pointer_v);

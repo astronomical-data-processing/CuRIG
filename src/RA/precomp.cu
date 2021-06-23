@@ -103,16 +103,16 @@ __global__ void explicit_gridder(int N1, int N2, int nrow, PCS *u, PCS *v, PCS *
         N1,N2 - width, height 
         row_pix_size, col_pix_size - xpixsize, ypixsize
     */
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int idx;
     int row;
     int col;
     PCS l, m, n_lm;
     CUCPX res;
     res.x = 0.0; res.y = 0.0;
     CUCPX temp;
-    for(idx=0; idx<N1 * N2; idx+=gridDim.x * blockDim.x){
-        row = idx / N1 - int(0.5*N2);
-        col = idx % N1 - int(0.5*N1);
+    for(idx=blockIdx.x * blockDim.x + threadIdx.x; idx<N1 * N2; idx+=gridDim.x * blockDim.x){
+        row = idx / N1 - (int)0.5*N2;
+        col = idx % N1 - (int)0.5*N1;
         l = row * row_pix_size;
         m = col * col_pix_size;
         n_lm = sqrt(1 - pow(l,2) - pow(m,2));
@@ -126,6 +126,7 @@ __global__ void explicit_gridder(int N1, int N2, int nrow, PCS *u, PCS *v, PCS *
         }
         dirty[idx].x += res.x/n_lm; // add values of all channels
         dirty[idx].y += res.y/n_lm;
+        if(idx == 101)printf("real part: %.3g, imag part: %.3g\n", dirty[idx].x, dirty[idx].y);
     }
 }
 
@@ -143,7 +144,7 @@ void explicit_gridder_invoker(ragridder_plan *gridder_plan){
     checkCudaErrors(cudaMalloc((void **)&d_v, sizeof(PCS)*nrow));
     checkCudaErrors(cudaMalloc((void **)&d_w, sizeof(PCS)*nrow));
     checkCudaErrors(cudaMalloc((void **)&d_vis, sizeof(CUCPX)*nrow));
-    checkCudaErrors(cudaMalloc((void **)&d_dirty, sizeof(CUCPX)*nrow));
+    checkCudaErrors(cudaMalloc((void **)&d_dirty, sizeof(CUCPX)*N1*N2));
 
     checkCudaErrors(cudaMemcpy(d_u, gridder_plan->kv.u, sizeof(PCS)*nrow, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(d_v, gridder_plan->kv.v, sizeof(PCS)*nrow, cudaMemcpyHostToDevice));
@@ -155,11 +156,12 @@ void explicit_gridder_invoker(ragridder_plan *gridder_plan){
     for(int i=0; i<nchan; i++){
         checkCudaErrors(cudaMemcpy(d_vis, gridder_plan->kv.vis+i*nrow, sizeof(CUCPX)*nrow, cudaMemcpyHostToDevice));
         f_over_c = gridder_plan->kv.frequency[i]/SPEEDOFLIGHT;
+        printf("foverc %0.3lf\n",f_over_c);
         explicit_gridder<<<(N1*N2-1)/blocksize+1, blocksize>>>(N1, N2, nrow, d_u, d_v, d_w, d_vis, 
-        d_dirty, f_over_c, xpixsize, ypixsize,pirange);
+        d_dirty, f_over_c, xpixsize, ypixsize, pirange);
         checkCudaErrors(cudaDeviceSynchronize());
     }
-    checkCudaErrors(cudaMemcpy(gridder_plan->dirty_image, d_dirty, sizeof(PCS)*nrow, cudaMemcpyDeviceToHost));
+    checkCudaErrors(cudaMemcpy(gridder_plan->dirty_image, d_dirty, sizeof(CPX)*N1*N2, cudaMemcpyDeviceToHost));
     checkCudaErrors(cudaFree(d_u));
     checkCudaErrors(cudaFree(d_v));
     checkCudaErrors(cudaFree(d_w));
