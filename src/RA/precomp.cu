@@ -107,10 +107,9 @@ __global__ void explicit_gridder(int N1, int N2, int nrow, PCS *u, PCS *v, PCS *
     int row;
     int col;
     PCS l, m, n_lm;
-    CUCPX res;
-    res.x = 0.0; res.y = 0.0;
     CUCPX temp;
     for(idx=blockIdx.x * blockDim.x + threadIdx.x; idx<N1 * N2; idx+=gridDim.x * blockDim.x){
+        temp.x = 0.0; temp.y = 0.0;
         row = idx / N1 - (int)(0.5*N2);
         col = idx % N1 - (int)(0.5*N1);
         l = row * row_pix_size;
@@ -119,13 +118,10 @@ __global__ void explicit_gridder(int N1, int N2, int nrow, PCS *u, PCS *v, PCS *
         for(int i=0; i<nrow; i++){
             PCS phase = f_over_c*(l*u[i] + m*v[i] + (n_lm-1)*w[i]);
             if(pirange != 1) phase = phase * 2 * PI;
-            temp.x = vis[i].x * cos(phase) - vis[i].y * sin(phase);
-            temp.y = vis[i].x * sin(phase) + vis[i].y * cos(phase);
-            res.x += temp.x;
-            res.y += temp.y; //
+            temp.x += vis[i].x * cos(phase) - vis[i].y * sin(phase);
+            temp.y += vis[i].x * sin(phase) + vis[i].y * cos(phase);
+            printf("temp.x .y %lf %lf\n",temp.x,temp.y);
         }
-        dirty[idx].x += res.x/n_lm; // add values of all channels
-        dirty[idx].y += res.y/n_lm;
     }
 }
 
@@ -144,11 +140,11 @@ void explicit_gridder_invoker(ragridder_plan *gridder_plan){
     checkCudaErrors(cudaMalloc((void **)&d_w, sizeof(PCS)*nrow));
     checkCudaErrors(cudaMalloc((void **)&d_vis, sizeof(CUCPX)*nrow));
     checkCudaErrors(cudaMalloc((void **)&d_dirty, sizeof(CUCPX)*N1*N2));
+    checkCudaErrors(cudaMemset(d_dirty, 0, sizeof(CUCPX)*N1*N2));
 
     checkCudaErrors(cudaMemcpy(d_u, gridder_plan->kv.u, sizeof(PCS)*nrow, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(d_v, gridder_plan->kv.v, sizeof(PCS)*nrow, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(d_w, gridder_plan->kv.w, sizeof(PCS)*nrow, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(d_vis, gridder_plan->kv.vis, sizeof(CUCPX)*nrow, cudaMemcpyHostToDevice));
     
     int blocksize = 1024;
     PCS f_over_c;
