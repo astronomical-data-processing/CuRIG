@@ -47,7 +47,7 @@ int curaew_scaling(curafft_plan *plan, ragridder_plan *gridder_plan){
     int N2 = gridder_plan->height;
     int N = N1*N2;
     PCS scaling_ratio = 1.0 / gridder_plan->pixelsize_x * gridder_plan->pixelsize_y;
-    int blocksize = 1024;
+    int blocksize = 512;
     int gridsize = (N-1)/blocksize + 1;
     gridder_rescaling_complex<<<gridsize,blocksize>>>(plan->fk, scaling_ratio, N);
     checkCudaErrors(cudaDeviceSynchronize());

@@ -148,7 +148,7 @@ void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize)
 
     int batchsize = plan->batchsize;
     int flag = plan->mode_flag;
-    int num_threads = 1024;
+    int num_threads = 512;
 
     dim3 block(num_threads);
     dim3 grid((N1 * N2 - 1) / num_threads + 1);
