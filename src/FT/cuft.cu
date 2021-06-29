@@ -29,7 +29,7 @@ int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, C
     plan->d_w = d_w;
     plan->d_c = d_c;
     plan->mode_flag = 1; //CMCL mode
-    int upsampfac = plan->copts.upsampfac;
+    //int upsampfac = plan->copts.upsampfac;
 
     plan->nf1 = nf1;
     plan->nf2 = nf2;

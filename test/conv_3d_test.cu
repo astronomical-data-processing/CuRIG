@@ -184,7 +184,7 @@ int main(int argc, char* argv[]){
 	checkCudaErrors(cudaMemcpy(fw,d_fw,sizeof(CUCPX)*f_size,cudaMemcpyDeviceToHost));
 	
 	//int nf3 = h_plan->num_w;
-	printf("Method %d (nupt driven) %ld NU pts to #%d U pts in %.3g s\n",
+	printf("Method %d (nupt driven) %d NU pts to #%d U pts in %.3g s\n",
 			h_plan->opts.gpu_gridder_method,M,nf1*nf2*nf3,kernel_time/1000);
 	
 	

@@ -40,12 +40,12 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int pirange, int di
   { // nonstandard sigma
     if (kerevalmeth == 1)
     {
-      fprintf(stderr, "setup_conv_opts: nonstandard upsampfac with kerevalmeth=1\n", (double)upsampfac);
+      fprintf(stderr, "setup_conv_opts: nonstandard upsampling factor %.3g with kerevalmeth=1\n", (double)upsampfac);
       return 2;
     }
     if (upsampfac <= 1.0)
     {
-      fprintf(stderr, "setup_conv_opts: error, upsampling factor too small\n", (double)upsampfac);
+      fprintf(stderr, "setup_conv_opts: error, upsampling factor %.3g too small\n", (double)upsampfac);
       return 2;
     }
     // calling routine must abort on above errors, since opts is garbage!
@@ -53,16 +53,16 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int pirange, int di
       fprintf(stderr, "setup_conv_opts: warning, upsampfac=%.3g is too large\n", (double)upsampfac);
   }
 
-  // defaults... (user can change after this function called)
-  opts.direction = direction; // user should always set to 1 or 2 as desired
-  opts.pirange = pirange;   // user also should always set this
+  
+  opts.direction = direction; 
+  opts.pirange = pirange;   
   opts.upsampfac = upsampfac;
 
-  // as in FINUFFT v2.0, allow too-small-eps by truncating to eps_mach...
+  
   int ier = 0;
   if (eps < EPSILON)
   {
-    fprintf(stderr, "setup_conv_opts: warning, eps (tol) is too small, set eps = %.3g.\n", (double)eps, (double)EPSILON);
+    fprintf(stderr, "setup_conv_opts: warning, eps (tol) is too small, set eps = %.3g.\n", (double)EPSILON);
     eps = EPSILON;
     ier = 1;
   }

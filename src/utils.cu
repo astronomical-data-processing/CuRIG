@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <cuda_runtime.h>
 #include <cuda.h>
+#include <iostream>
 #include <stdio.h>
 //#include <thrust/extrema.h>
 #include <thrust/device_ptr.h>
@@ -41,15 +42,7 @@ void get_max_min(PCS &max, PCS &min, PCS *d_array, int n)
 
 void GPU_info()
 {
-  /*
-    int *h_max_test, *h_max_test2, *h_max_test3;
-    CHECK(cudaMalloc(&h_max_test,sizeof(float)*1024*1024));
-    CHECK(
-    cudaMalloc(&h_max_test2,sizeof(float)*1024*1024));
-    CHECK(
-    cudaMalloc(&h_max_test3,sizeof(float)*1024*1024*1000));
-    cudaFree(h_max_test);
-    */
+  
   printf("Starting... \n");
   int deviceCount = 0;
   cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
@@ -69,7 +62,7 @@ void GPU_info()
   dev = 0;
 
   printf("Input the device index:");
-  scanf("%d", &dev);
+  std::cin>>dev;
   cudaSetDevice(dev);
 
   cudaDeviceProp deviceProp;

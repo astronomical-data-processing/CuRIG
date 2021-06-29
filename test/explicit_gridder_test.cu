@@ -17,7 +17,6 @@ int main(int argc, char *argv[])
         nchan - number of channels
         nxdirty, nydirty - image size (height, width)
         fov - field of view
-        epsilon - tolerance (default 10^(-4))
     */
 	if (argc < 5)
 	{
