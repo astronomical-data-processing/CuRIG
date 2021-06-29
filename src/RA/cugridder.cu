@@ -128,10 +128,11 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
 	plan->ms = N1;
 	plan->mt = N2;
 	plan->mu = 1;
-
+    plan->execute_flow = 1;
+    plan->fw =NULL; //allocated in precomp
     int fftsign = (iflag>=0) ? 1 : -1;
 
-	plan->iflag = fftsign;
+	plan->iflag = fftsign; //may be useless| conflict with direction
     if (batchsize == 0) batchsize = min(4,gridder_plan->num_w);
 	plan->batchsize = batchsize;
 
@@ -190,7 +191,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
 }
 
 
-int gridder_exectuion(curafft_plan* plan, ragridder_plan* gridder_plan){
+int gridder_execution(curafft_plan* plan, ragridder_plan* gridder_plan){
     /*
     Execute conv, fft, dft, correction for different direction (gridding or degridding)
     */
@@ -199,8 +200,8 @@ int gridder_exectuion(curafft_plan* plan, ragridder_plan* gridder_plan){
         // int orig_gpu_device_id;
         // cudaGetDevice(& orig_gpu_device_id);
         // cudaSetDevice(d_plan->opts.gpu_device_id);
-
 	int direction = plan->copts.direction;
+    
     if (direction == 1){
         ier = exec_inverse(plan, gridder_plan);
     }

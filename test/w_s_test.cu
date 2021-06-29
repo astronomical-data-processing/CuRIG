@@ -89,8 +89,8 @@ int main(int argc, char *argv[])
 	}
 
 	// degree per pixel (unit radius)
-	PCS deg_per_pixelx = fov / 180.0 * PI / (PCS)nxdirty;
-	PCS deg_per_pixely = fov / 180.0 * PI / (PCS)nydirty;
+	// PCS deg_per_pixelx = fov / 180.0 * PI / (PCS)nxdirty;
+	// PCS deg_per_pixely = fov / 180.0 * PI / (PCS)nydirty;
 	// chanel setting
 	PCS f0 = 1e9;
 	PCS *freq = (PCS *)malloc(sizeof(PCS) * nchan);
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 
 	ier = gridder_setting(nydirty,nxdirty,method,kerevalmeth,w_term_method,epsilon,direction,sigma,0,1,nrow,nchan,fov,pointer_v,d_u,d_v,d_w,d_vis
 		,plan,gridder_plan);
-	
+	//print the setting result
 	free(pointer_v);
 	if(ier == 1){
 		printf("errors in gridder setting\n");
@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
 		// memory transfer (vis belong to this channel and weight)
 		checkCudaErrors(cudaMemcpy(d_vis, vis, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice)); //
 		// shift to corresponding range
-		ier = gridder_exectuion(plan,gridder_plan);
+		ier = gridder_execution(plan,gridder_plan);
 		if(ier == 1){
 			printf("errors in gridder execution\n");
 			return ier;

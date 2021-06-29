@@ -66,13 +66,18 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
         Flow2: the data size is large, the data is divided into parts 
     */
     int ier=0;
+    printf("execute flow %d\n",plan->execute_flow);
     if (plan->execute_flow == 1)
     {
             /// curafft_conv workflow for enough memory
             
             // 1. convlution
-            ier = curafft_conv(plan);
 
+            ier = curafft_conv(plan);
+            printf("conv result:...\n");
+            for(int i=0;i<1;i++)
+            printf("%.3lf ",plan->fw[i].x);
+            printf("\n");
             // 2. cufft
             int direction = plan->iflag;
             // cautious, a batch of fft, bath size is num_w when memory is sufficent.
