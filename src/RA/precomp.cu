@@ -70,10 +70,14 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
         checkCudaErrors(cudaMemcpy(plan->fwkerhalf3,fwkerhalf3,(plan->nf3/2+1)*
 			sizeof(PCS),cudaMemcpyHostToDevice));
         free(fwkerhalf3);
-        //fw
-        if(plan->fw!=NULL)checkCudaErrors(cudaFree(plan->fw));
+        //
+        
+        if(plan->fw!=NULL){checkCudaErrors(cudaFree(plan->fw));plan->fw=NULL;}
+        //BUG here
+        
         checkCudaErrors(cudaMalloc((void**)&plan->fw,sizeof(CUCPX)*plan->nf1*plan->nf2*plan->nf3));
         checkCudaErrors(cudaMemset(plan->fw, 0, plan->nf3 * plan->nf1 * plan->nf2 * sizeof(CUCPX)));
+        for(int i=0;i<10;i++)printf("%.3g\n",plan->fw[i].x);
     }
     int N1 = plan->ms;
     int N2 = plan->mt;
@@ -85,6 +89,8 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
     // ---------get effective coordinates---------
     get_effective_coordinate<<<(N-1)/blocksize+1, blocksize>>>(d_u, d_v, d_w, f_over_c, pirange, nrow);
     checkCudaErrors(cudaDeviceSynchronize());
+    gridder_plan->kv.pirange = 1;
+    plan->copts.pirange = 1;
     // ----------------rescaling-----------------
     PCS scaling_ratio = 1.0/xpixelsize;
     gridder_rescaling_real<<<(N-1)/blocksize+1, blocksize>>>(d_u, scaling_ratio, nrow);
@@ -121,6 +127,7 @@ __global__ void explicit_gridder(int N1, int N2, int nrow, PCS *u, PCS *v, PCS *
             temp.x += vis[i].x * cos(phase) - vis[i].y * sin(phase);
             temp.y += vis[i].x * sin(phase) + vis[i].y * cos(phase);
         }
+        
         dirty[idx].x += temp.x/n_lm; // add values of all channels
         dirty[idx].y += temp.y/n_lm;
     }
