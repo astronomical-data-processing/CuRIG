@@ -6,7 +6,6 @@
 #include <algorithm>
 //#include <thrust>
 using namespace thrust;
-using namespace std::complex_literals;
 
 
 #include "ragridder_plan.h"

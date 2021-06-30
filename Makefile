@@ -112,6 +112,8 @@ utiltest: $(BINDIR)/utils_test
 
 w_s_test: $(BINDIR)/w_s_test
 
+nufft_test: $(BINDIR)/nufft_2d_test
+
 $(BINDIR)/%: test/%.o $(CURAFFTOBJS_64) $(CURAFFTOBJS)
 	mkdir -p $(BINDIR)
 	$(NVCC) $^ $(NVCCFLAGS) $(NVCC_LIBS_PATH) $(LIBS) -o $@
@@ -154,6 +156,10 @@ checkwst: w_s_test
 checkeg: explicit_gridder_test
 	@echo "Explicit gridder testing..."
 	bin/explicit_gridder_test 2 64 130 0.5
+
+checknufft: nufft_test
+	@echo "NUFFT testing..."
+	bin/nufft_2d_test 10 10 20
 
 # --------------------------------------------- end of check tasks ---------
 
