@@ -17,6 +17,7 @@ __global__ void get_effective_coordinate(PCS *u, PCS *v, PCS *w, PCS f_over_c, i
         pirange - 1 in [-pi,pi), 0 - [-0.5,0.5)
         nrow - number of coordinates
     */
+    
     int idx;
     for(idx = blockDim.x * blockIdx.x + threadIdx.x; idx<nrow; idx+= gridDim.x * blockDim.x){
         u[idx] *= f_over_c;
@@ -77,7 +78,6 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
         
         checkCudaErrors(cudaMalloc((void**)&plan->fw,sizeof(CUCPX)*plan->nf1*plan->nf2*plan->nf3));
         checkCudaErrors(cudaMemset(plan->fw, 0, plan->nf3 * plan->nf1 * plan->nf2 * sizeof(CUCPX)));
-        for(int i=0;i<10;i++)printf("%.3g\n",plan->fw[i].x);
     }
     int N1 = plan->ms;
     int N2 = plan->mt;

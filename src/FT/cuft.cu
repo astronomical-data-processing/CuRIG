@@ -93,6 +93,11 @@ int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, C
 
 __global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int N1, int N2, PCS xpixelsize, PCS ypixelsize, int flag, int batchsize)
 {
+    /*
+        Specified for radio astronomy
+        W term dft output driven method
+        the output of cufft is FFTW format// just do dft on the in range pixels
+    */
     int idx;
     for (idx = threadIdx.x + blockIdx.x * blockDim.x; idx < N1 * N2; idx += gridDim.x * blockDim.x)
     {
@@ -102,27 +107,24 @@ __global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int N1, int N2, PCS xpix
         int idx_fw = 0;
         int w1 = 0;
         int w2 = 0;
-        if (flag == 1)
-        {
-            w1 = row >= N1 / 2 ? row - N1 / 2 : nf1 + row - N1 / 2;
-            w2 = col >= N2 / 2 ? col - N2 / 2 : nf2 + col - N2 / 2;
-        }
-        else
-        {
-            w1 = row >= N1 / 2 ? nf1 + row - N1 / 2 : row;
-            w2 = col >= N2 / 2 ? nf2 + col - N2 / 2 : col;
-        }
+        int row_hat = row >= N2 / 2 ? row - N2 : row;
+        int col_hat = col >= N1 / 2 ? col - N1 : col;
+
+        w1 = col >= N1 / 2 ? nf1 + col - N1 : col;
+        w2 = row >= N2 / 2 ? nf2 + row - N2 : row;
         idx_fw = w1 + w2 * nf1;
         CUCPX temp;
         temp.x = 0;
         temp.y = 0;
-        PCS z = sqrt(1 - pow((row * xpixelsize),2) - pow((col * ypixelsize),2)) - 1; // revise for >1
-        double z_t_2pi = 2 * PI * (z);
+        // from N/2 to N/2, not 0 to N
+        
+        PCS z = sqrt(1 - pow((row_hat * xpixelsize),2) - pow((col_hat * ypixelsize),2)) - 1; // revise for >1
+        // double z_t_2pi = 2 * PI * (z); w have been scaling to pirange
         for (int i = 0; i < batchsize; i++)
         {
             //for partial computing, the i should add a shift
-            omega.x = fw[idx_fw].x * cos(z_t_2pi * i) - fw[idx_fw].y * sin(z_t_2pi * i);
-            omega.y = fw[idx_fw].x * sin(z_t_2pi * i) + fw[idx_fw].y * cos(z_t_2pi * i);
+            omega.x = fw[idx_fw].x * cos(z * i) - fw[idx_fw].y * sin(z * i);
+            omega.y = fw[idx_fw].x * sin(z * i) + fw[idx_fw].y * cos(z * i);
             //
             temp.x += omega.x;
             temp.y += omega.y;

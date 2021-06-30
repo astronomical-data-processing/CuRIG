@@ -29,7 +29,7 @@ __global__ void deconv_1d(int N1, int nf1, CUCPX *fw, CUCPX *fk, PCS *fwkerhalf1
             w = k >= N1/2 ? k - N1/2 : nf1 + k - N1/2; // CMCL
         }
         else{
-            w = k >= N1/2 ? nf1+k-N1/2 : k; // FFTW
+            w = k >= N1/2 ? nf1+k-N1 : k; // FFTW
         }
         idx_fw = w;
         fk[idx].x = fw[idx_fw].x / fwkerhalf1[abs(k-N1/2)];
@@ -53,12 +53,12 @@ __global__ void deconv_2d(int N1, int N2, int nf1, int nf2, CUCPX* fw, CUCPX* fk
         w1 = 0;
         w2 = 0;
         if(flag == 1){
-            w1 = k1 >= N1/2 ? k1-N1/2 : nf1+k1-N1/2;
-		    w2 = k2 >= N2/2 ? k2-N2/2 : nf2+k2-N2/2;
+            w1 = k1 >= N1/2 ? k1-N1 : nf1+k1-N1/2;
+		    w2 = k2 >= N2/2 ? k2-N2 : nf2+k2-N2/2;
         }
         else{
-            w1 = k1 >= N1/2 ? nf1+k1-N1/2 : k1;
-            w2 = k2 >= N2/2 ? nf2+k2-N2/2 : k2;
+            w1 = k1 >= N1/2 ? nf1+k1-N1 : k1;
+            w2 = k2 >= N2/2 ? nf2+k2-N2 : k2;
         }
         idx_fw = w1 + w2*nf1;
         
@@ -88,9 +88,9 @@ __global__ void deconv_3d(int N1, int N2, int N3, int nf1, int nf2, int nf3, CUC
 		    w3 = k3 >= N3/2 ? k3-N3/2 : nf3+k3-N3/2;
         }
         else{
-            w1 = k1 >= N1/2 ? nf1+k1-N1/2 : k1;
-            w2 = k2 >= N2/2 ? nf2+k2-N2/2 : k2;
-            w3 = k3 >= N3/2 ? nf3+k3-N3/2 : k3;
+            w1 = k1 >= N1/2 ? nf1+k1-N1 : k1;
+            w2 = k2 >= N2/2 ? nf2+k2-N2 : k2;
+            w3 = k3 >= N3/2 ? nf3+k3-N3 : k3;
         }
 	    idx_fw = w1 + w2*nf1 + w3*nf1*nf2;
 

@@ -127,6 +127,17 @@ int main(int argc, char *argv[])
 		vis[i].imag(randm11() * 0.5);
 		// wgt[i] = 1;
 	}
+#ifdef DEBUG
+	printf("origial input data...\n");
+	for(int i=0; i<10; i++){
+		printf("%.3lf ",u[i]);
+	}
+	printf("\n");
+	for(int i=0; i<10; i++){
+		printf("%.3lf ",vis[i].real());
+	}
+	printf("\n");
+#endif
 	// ignore the tdirty
 	// how to convert ms to vis
 
@@ -137,8 +148,6 @@ int main(int argc, char *argv[])
 	checkCudaErrors(cudaMemcpy(d_u, u, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //u
 	checkCudaErrors(cudaMemcpy(d_v, v, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //v
 	checkCudaErrors(cudaMemcpy(d_w, w, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //w
-
-	
 
 	/* -----------Step1: Baseline setting--------------
 	skip negative v
@@ -208,7 +217,7 @@ int main(int argc, char *argv[])
 		checkCudaErrors(cudaMemcpy(gridder_plan->dirty_image+i*nxdirty*nydirty, d_fk, sizeof(CUCPX)*nydirty*nxdirty,
 			cudaMemcpyDeviceToHost));
 	}
-
+	
 	ier = gridder_destroy(plan, gridder_plan);
 	if(ier == 1){
 		printf("errors in gridder destroy\n");

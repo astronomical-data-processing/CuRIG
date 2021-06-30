@@ -66,30 +66,40 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
         Flow2: the data size is large, the data is divided into parts 
     */
     int ier=0;
-    printf("execute flow %d\n",plan->execute_flow);
+    //printf("execute flow %d\n",plan->execute_flow);
     if (plan->execute_flow == 1)
     {
             /// curafft_conv workflow for enough memory
             
             // 1. convlution
-
             ier = curafft_conv(plan);
-            printf("conv result:...\n");
-            for(int i=0;i<1;i++)
-            printf("%.3lf ",plan->fw[i].x);
-            printf("\n");
+
+            // printf("n1 n2 n3 M %d, %d, %d, %d\n",plan->nf1,plan->nf2,plan->nf3,plan->M);
             // 2. cufft
             int direction = plan->iflag;
             // cautious, a batch of fft, bath size is num_w when memory is sufficent.
             CUFFT_EXEC(plan->fftplan, plan->fw, plan->fw, direction); // sychronized or not
+
             // keep the N1*N2*num_w. ignore the outputs that are out of range
 
             // 3. dft on w (or 1 dimensional nufft type3)
             curadft_invoker(plan, gridder_plan->pixelsize_x, gridder_plan->pixelsize_y);
-
+            printf("part of dft result printing:...\n");
+            CPX *fw = (CPX *)malloc(sizeof(CPX)*plan->nf1*plan->nf2*plan->nf3);
+            cudaMemcpy(fw,plan->fw,sizeof(CUCPX)*plan->nf1*plan->nf2*plan->nf3,cudaMemcpyDeviceToHost);
+            for(int i=0;i<plan->ms*plan->mt;i++)
+            printf("%.3g ",fw[i].real());
+            printf("\n");
+            
             // 4. deconvolution (correction)
+            // error detected, 1. w term deconv, 2. result of deconv = 0
             ier = curafft_deconv(plan);
-
+            printf("deconv result printing:...\n");
+            CPX *fk = (CPX *)malloc(sizeof(CPX)*plan->ms*plan->mt);
+            cudaMemcpy(fk,plan->fk,sizeof(CUCPX)*plan->ms*plan->mt,cudaMemcpyDeviceToHost);
+            for(int i=0;i<plan->ms*plan->mt;i++)
+            printf("%.3g ",fk[i].real());
+            printf("\n");
             // 5. ending work - scaling
             // /n_lm, fourier related rescale
             curaew_scaling(plan, gridder_plan);
