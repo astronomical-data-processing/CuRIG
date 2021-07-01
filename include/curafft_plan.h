@@ -20,7 +20,7 @@ struct conv_opts{
     options for convolutional gridding process
     kw - w, the kernel width (number of grid cells)
     direction - 1 means inverse NU->U, 0 means forward interpolate U->NU //changed
-    pirange - 0: coords in [0,N), 1 coords in [-pi,pi), 2 coords in [-lamda/2,lamda) * resolution / fov for scaling
+    pirange - 0: coords in [0,N), 1 coords in [-pi,pi) or can be shifted into pirange, 2 coords is nature number for scaling
     upsampfac - sigma, upsampling factor, default 2.0
     ES_beta
     ES_halfwidth
@@ -28,7 +28,7 @@ struct conv_opts{
   */
   int kw;   //kernel width // also need to take factors in improved ws into consideration
   int direction;
-  int pirange; // [-pi,pi)
+  int pirange; // pirange or nature number
   PCS upsampfac;
   // ES kernel specific...
   PCS ES_beta;

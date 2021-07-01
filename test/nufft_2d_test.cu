@@ -62,7 +62,6 @@ int main(int argc, char *argv[])
 
 	//gpu_method == 0, nupts driven
 
-	N1 = 3; N2 = 3; M = 25; //for correctness checking
 	//int ier;
 	PCS *u, *v;
 	CPX *c;
@@ -81,16 +80,16 @@ int main(int argc, char *argv[])
 	{
 		u[i] = randm11()*PI; //xxxxx
 		v[i] = randm11()*PI;
-		c[i].real(1); // M vis per channel, weight?
-		c[i].imag(1);
+		c[i].real(randm11()); // M vis per channel, weight?
+		c[i].imag(randm11());
 		// wgt[i] = 1;
 	}
 
-	double a[5] = {-PI/2, -PI/3, 0, PI/3, PI/2};
-	for(int i=0; i<M; i++){
-		u[i] = a[i/5];
-		v[i] = a[i%5];
-	}
+	// double a[5] = {-PI/2, -PI/3, 0, PI/3, PI/2}; // change to random data
+	// for(int i=0; i<M; i++){
+	// 	u[i] = a[i/5];
+	// 	v[i] = a[i%5];
+	// }
 #ifdef DEBUG
 	printf("origial input data...\n");
 	for(int i=0; i<M; i++){

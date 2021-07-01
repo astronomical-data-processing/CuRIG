@@ -98,7 +98,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     plan->opts.gpu_conv_only = 0;
     plan->opts.gpu_gridder_method = method;
 
-    ier = setup_conv_opts(plan->copts, tol, sigma, 0, direction, kerevalmeth); //check the arguements
+    ier = setup_conv_opts(plan->copts, tol, sigma, 1, direction, kerevalmeth); //check the arguements pirange = 1
 
 	if(ier!=0)printf("setup_error\n");
 

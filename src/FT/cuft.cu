@@ -91,74 +91,6 @@ int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, C
     return ier;
 }
 
-__global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int N1, int N2, PCS xpixelsize, PCS ypixelsize, int flag, int batchsize)
-{
-    /*
-        Specified for radio astronomy
-        W term dft output driven method
-        the output of cufft is FFTW format// just do dft on the in range pixels
-    */
-    int idx;
-    for (idx = threadIdx.x + blockIdx.x * blockDim.x; idx < N1 * N2; idx += gridDim.x * blockDim.x)
-    {
-        CUCPX omega;
-        int row = idx / N1;
-        int col = idx % N1;
-        int idx_fw = 0;
-        int w1 = 0;
-        int w2 = 0;
-        int row_hat = row >= N2 / 2 ? row - N2 : row;
-        int col_hat = col >= N1 / 2 ? col - N1 : col;
-
-        w1 = col >= N1 / 2 ? nf1 + col - N1 : col;
-        w2 = row >= N2 / 2 ? nf2 + row - N2 : row;
-        idx_fw = w1 + w2 * nf1;
-        CUCPX temp;
-        temp.x = 0;
-        temp.y = 0;
-        // from N/2 to N/2, not 0 to N
-        
-        PCS z = sqrt(1 - pow((row_hat * xpixelsize),2) - pow((col_hat * ypixelsize),2)) - 1; // revise for >1
-        // double z_t_2pi = 2 * PI * (z); w have been scaling to pirange
-        for (int i = 0; i < batchsize; i++)
-        {
-            //for partial computing, the i should add a shift
-            omega.x = fw[idx_fw].x * cos(z * i) - fw[idx_fw].y * sin(z * i);
-            omega.y = fw[idx_fw].x * sin(z * i) + fw[idx_fw].y * cos(z * i);
-            //
-            temp.x += omega.x;
-            temp.y += omega.y;
-        }
-        fw[idx_fw] = temp;
-    }
-}
-
-void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize)
-{
-    /*
-        Specified for radio astronomy
-        Input: 
-            fw - the res after 2D-FT towards each w
-        Output:
-            fw - after dft (part/whole based on batchsize)
-    */
-    int nf1 = plan->nf1;
-    int nf2 = plan->nf2;
-
-    int N1 = plan->ms;
-    int N2 = plan->mt;
-
-    int batchsize = plan->batchsize;
-    int flag = plan->mode_flag;
-    int num_threads = 512;
-
-    dim3 block(num_threads);
-    dim3 grid((N1 * N2 - 1) / num_threads + 1);
-    w_term_dft<<<grid, block>>>(plan->fw, nf1, nf2, N1, N2, xpixelsize, ypixelsize, flag, batchsize);
-    checkCudaErrors(cudaDeviceSynchronize());
-    return;
-}
-
 int curafft_free(curafft_plan *plan)
 {
     //free gpu memory like cell_loc
@@ -188,4 +120,68 @@ int curafft_free(curafft_plan *plan)
     }
 
     return ier;
+}
+
+//------------------------------Below this line, all are just for Radio astronomy-------------------------
+__global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int N1, int N2, PCS xpixelsize, PCS ypixelsize, int flag, int batchsize)
+{
+    /*
+        Specified for radio astronomy
+        W term dft output driven method
+        the output of cufft is FFTW format// just do dft on the in range pixels
+        //flag
+    */
+    int idx;
+    for (idx = threadIdx.x + blockIdx.x * blockDim.x; idx < N1 * N2; idx += gridDim.x * blockDim.x)
+    {
+        int row = idx / N1;
+        int col = idx % N1;
+        int idx_fw = 0;
+        int w1 = 0;
+        int w2 = 0;
+
+        w1 = col >= N1 / 2 ? col - N1 / 2 : nf1 + col - N1 / 2;
+        w2 = row >= N2 / 2 ? row - N2 / 2 : nf2 + row - N2 / 2;
+        idx_fw = w1 + w2 * nf1;
+        CUCPX temp;
+        temp.x = 0;
+        temp.y = 0;
+        // from N/2 to N/2, not 0 to N
+        
+        PCS z = sqrt(1 - pow(((row - N2/2) * xpixelsize),2) - pow(((col-N2/2) * ypixelsize),2)) - 1; // revise for >1
+        // double z_t_2pi = 2 * PI * (z); w have been scaling to pirange
+        for (int i = 0; i < batchsize; i++)
+        {
+            //for partial computing, the i should add a shift, and fw should change
+            temp.x += fw[idx_fw + i*nf1*nf2].x * cos(z * i) - fw[idx_fw + i*nf1*nf2].y * sin(z * i);
+            temp.y += fw[idx_fw + i*nf1*nf2].x * sin(z * i) + fw[idx_fw + i*nf1*nf2].y * cos(z * i);
+        }
+        fw[idx_fw] = temp;
+    }
+}
+
+void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize)
+{
+    /*
+        Specified for radio astronomy
+        Input: 
+            fw - the res after 2D-FT towards each w
+        Output:
+            fw - after dft (part/whole based on batchsize)
+    */
+    int nf1 = plan->nf1;
+    int nf2 = plan->nf2;
+
+    int N1 = plan->ms;
+    int N2 = plan->mt;
+
+    int batchsize = plan->batchsize;
+    int flag = plan->mode_flag;
+    int num_threads = 512;
+
+    dim3 block(num_threads);
+    dim3 grid((N1 * N2 - 1) / num_threads + 1);
+    w_term_dft<<<grid, block>>>(plan->fw, nf1, nf2, N1, N2, xpixelsize, ypixelsize, flag, batchsize);
+    checkCudaErrors(cudaDeviceSynchronize());
+    return;
 }

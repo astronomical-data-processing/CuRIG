@@ -216,7 +216,13 @@ int main(int argc, char *argv[])
 		checkCudaErrors(cudaMemcpy(gridder_plan->dirty_image+i*nxdirty*nydirty, d_fk, sizeof(CUCPX)*nydirty*nxdirty,
 			cudaMemcpyDeviceToHost));
 	}
-	
+	printf("result printing...\n");
+	for(int i=0; i<nxdirty; i++){
+		for(int j=0; j<nydirty; j++){
+			printf("%.3lf ", gridder_plan->dirty_image[i*nydirty+j].real());
+		}
+		printf("\n");
+	}
 	ier = gridder_destroy(plan, gridder_plan);
 	if(ier == 1){
 		printf("errors in gridder destroy\n");

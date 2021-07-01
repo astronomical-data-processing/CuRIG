@@ -21,20 +21,22 @@ FORWARD: type 2
 
 __global__ void gridder_rescaling_complex(CUCPX *x, PCS scale_ratio, int N){
     int idx;
-    for(idx = blockIdx.x * blockDim.x; idx<N; idx += gridDim.x * blockDim.x){
+    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx<N; idx += gridDim.x * blockDim.x){
         x[idx].x *= scale_ratio;
         x[idx].y *= scale_ratio;
     }
 }
 
-__global__ void div_n_lm(CUCPX *fk, int xpixelsize, int ypixelsize, int N1, int N2){
+__global__ void div_n_lm(CUCPX *fk, PCS xpixelsize, PCS ypixelsize, int N1, int N2){
     int idx;
     PCS n_lm;
     int row, col;
     for(idx = blockDim.x*blockIdx.x+threadIdx.x; idx<N1*N2; idx+=gridDim.x*blockDim.x){
         row = idx / N1;
         col = idx % N1;
-        n_lm = sqrt(1 - pow(row*xpixelsize,2) + pow(col*ypixelsize, 2));
+        // printf("%d, %.5lf, %.5lf, %d, %d\n",idx,xpixelsize,ypixelsize,row,col);
+        // printf("idx %d, %.4lf\n",idx,sqrt(1 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize, 2)));
+        n_lm = sqrt(1 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize, 2));
         fk[idx].x /= n_lm;
         fk[idx].y /= n_lm;
     }
@@ -46,14 +48,17 @@ int curaew_scaling(curafft_plan *plan, ragridder_plan *gridder_plan){
     int N1 = gridder_plan->width;
     int N2 = gridder_plan->height;
     int N = N1*N2;
-    PCS scaling_ratio = 1.0 / gridder_plan->pixelsize_x * gridder_plan->pixelsize_y;
-    int blocksize = 512;
+    PCS scaling_ratio = 1.0 / gridder_plan->pixelsize_x / gridder_plan->pixelsize_y;
+    int blocksize = 256;
     int gridsize = (N-1)/blocksize + 1;
+    
     gridder_rescaling_complex<<<gridsize,blocksize>>>(plan->fk, scaling_ratio, N);
     checkCudaErrors(cudaDeviceSynchronize());
+    
     // 2. dividing n_lm
     div_n_lm<<<gridsize,blocksize>>>(plan->fk, gridder_plan->pixelsize_x, gridder_plan->pixelsize_y, N1,N2);
     checkCudaErrors(cudaDeviceSynchronize());
+    
     return 0;
 }
 
@@ -93,8 +98,12 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
             printf("\n");
 #endif
             // 4. deconvolution (correction)
-            // error detected, 1. w term deconv, 2. result of deconv = 0
+            // error detected, 1. w term deconv
+            // 1. 2D deconv towards u and v
+            plan->dim = 2;
             ier = curafft_deconv(plan);
+            // 2. w term deconv on fk
+            // fwkerhalf and new deconv function
 #ifdef DEBUG
             printf("deconv result printing:...\n");
             CPX *fk = (CPX *)malloc(sizeof(CPX)*plan->ms*plan->mt);

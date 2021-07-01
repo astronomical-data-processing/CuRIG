@@ -13,7 +13,8 @@
 		     ((x*M_1_2PI + (x<-PI ? 1.5 : (x>=PI ? -0.5 : 0.5)))*N) : \
 		     (x<0 ? x+N : (x>=N ? x-N : x)))
 
-// p is not ture, shift to [-pi, pi) and then rescale, p is true just rescale.
+// p is not ture, shift to [-pi, pi) and then rescale, p is true just rescale. 
+//need to revise, need to combine rescale
 #define SHIFT_RESCALE(x,N,p) (  (p ? x : \
                                      ((x - floor(x/M_2PI)*M_2PI) - ((x - floor(x/M_2PI)*M_2PI)>=PI)*M_2PI)) \
                                 * M_1_2PI + 0.5 )*N

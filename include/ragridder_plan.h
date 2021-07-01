@@ -22,7 +22,7 @@ struct visibility
 
     //PCS time;
     PCS* frequency;
-    int pirange;
+    int pirange; // in pirange do nothing, not in pirange *2PI
     //int antenna_1;
     //int antenna_2;
     //PCS image_weight;

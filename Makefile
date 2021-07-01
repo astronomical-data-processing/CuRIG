@@ -18,7 +18,7 @@ NVCCFLAGS ?= -std=c++14 -ccbin=$(CXX) -O3 $(NVARCH) -Wno-deprecated-gpu-targets 
 #NVCCFLAGS+= -g -G
 # and enable cufinufft internal flags.
 #NVCCFLAGS+= -DINFO -DDEBUG -DRESULT -DTIME
-#NVCCFLAGS+= -DDEBUG
+NVCCFLAGS+= -DDEBUG
 
 #set your cuda path
 CUDA_ROOT := /usr/local/cuda
