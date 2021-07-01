@@ -81,7 +81,6 @@ int main(int argc, char *argv[])
 		vis[i].imag(i % 10 * 0.5);
 		// wgt[i] = 1;
 	}
-    printf("u1: %.3lf, v1: %.3lf, w1: %.3lf\n", u[1], v[1], w[1]);
     // gridder plan setting
     ragridder_plan * plan = (ragridder_plan *) malloc (sizeof(ragridder_plan));
     memset(plan, 0, sizeof(ragridder_plan));
@@ -101,7 +100,6 @@ int main(int argc, char *argv[])
     plan->kv.w = w;
     plan->kv.vis = vis;
 
-    printf("pixelsize %.3g\n",deg_per_pixely);
 
     plan->dirty_image = (CPX *)malloc(sizeof(CPX)*nxdirty*nydirty*nchan); //
 
@@ -114,5 +112,6 @@ int main(int argc, char *argv[])
         }
         printf("\n");
     }
+	// add ground truth result printing and error printing +++
     return 0;
 }

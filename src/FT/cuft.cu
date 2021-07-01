@@ -80,12 +80,12 @@ int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, C
         }
         checkCudaErrors(cudaMalloc(&plan->fw, n1 * n2 * n3 * sizeof(CUCPX)));
         /* For multi GPU
-    cudaStream_t* streams =(cudaStream_t*) malloc(plan->opts.gpu_nstreams*
-      sizeof(cudaStream_t));
-    for(int i=0; i<plan->opts.gpu_nstreams; i++)
-      checkCudaErrors(cudaStreamCreate(&streams[i]));
-    plan->streams = streams;
-    */
+        cudaStream_t* streams =(cudaStream_t*) malloc(plan->opts.gpu_nstreams*
+        sizeof(cudaStream_t));
+        for(int i=0; i<plan->opts.gpu_nstreams; i++)
+        checkCudaErrors(cudaStreamCreate(&streams[i]));
+        plan->streams = streams;
+        */
     }
 
     return ier;

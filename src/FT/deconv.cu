@@ -54,8 +54,8 @@ __global__ void deconv_2d(int N1, int N2, int nf1, int nf2, CUCPX* fw, CUCPX* fk
         w1 = 0;
         w2 = 0;
         if(flag == 1){
-            w1 = k1 >= N1/2 ? k1-N1 : nf1+k1-N1/2;
-		    w2 = k2 >= N2/2 ? k2-N2 : nf2+k2-N2/2;
+            w1 = k1 >= N1/2 ? k1-N1/2 : nf1+k1-N1/2;
+		    w2 = k2 >= N2/2 ? k2-N2/2 : nf2+k2-N2/2;
         }
         else{
             w1 = k1 >= N1/2 ? nf1+k1-N1 : k1;
@@ -65,11 +65,11 @@ __global__ void deconv_2d(int N1, int N2, int nf1, int nf2, CUCPX* fw, CUCPX* fk
         
         
 		PCS kervalue = fwkerhalf1[abs(k1-N1/2)]*fwkerhalf2[abs(k2-N2/2)];
-        if(idx==20)printf("correction factor %.3g\n",kervalue);
+        //if(idx==20)printf("correction factor %.3g\n",kervalue);
 		fk[idx].x = fw[idx_fw].x/kervalue;
 		fk[idx].y = fw[idx_fw].y/kervalue;
-        if(idx==20)printf("idx_fw %d, fw %.3g, fk %.3g\n", idx_fw, fw[idx_fw].x, fk[idx].x);
-        if(idx==20)printf("nf1 %d, nf2 %d\n",nf1, nf2);
+        //if(idx==20)printf("idx_fw %d, fw %.3g, fk %.3g\n", idx_fw, fw[idx_fw].x, fk[idx].x);
+        //if(idx==20)printf("nf1 %d, nf2 %d\n",nf1, nf2);
 
     }
 }

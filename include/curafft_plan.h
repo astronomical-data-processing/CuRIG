@@ -79,7 +79,7 @@ struct curafft_plan
 
 	int *idxnupts;//length: #nupts, index of the nupts in the bin-sorted order (size is M) abs location in bin
 	int *sortidx; //length: #nupts, order inside the bin the nupt belongs to (size is M) local position in bin
-	INT_M *cell_loc; // length: #nupts, location in grid cells for 2D case
+	INT_M *cell_loc; // length: #nupts, location in grid cells for 2D case // can be remove, it is useless
 
 
 	//----for GM-sort method----

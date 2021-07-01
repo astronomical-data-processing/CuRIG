@@ -173,9 +173,9 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     
     // cufft plan setting
     cufftHandle fftplan;
-    int n[] = {N2, N1};
+    int n[] = {plan->nf2, plan->nf1};
     int inembed[] = {plan->nf2, plan->nf1};
-	int onembed[] = {N2, N1};
+	int onembed[] = {plan->nf2, plan->nf1};
     
     // check, multi cufft for different w ??? how to set
 	// cufftCreate(&fftplan);
