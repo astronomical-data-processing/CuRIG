@@ -14,7 +14,7 @@ __global__ void fourier_series_appro(PCS *fseries, PCS *k, int N, PCS *g, PCS *x
     int idx;
     for(idx = blockDim.x * blockIdx.x + threadIdx.x; idx < N; idx+=gridDim.x*blockDim.x){
         for(int i=0; i<p; i++){
-            fseries[idx] += g[i]*cos(x[i]*(k==NULL? idx: k[idx]));
+            fseries[idx] += g[i]*cos(x[i]*(k==NULL? ((PCS)idx/(PCS)(N-1)/2.0)*2*PI: k[idx]));
         }
         fseries[idx] = 2*fseries[idx]; // add negative part
     }
