@@ -160,14 +160,14 @@ int main(int argc, char *argv[])
     // // fw allocation
     // checkCudaErrors(cudaMalloc((void**)&plan->fw,sizeof(CUCPX)*nf1*nf2*nf3));
 
-    // PCS *fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*(plan->nf1/2+1));
-    // onedim_fseries_kernel(plan->nf1, fwkerhalf1, plan->copts); // used for correction
+    PCS *fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*(plan->nf1/2+1));
+    onedim_fseries_kernel_seq(plan->nf1, fwkerhalf1, plan->copts); // used for correction
     
-    // PCS *fwkerhalf2 = (PCS*)malloc(sizeof(PCS)*(plan->nf2/2+1));
-    // onedim_fseries_kernel(plan->nf2, fwkerhalf2, plan->copts);
+    PCS *fwkerhalf2 = (PCS*)malloc(sizeof(PCS)*(plan->nf2/2+1));
+    onedim_fseries_kernel_seq(plan->nf2, fwkerhalf2, plan->copts);
 
-	fourier_series_appro_invoker(plan->fwkerhalf1, NULL, plan->copts, plan->nf1);
-	fourier_series_appro_invoker(plan->fwkerhalf2, NULL, plan->copts, plan->nf2);
+	// fourier_series_appro_invoker(plan->fwkerhalf1, NULL, plan->copts, plan->nf1/2+1);
+	// fourier_series_appro_invoker(plan->fwkerhalf2, NULL, plan->copts, plan->nf2/2+1);
 
 #ifdef DEBUG
 	printf("nf1, nf2 %d %d\n",plan->nf1,plan->nf2);
@@ -181,14 +181,14 @@ int main(int argc, char *argv[])
     plan->copts.ES_halfwidth,
     plan->copts.ES_c);
 
-	PCS *fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*(plan->nf1/2+1));
-	PCS *fwkerhalf2 = (PCS*)malloc(sizeof(PCS)*(plan->nf2/2+1));
+	// PCS *fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*(plan->nf1/2+1));
+	// PCS *fwkerhalf2 = (PCS*)malloc(sizeof(PCS)*(plan->nf2/2+1));
 
-	checkCudaErrors(cudaMemcpy(fwkerhalf1,plan->fwkerhalf1,(plan->nf1/2+1)*
-	 	sizeof(PCS),cudaMemcpyDeviceToHost));
+	// checkCudaErrors(cudaMemcpy(fwkerhalf1,plan->fwkerhalf1,(plan->nf1/2+1)*
+	//  	sizeof(PCS),cudaMemcpyDeviceToHost));
 	
-	checkCudaErrors(cudaMemcpy(fwkerhalf2,plan->fwkerhalf2,(plan->nf2/2+1)*
-	 	sizeof(PCS),cudaMemcpyDeviceToHost));
+	// checkCudaErrors(cudaMemcpy(fwkerhalf2,plan->fwkerhalf2,(plan->nf2/2+1)*
+	//  	sizeof(PCS),cudaMemcpyDeviceToHost));
 	
 	printf("correction factor print...\n");
 	for(int i=0; i<nf1/2+1; i++){
@@ -203,11 +203,11 @@ int main(int argc, char *argv[])
 #endif
 
     // copy to device 
-    // checkCudaErrors(cudaMemcpy(plan->fwkerhalf1,fwkerhalf1,(plan->nf1/2+1)*
-	// 	sizeof(PCS),cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(plan->fwkerhalf1,fwkerhalf1,(plan->nf1/2+1)*
+		sizeof(PCS),cudaMemcpyHostToDevice));
 	
-	// checkCudaErrors(cudaMemcpy(plan->fwkerhalf2,fwkerhalf2,(plan->nf2/2+1)*
-	// 	sizeof(PCS),cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(plan->fwkerhalf2,fwkerhalf2,(plan->nf2/2+1)*
+		sizeof(PCS),cudaMemcpyHostToDevice));
     
     // cufft plan setting
     cufftHandle fftplan;

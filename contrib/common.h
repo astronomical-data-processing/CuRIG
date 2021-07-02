@@ -38,6 +38,6 @@
 struct conv_opts;
 
 // common.cpp provides...
-
+void onedim_fseries_kernel_seq(int nf, PCS *fwkerhalf, conv_opts opts);
 void onedim_fseries_kernel(int nf, PCS *fwkerhalf, conv_opts opts);
 #endif // COMMON_H
