@@ -8,14 +8,7 @@ legendre_rule_fast cuda version should be implemented here
 #include "deconv.h"
 #include "helper_cuda.h"
 #include "curafft_plan.h"
-#ifdef __cplusplus
-extern "C"
-{
-#include "legendre_rule_fast.h"
-}
-#else
-#include "legendre_rule_fast.h"
-#endif
+
 
 __global__ void fourier_series_appro(PCS *fseries, PCS *k, int N, PCS *g, PCS *x, int p){
     int idx;
