@@ -7,6 +7,7 @@ Some precomputation related radio astronomy
 #include "dataType.h"
 #include "curafft_plan.h"
 #include "ragridder_plan.h"
+#include "deconv.h"
 #include "utils.h"
 #include "precomp.h"
 
@@ -61,16 +62,17 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
     //----------plan reset--------------
     plan->nf3 = num_w;
     plan->batchsize = min(4,num_w);
+    int N1 = plan->ms;
+    int N2 = plan->mt;
     if(gridder_plan->w_term_method){
 		// improved_ws
-        checkCudaErrors(cudaFree(plan->fwkerhalf3));
-        PCS *fwkerhalf3 = (PCS*)malloc(sizeof(PCS)*(plan->nf3/2+1));
-        //need to revise
-        onedim_fseries_kernel(gridder_plan->num_w, fwkerhalf3, plan->copts);
-        checkCudaErrors(cudaMalloc((void**)&plan->fwkerhalf3,sizeof(PCS)*(plan->nf3/2+1)));
-        checkCudaErrors(cudaMemcpy(plan->fwkerhalf3,fwkerhalf3,(plan->nf3/2+1)*
-			sizeof(PCS),cudaMemcpyHostToDevice));
-        free(fwkerhalf3);
+        checkCudaErrors(cudaFree(plan->fwkerhalf3));  
+        checkCudaErrors(cudaMalloc((void**)&plan->fwkerhalf3,sizeof(PCS)*(N1/2+1)*(N2/2+1)));
+        PCS *k;
+        checkCudaErrors(cudaMalloc((void**)&k,sizeof(PCS)*(N1/2+1)*(N2/2+1)));
+        w_term_k_generation(k,plan->nf1,plan->nf2,gridder_plan->pixelsize_x,gridder_plan->pixelsize_y);
+        fourier_series_appro_invoker(plan->fwkerhalf3,k,plan->copts,(N1/2+1)*(N2/2+1)); // correction with k, may be wrong, k will be free in this function
+        checkCudaErrors(cudaFree(k));
         //
         
         if(plan->fw!=NULL){checkCudaErrors(cudaFree(plan->fw));plan->fw=NULL;}
@@ -79,8 +81,7 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
         checkCudaErrors(cudaMalloc((void**)&plan->fw,sizeof(CUCPX)*plan->nf1*plan->nf2*plan->nf3));
         checkCudaErrors(cudaMemset(plan->fw, 0, plan->nf3 * plan->nf1 * plan->nf2 * sizeof(CUCPX)));
     }
-    int N1 = plan->ms;
-    int N2 = plan->mt;
+    
     int n[] = {N2, N1};
     int inembed[] = {plan->nf2, plan->nf1};
 	int onembed[] = {N2, N1};
@@ -92,15 +93,44 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
     gridder_plan->kv.pirange = 1;
     plan->copts.pirange = 1;
     // ----------------rescaling-----------------
-    PCS scaling_ratio = 1.0/xpixelsize;
+    PCS scaling_ratio = xpixelsize;
     gridder_rescaling_real<<<(N-1)/blocksize+1, blocksize>>>(d_u, scaling_ratio, nrow);
     checkCudaErrors(cudaDeviceSynchronize());
-    scaling_ratio = 1.0/ypixelsize;
+    scaling_ratio = ypixelsize;
     gridder_rescaling_real<<<(N-1)/blocksize+1, blocksize>>>(d_v, scaling_ratio, nrow);
     checkCudaErrors(cudaDeviceSynchronize());
     // ------------vis * flag * weight--------+++++
     // memory transfer (vis belong to this channel and weight)
 	checkCudaErrors(cudaMemcpy(d_vis, gridder_plan->kv.vis + nrow*gridder_plan->cur_channel, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice)); //
+}
+
+__global__ void k_generation(PCS *k, int nf1, int nf2, PCS xpixelsize, PCS ypixelsize){
+    int idx;
+    int N = (nf1/2+1)*(nf2/2+1);
+    for(idx = threadIdx.x + blockDim.x*blockIdx.x; idx<N; idx+=gridDim.x*blockDim.x){
+        int row = idx / (nf1/2 + 1);
+        int col = idx % (nf1/2 + 1);
+        k[idx] = sqrt(1 - pow(row*xpixelsize,2)-pow(col*ypixelsize,2)) - 1;
+    }
+}
+
+int w_term_k_generation(PCS *k, int nf1, int nf2, PCS xpixelsize, PCS ypixelsize){
+    /*
+        W term k array generation
+        Output:
+            k - size: [nf1/2+1, nf2/2+1] (due to the parity, just calculate 1/4 of the result)
+            The value of k[i] is set based on z = sqrt(1 - l^2 - m^2) - 1
+        
+    */
+    // k array generation
+    PCS *d_k;
+    int N = (nf1/2+1)*(nf2/2+1);
+    checkCudaErrors(cudaMalloc((void**)&d_k, sizeof(PCS)*N));
+
+    int blocksize = 512;
+    k_generation<<<(N-1)/blocksize+1, blocksize>>>(k,nf1,nf2,xpixelsize,ypixelsize);
+    checkCudaErrors(cudaDeviceSynchronize());
+    return 0;
 }
 
 __global__ void explicit_gridder(int N1, int N2, int nrow, PCS *u, PCS *v, PCS *w, CUCPX *vis, 

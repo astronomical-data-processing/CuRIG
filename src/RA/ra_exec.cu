@@ -48,12 +48,12 @@ int curaew_scaling(curafft_plan *plan, ragridder_plan *gridder_plan){
     int N1 = gridder_plan->width;
     int N2 = gridder_plan->height;
     int N = N1*N2;
-    PCS scaling_ratio = 1.0 / gridder_plan->pixelsize_x / gridder_plan->pixelsize_y;
+    //PCS scaling_ratio = 1.0 / gridder_plan->pixelsize_x / gridder_plan->pixelsize_y;
     int blocksize = 256;
     int gridsize = (N-1)/blocksize + 1;
     
-    gridder_rescaling_complex<<<gridsize,blocksize>>>(plan->fk, scaling_ratio, N);
-    checkCudaErrors(cudaDeviceSynchronize());
+    // gridder_rescaling_complex<<<gridsize,blocksize>>>(plan->fk, scaling_ratio, N);
+    // checkCudaErrors(cudaDeviceSynchronize());
     
     // 2. dividing n_lm
     div_n_lm<<<gridsize,blocksize>>>(plan->fk, gridder_plan->pixelsize_x, gridder_plan->pixelsize_y, N1,N2);
@@ -103,7 +103,7 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
             plan->dim = 2;
             ier = curafft_deconv(plan);
             // 2. w term deconv on fk
-            // fwkerhalf and new deconv function
+            ier = curadft_w_deconv(plan);
 #ifdef DEBUG
             printf("deconv result printing:...\n");
             CPX *fk = (CPX *)malloc(sizeof(CPX)*plan->ms*plan->mt);

@@ -184,6 +184,7 @@ int main(int argc, char *argv[])
 
 	int direction = 1; //inverse
 
+	// device data allocation and transfer should be done in gridder setting
 	ier = gridder_setting(nydirty,nxdirty,method,kerevalmeth,w_term_method,epsilon,direction,sigma,0,1,nrow,nchan,fov,pointer_v,d_u,d_v,d_w,d_vis
 		,plan,gridder_plan);
 	//print the setting result
@@ -217,6 +218,14 @@ int main(int argc, char *argv[])
 			cudaMemcpyDeviceToHost));
 	}
 	printf("result printing...\n");
+	for(int i=0; i<nxdirty; i++){
+		for(int j=0; j<nydirty; j++){
+			printf("%.3lf ", gridder_plan->dirty_image[i*nydirty+j].real());
+		}
+		printf("\n");
+	}
+	printf("ground truth printing...\n");
+	explicit_gridder_invoker(gridder_plan);
 	for(int i=0; i<nxdirty; i++){
 		for(int j=0; j<nydirty; j++){
 			printf("%.3lf ", gridder_plan->dirty_image[i*nydirty+j].real());

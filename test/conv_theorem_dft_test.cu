@@ -63,28 +63,32 @@ int main(int argc, char *argv[])
 	//gpu_method == 0, nupts driven
 
 	//int ier;
-	PCS *u, *v;
+	PCS *u;
 	CPX *c;
-	u = (PCS *)malloc(M * sizeof(PCS)); //Allocates page-locked memory on the host.
-	v = (PCS *)malloc(M * sizeof(PCS));
-	c = (CPX *)malloc(M * sizeof(CPX));
-	PCS *d_u, *d_v;
+	u = (PCS *)malloc(M * N1 * N2 * sizeof(PCS)); //Allocates page-locked memory on the host.
+	c = (CPX *)malloc(M * N1 * N2 * sizeof(CPX));
+	PCS *d_u;
 	CUCPX *d_c, *d_fk;
 	CUCPX *d_fw;
-	checkCudaErrors(cudaMalloc(&d_u, M * sizeof(PCS)));
-	checkCudaErrors(cudaMalloc(&d_v, M * sizeof(PCS)));
-	checkCudaErrors(cudaMalloc(&d_c, M * sizeof(CUCPX)));
-
+	checkCudaErrors(cudaMalloc(&d_u, M * N1 * N2 * sizeof(PCS)));
+	checkCudaErrors(cudaMalloc(&d_c, M * N1 * N2 * sizeof(CUCPX)));
+    /// pixel size 
 	// generating data
 	for (int i = 0; i < M; i++)
 	{
 		u[i] = randm11()*PI; //xxxxx
-		v[i] = randm11()*PI;
 		c[i].real(randm11()); // M vis per channel, weight?
 		c[i].imag(randm11());
 		// wgt[i] = 1;
 	}
 
+	PCS *k = (PCS*) malloc(sizeof(PCS)*N1*N2);
+	PCS pixelsize = 0.01;
+	for (int i=0; i<N2; i++){
+		for(int j=0; j<N1; j++){
+			k[i*N1+j] = sqrt(1-pow(pixelsize*(i-N2/2),2) - pow(pixelsize*(i-N1/2),2))-1;
+		}
+	}
 	// double a[5] = {-PI/2, -PI/3, 0, PI/3, PI/2}; // change to random data
 	// for(int i=0; i<M; i++){
 	// 	u[i] = a[i/5];
@@ -108,8 +112,7 @@ int main(int argc, char *argv[])
 
 	// Timing begin
 	//data transfer
-	checkCudaErrors(cudaMemcpy(d_u, u, M * sizeof(PCS), cudaMemcpyHostToDevice)); //u
-	checkCudaErrors(cudaMemcpy(d_v, v, M * sizeof(PCS), cudaMemcpyHostToDevice)); //v
+	checkCudaErrors(cudaMemcpy(d_u, u, M * N1 * N2 * sizeof(PCS), cudaMemcpyHostToDevice)); //u
 	checkCudaErrors(cudaMemcpy(d_c, c, M * sizeof(CUCPX), cudaMemcpyHostToDevice));
 
 	/* ----------Step2: plan setting------------*/
@@ -139,14 +142,14 @@ int main(int argc, char *argv[])
     // cuda stream malloc in setup_plan
     
 
-    int nf1 = get_num_cells(N1,plan->copts);
-    int nf2 = get_num_cells(N2,plan->copts);
-    
-    plan->dim = 2;
-    setup_plan(nf1, nf2, 1, M, d_u, d_v, NULL, d_c, plan);
+    int nf1 = get_num_cells(M,plan->copts);
 
-	plan->ms = N1;
-	plan->mt = N2;
+    
+    plan->dim = 1;
+    setup_plan(nf1, 1, 1, M, d_u, NULL, NULL, d_c, plan);
+
+	plan->ms = M; ///!!!
+	plan->mt = 1;
 	plan->mu = 1;
     plan->execute_flow = 1;
 	int iflag = direction;
@@ -156,21 +159,18 @@ int main(int argc, char *argv[])
 	plan->batchsize = 1;
 
     plan->copts.direction = direction; // 1 inverse, 0 forward
+    PCS *d_fwkerhalf;
+    checkCudaErrors(cudaMalloc((void**)&d_fwkerhalf,sizeof(PCS)*(N1/2+1)*(N2/2+1)));
+    checkCudaErrors(cudaMalloc((void**)&d_fwkerhalf,sizeof(PCS)*(N1/2+1)*(N2/2+1)));
+    PCS *d_k;
+    checkCudaErrors(cudaMalloc((void**)&d_k,sizeof(PCS)*(N1/2+1)*(N2/2+1)));
+    checkCudaErrors(cudaMemcpy(d_k,k,sizeof(PCS)*(N1/2+1)*(N2/2+1),cudaMemcpyHostToDevice));
+    fourier_series_appro_invoker(d_fwkerhalf,d_k,plan->copts,(N1/2+1)*(N2/2+1)); // correction with k, may be wrong, k will be free in this function
 
-    // // fw allocation
-    // checkCudaErrors(cudaMalloc((void**)&plan->fw,sizeof(CUCPX)*nf1*nf2*nf3));
-
-    // PCS *fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*(plan->nf1/2+1));
-    // onedim_fseries_kernel_seq(plan->nf1, fwkerhalf1, plan->copts); // used for correction
-    
-    // PCS *fwkerhalf2 = (PCS*)malloc(sizeof(PCS)*(plan->nf2/2+1));
-    // onedim_fseries_kernel_seq(plan->nf2, fwkerhalf2, plan->copts);
-
-	fourier_series_appro_invoker(plan->fwkerhalf1, NULL, plan->copts, plan->nf1/2+1);
-	fourier_series_appro_invoker(plan->fwkerhalf2, NULL, plan->copts, plan->nf2/2+1);
+	// do conv and then record on the  2D array ++++++++++++++++++
 
 #ifdef DEBUG
-	printf("nf1, nf2 %d %d\n",plan->nf1,plan->nf2);
+	printf("nf1 %d\n",plan->nf1);
 	printf("copts info printing...\n");
 	printf("kw: %d, direction: %d, pirange: %d, upsampfac: %lf, \nbeta: %lf, halfwidth: %lf, c: %lf\n",
  	plan->copts.kw,
@@ -181,62 +181,30 @@ int main(int argc, char *argv[])
     plan->copts.ES_halfwidth,
     plan->copts.ES_c);
 
-	PCS *fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*(plan->nf1/2+1));
-	PCS *fwkerhalf2 = (PCS*)malloc(sizeof(PCS)*(plan->nf2/2+1));
+	PCS *fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*((N1/2+1)*(N2/2+1)));
+	
 
-	checkCudaErrors(cudaMemcpy(fwkerhalf1,plan->fwkerhalf1,(plan->nf1/2+1)*
+	checkCudaErrors(cudaMemcpy(fwkerhalf1,d_fwkerhalf,(N1/2+1)*(N2/2+1)*
 	 	sizeof(PCS),cudaMemcpyDeviceToHost));
 	
-	checkCudaErrors(cudaMemcpy(fwkerhalf2,plan->fwkerhalf2,(plan->nf2/2+1)*
-	 	sizeof(PCS),cudaMemcpyDeviceToHost));
 	
 	printf("correction factor print...\n");
-	for(int i=0; i<nf1/2+1; i++){
-		printf("%.3g ", fwkerhalf1[i]);
-	}
-	printf("\n");
-
-	for(int i=0; i<nf2/2+1; i++){
-		printf("%.3g ", fwkerhalf2[i]);
-	}
-	printf("\n");
+    for(int j=0; j<N2/2+1; j++){
+        for(int i=0; i<N1/2+1; i++){
+            printf("%.3g ", fwkerhalf1[i+j*(N1/2+1)]);
+        }
+	    printf("\n");
+    }
+	
 	// free host fwkerhalf
     free(fwkerhalf1);
-    free(fwkerhalf2);
+
 #endif
 
-    // // copy to device 
-    // checkCudaErrors(cudaMemcpy(plan->fwkerhalf1,fwkerhalf1,(plan->nf1/2+1)*
-	// 	sizeof(PCS),cudaMemcpyHostToDevice));
-	
-	// checkCudaErrors(cudaMemcpy(plan->fwkerhalf2,fwkerhalf2,(plan->nf2/2+1)*
-	// 	sizeof(PCS),cudaMemcpyHostToDevice));
     
-    // cufft plan setting
-    cufftHandle fftplan;
-    int n[] = {plan->nf2, plan->nf1};
-    int inembed[] = {plan->nf2, plan->nf1};
-	int onembed[] = {plan->nf2, plan->nf1};
-    
-	// cufftCreate(&fftplan);
-	// cufftPlan2d(&fftplan,n[0],n[1],CUFFT_TYPE);
-    // the bach size sets as the num of w when memory is sufficent. Alternative way, set as a smaller number when memory is insufficient.
-    // and handle this piece by piece 
-	cufftPlanMany(&fftplan,2,n,inembed,1,inembed[0]*inembed[1],
-		onembed,1,onembed[0]*onembed[1],CUFFT_TYPE,plan->nf3); //need to check and revise (the partial conv will be differnt)
-    plan->fftplan = fftplan; 
-
-    // set up bin size +++ (for other methods) and related malloc based on gpu method
-    // assign memory for index after sorting (can be done in setup_plan)
-    // bin sorting (for other methods)
-
-	if(ier == 1){
-		printf("errors in gridder setting\n");
-		return ier;
-	}
 	// fw (conv res set)
-	checkCudaErrors(cudaMalloc((void**)&d_fw,sizeof(CUCPX)*nf1*nf2));
-	checkCudaErrors(cudaMemset(d_fw, 0, sizeof(CUCPX)*nf1*nf2));
+	checkCudaErrors(cudaMalloc((void**)&d_fw,sizeof(CUCPX)*nf1*N1*N2));
+	checkCudaErrors(cudaMemset(d_fw, 0, sizeof(CUCPX)*nf1*N1*N2));
 	plan->fw = d_fw;
 	// fk malloc and set
 	checkCudaErrors(cudaMalloc((void**)&d_fk,sizeof(CUCPX)*N1*N2));
@@ -295,23 +263,10 @@ int main(int argc, char *argv[])
 		printf("\n");
 	}
 
-	printf("ground truth printing...\n");
-	CPX Ft = CPX(0,0), J = IMA*(PCS)iflag;
-	for(int i=0; i<N2; i++){
-		for(int j=0; j<N1; j++){
-			for (int k=0; k<M; ++k)
-				Ft += c[k] * exp(J*((j-N1/2)*u[k]+(i-N2/2)*v[k]));   // crude direct
-			printf("%.10lf ",Ft.real());
-			Ft.real(0);
-			Ft.imag(0);
-		}
-		printf("\n");
-	}
 	//free
 	curafft_free(plan);
 	free(fk);
 	free(u);
-	free(v);
 	free(c);
 
 	return ier;

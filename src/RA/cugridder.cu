@@ -19,8 +19,10 @@
 #include "ragridder_plan.h"
 #include "curafft_plan.h"
 #include "cuft.h"
+#include "precomp.h"
 #include "ra_exec.h"
 #include "utils.h"
+#include "deconv.h"
 #include "cugridder.h"
 
 
@@ -149,26 +151,18 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     // // fw allocation
     // checkCudaErrors(cudaMalloc((void**)&plan->fw,sizeof(CUCPX)*nf1*nf2*nf3));
 
-    PCS *fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*(plan->nf1/2+1));
-    onedim_fseries_kernel(plan->nf1, fwkerhalf1, plan->copts); // used for correction
+    fourier_series_appro_invoker(plan->fwkerhalf1,NULL,plan->copts,plan->nf1/2+1);
+    fourier_series_appro_invoker(plan->fwkerhalf2,NULL,plan->copts,plan->nf2/2+1);
     
-    PCS *fwkerhalf2 = (PCS*)malloc(sizeof(PCS)*(plan->nf2/2+1));
-    onedim_fseries_kernel(plan->nf2, fwkerhalf2, plan->copts);
-
-    // copy to device 
-    checkCudaErrors(cudaMemcpy(plan->fwkerhalf1,fwkerhalf1,(plan->nf1/2+1)*
-		sizeof(PCS),cudaMemcpyHostToDevice));
-	
-	checkCudaErrors(cudaMemcpy(plan->fwkerhalf2,fwkerhalf2,(plan->nf2/2+1)*
-		sizeof(PCS),cudaMemcpyHostToDevice));
-    PCS *fwkerhalf3;
 	if(w_term_method){
 		// improved_ws
-        fwkerhalf3 = (PCS*)malloc(sizeof(PCS)*(plan->nf3/2+1));
-        //need to revise
-        onedim_fseries_kernel(gridder_plan->num_w, fwkerhalf3, plan->copts);
-        checkCudaErrors(cudaMemcpy(plan->fwkerhalf3,fwkerhalf3,(gridder_plan->num_w/2+1)*
-			sizeof(PCS),cudaMemcpyHostToDevice));
+        checkCudaErrors(cudaFree(plan->fwkerhalf3));  
+        checkCudaErrors(cudaMalloc((void**)&plan->fwkerhalf3,sizeof(PCS)*(N1/2+1)*(N2/2+1)));
+        PCS *k;
+        checkCudaErrors(cudaMalloc((void**)&k,sizeof(PCS)*(N1/2+1)*(N2/2+1)));
+        w_term_k_generation(k,plan->nf1,plan->nf2,gridder_plan->pixelsize_x,gridder_plan->pixelsize_y);
+        fourier_series_appro_invoker(plan->fwkerhalf3,k,plan->copts,(N1/2+1)*(N2/2+1)); // correction with k, may be wrong, k will be free in this function
+        checkCudaErrors(cudaFree(k));
     }
     
     // cufft plan setting
@@ -191,9 +185,9 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     // bin sorting (for other methods)
 
     // free host fwkerhalf
-    free(fwkerhalf1);
-    free(fwkerhalf2);
-    if(w_term_method)free(fwkerhalf3);
+    // free(fwkerhalf1);
+    // free(fwkerhalf2);
+    // if(w_term_method)free(fwkerhalf3);
 
     return ier;
 }

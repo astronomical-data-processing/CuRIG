@@ -16,7 +16,10 @@ __global__ void fourier_series_appro(PCS *fseries, PCS *k, int N, PCS *g, PCS *x
         
         for(int i=0; i<p; i++){
             //why N-1 - x will change the answer
-            fseries[idx] += g[i]*cos((N-1-x[i])/(PCS)(N-1)*PI*(k==NULL? idx: k[idx]));
+            if(k == NULL)
+            fseries[idx] += g[i]*cos((N-1-x[i])/(PCS)(N-1)*PI* idx);
+            else
+            fseries[idx] += g[i]*cos(x[i] * k[idx]); //slow
         }
         fseries[idx] = 2*fseries[idx]; // add negative part
     }
@@ -209,3 +212,26 @@ int curafft_deconv(curafft_plan *plan){
 
 
 //------------------Below this line, the content is just for Radio Astronomy---------------------
+
+__global__ void w_term_deconv(int N1, int N2, CUCPX* fk, PCS* fwkerhalf){
+    // Input is CMCL format
+    int idx;
+    int nmodes = N1*N2; 
+    int idx_fw = 0;
+    for(idx = blockIdx.x*blockDim.x + threadIdx.x; idx < nmodes; idx+=gridDim.x*blockDim.x){
+        int row = idx / N1;
+        int col = idx % N1;
+        idx_fw = abs(col-N1/2)+abs(row-N2/2)*(N1/2+1);
+        fk[idx].x = fk[idx].x / fwkerhalf[idx_fw];
+        fk[idx].y = fk[idx].y / fwkerhalf[idx_fw];
+    }
+}
+
+int curadft_w_deconv(curafft_plan *plan){
+    int ier = 0;
+    int blocksize = 512;
+    int N = plan->ms*plan->mt;
+    w_term_deconv<<<(N-1)/blocksize+1,blocksize>>>(plan->ms,plan->mt,plan->fk,plan->fwkerhalf3);
+    checkCudaErrors(cudaDeviceSynchronize());
+    return ier;
+}
