@@ -64,8 +64,9 @@ int main(int argc, char *argv[])
 	for (size_t i = 0; i < N; i++)
 	{
 		/* code */
-		k[i] = (int)i-N/2;
-		// k[i] = randm11();
+		// k[i] = (int)i-N/2;
+		//k[i] = randm11();
+		k[i] = i;
 	}
 	
 	// double a[5] = {-PI/2, -PI/3, 0, PI/3, PI/2}; // change to random data
@@ -158,15 +159,15 @@ int main(int argc, char *argv[])
 		printf("%lf ",fwkerhalf[i]);
 	}
 	printf("\n");
-	fourier_series_appro_invoker(d_fwkerhalf,plan->copts,nf1/2+1);
-	cudaMemcpy(fwkerhalf, d_fwkerhalf, sizeof(PCS)*(nf1/2+1), cudaMemcpyDeviceToHost);
-	printf("correction factor printing method2...\n");
-	for (size_t i = 0; i < N/2+1; i++)
-	{
-		/* code */
-		printf("%lf ",fwkerhalf[i]);
-	}
-	printf("\n");
+	// fourier_series_appro_invoker(d_fwkerhalf,plan->copts,nf1/2+1);
+	// cudaMemcpy(fwkerhalf, d_fwkerhalf, sizeof(PCS)*(nf1/2+1), cudaMemcpyDeviceToHost);
+	// printf("correction factor printing method2...\n");
+	// for (size_t i = 0; i < N/2+1; i++)
+	// {
+	// 	/* code */
+	// 	printf("%lf ",fwkerhalf[i]);
+	// }
+	// printf("\n");
 	// for(int i=0; i<nf1/2+1; i++){
 	// 	k[i] = i;
 	// }
@@ -259,7 +260,7 @@ printf("\n");
 	cudaMemcpy(fwkerhalf, d_fwkerhalf, sizeof(PCS)*(N), cudaMemcpyDeviceToHost);
 
 	for(int i=0; i<N; i++){
-		fk[i] = fk[i] / fwkerhalf[abs(i-N/2)];
+		fk[i] = fk[i] / fwkerhalf[abs(i)];
 	}
 
 	
