@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 		epsilon - tolerance
 	*/
 	int ier = 0;
-	if (argc < 4)
+	if (argc < 3)
 	{
 		fprintf(stderr,
 				"Usage: W Stacking\n"
@@ -42,44 +42,41 @@ int main(int argc, char *argv[])
 				"    2: sub-problem, or\n");
 		return 1;
 	}
-	int N1, N2;
+	int N1;
 	PCS sigma = 2.0; // upsampling factor
 	int M;
 
 	double inp;
 	sscanf(argv[1], "%d", &N1);
-	sscanf(argv[2], "%d", &N2);
-	sscanf(argv[3], "%d", &M);
+	
+	sscanf(argv[2], "%d", &M);
 	PCS epsilon = 1e-6;
-	if(argc>4){
-		sscanf(argv[4], "%lf", &inp);
+	if(argc>3){
+		sscanf(argv[3], "%lf", &inp);
 		epsilon = inp;
 	}
 	int kerevalmeth = 0;
-	if(argc>5)sscanf(argv[5], "%d", &kerevalmeth);
+	if(argc>4)sscanf(argv[4], "%d", &kerevalmeth);
 	int method=0;
-	if(argc>6)sscanf(argv[6], "%d", &method);
+	if(argc>5)sscanf(argv[5], "%d", &method);
 
 	//gpu_method == 0, nupts driven
 
 	//int ier;
-	PCS *u, *v;
+	PCS *u;
 	CPX *c;
 	u = (PCS *)malloc(M * sizeof(PCS)); //Allocates page-locked memory on the host.
-	v = (PCS *)malloc(M * sizeof(PCS));
 	c = (CPX *)malloc(M * sizeof(CPX));
-	PCS *d_u, *d_v;
+	PCS *d_u;
 	CUCPX *d_c, *d_fk;
 	CUCPX *d_fw;
 	checkCudaErrors(cudaMalloc(&d_u, M * sizeof(PCS)));
-	checkCudaErrors(cudaMalloc(&d_v, M * sizeof(PCS)));
 	checkCudaErrors(cudaMalloc(&d_c, M * sizeof(CUCPX)));
 
 	// generating data
 	for (int i = 0; i < M; i++)
 	{
 		u[i] = randm11()*PI; //xxxxx
-		v[i] = randm11()*PI;
 		c[i].real(randm11()); // M vis per channel, weight?
 		c[i].imag(randm11());
 		// wgt[i] = 1;
@@ -109,7 +106,6 @@ int main(int argc, char *argv[])
 	// Timing begin
 	//data transfer
 	checkCudaErrors(cudaMemcpy(d_u, u, M * sizeof(PCS), cudaMemcpyHostToDevice)); //u
-	checkCudaErrors(cudaMemcpy(d_v, v, M * sizeof(PCS), cudaMemcpyHostToDevice)); //v
 	checkCudaErrors(cudaMemcpy(d_c, c, M * sizeof(CUCPX), cudaMemcpyHostToDevice));
 
 	/* ----------Step2: plan setting------------*/
@@ -140,13 +136,12 @@ int main(int argc, char *argv[])
     
 
     int nf1 = get_num_cells(N1,plan->copts);
-    int nf2 = get_num_cells(N2,plan->copts);
     
-    plan->dim = 2;
-    setup_plan(nf1, nf2, 1, M, d_u, d_v, NULL, d_c, plan);
+    plan->dim = 1;
+    setup_plan(nf1, 1, 1, M, d_u, NULL, NULL, d_c, plan);
 
 	plan->ms = N1;
-	plan->mt = N2;
+	plan->mt = 1;
 	plan->mu = 1;
     plan->execute_flow = 1;
 	int iflag = direction;
@@ -167,8 +162,7 @@ int main(int argc, char *argv[])
     // onedim_fseries_kernel_seq(plan->nf2, fwkerhalf2, plan->copts);
 
 	fourier_series_appro_invoker(plan->fwkerhalf1, plan->copts, plan->nf1/2+1);
-	fourier_series_appro_invoker(plan->fwkerhalf2, plan->copts, plan->nf2/2+1);
-
+	
 #ifdef DEBUG
 	printf("nf1, nf2 %d %d\n",plan->nf1,plan->nf2);
 	printf("copts info printing...\n");
@@ -182,12 +176,9 @@ int main(int argc, char *argv[])
     plan->copts.ES_c);
 
 	PCS *fwkerhalf1 = (PCS*)malloc(sizeof(PCS)*(plan->nf1/2+1));
-	PCS *fwkerhalf2 = (PCS*)malloc(sizeof(PCS)*(plan->nf2/2+1));
+	
 
 	checkCudaErrors(cudaMemcpy(fwkerhalf1,plan->fwkerhalf1,(plan->nf1/2+1)*
-	 	sizeof(PCS),cudaMemcpyDeviceToHost));
-	
-	checkCudaErrors(cudaMemcpy(fwkerhalf2,plan->fwkerhalf2,(plan->nf2/2+1)*
 	 	sizeof(PCS),cudaMemcpyDeviceToHost));
 	
 	printf("correction factor print...\n");
@@ -196,13 +187,8 @@ int main(int argc, char *argv[])
 	}
 	printf("\n");
 
-	for(int i=0; i<nf2/2+1; i++){
-		printf("%.3g ", fwkerhalf2[i]);
-	}
-	printf("\n");
-	// free host fwkerhalf
+
     free(fwkerhalf1);
-    free(fwkerhalf2);
 #endif
 
     // // copy to device 
@@ -214,16 +200,17 @@ int main(int argc, char *argv[])
     
     // cufft plan setting
     cufftHandle fftplan;
-    int n[] = {plan->nf2, plan->nf1};
-    int inembed[] = {plan->nf2, plan->nf1};
-	int onembed[] = {plan->nf2, plan->nf1};
+    int n[] = { plan->nf1};
+    int inembed[] = { plan->nf1};
+	int onembed[] = { plan->nf1};
     
 	// cufftCreate(&fftplan);
 	// cufftPlan2d(&fftplan,n[0],n[1],CUFFT_TYPE);
     // the bach size sets as the num of w when memory is sufficent. Alternative way, set as a smaller number when memory is insufficient.
     // and handle this piece by piece 
-	cufftPlanMany(&fftplan,2,n,inembed,1,inembed[0]*inembed[1],
-		onembed,1,onembed[0]*onembed[1],CUFFT_TYPE,plan->nf3); //need to check and revise (the partial conv will be differnt)
+    
+	cufftPlanMany(&fftplan,1,n,inembed,1,inembed[0],
+		onembed,1,onembed[0],CUFFT_TYPE,plan->nf3); //need to check and revise (the partial conv will be differnt)
     plan->fftplan = fftplan; 
 
     // set up bin size +++ (for other methods) and related malloc based on gpu method
@@ -235,42 +222,42 @@ int main(int argc, char *argv[])
 		return ier;
 	}
 	// fw (conv res set)
-	checkCudaErrors(cudaMalloc((void**)&d_fw,sizeof(CUCPX)*nf1*nf2));
-	checkCudaErrors(cudaMemset(d_fw, 0, sizeof(CUCPX)*nf1*nf2));
+	checkCudaErrors(cudaMalloc((void**)&d_fw,sizeof(CUCPX)*nf1));
+	checkCudaErrors(cudaMemset(d_fw, 0, sizeof(CUCPX)*nf1));
 	plan->fw = d_fw;
 	// fk malloc and set
-	checkCudaErrors(cudaMalloc((void**)&d_fk,sizeof(CUCPX)*N1*N2));
+	checkCudaErrors(cudaMalloc((void**)&d_fk,sizeof(CUCPX)*N1));
 	plan->fk = d_fk;
 
 	// calulating result
 	curafft_conv(plan);
-#ifdef DEBUG
-	printf("conv result printing...\n");
-	CPX *fw = (CPX *)malloc(sizeof(CPX)*nf1*nf2);
-	PCS temp_res=0;
-	cudaMemcpy(fw,plan->fw,sizeof(CUCPX)*nf1*nf2,cudaMemcpyDeviceToHost);
-	for(int i=0; i<nf2; i++){
-		for(int j=0; j<nf1; j++){
-			printf("%.3g ",fw[i*nf1+j].real());
-			temp_res += fw[i*nf1+j].real();
-		}
-		printf("\n");
-	}
-	printf("fft(0,0) %.3g\n",temp_res);
-#endif
+// #ifdef DEBUG
+// 	printf("conv result printing...\n");
+// 	CPX *fw = (CPX *)malloc(sizeof(CPX)*nf1*nf2);
+// 	PCS temp_res=0;
+// 	cudaMemcpy(fw,plan->fw,sizeof(CUCPX)*nf1*nf2,cudaMemcpyDeviceToHost);
+// 	for(int i=0; i<nf2; i++){
+// 		for(int j=0; j<nf1; j++){
+// 			printf("%.3g ",fw[i*nf1+j].real());
+// 			temp_res += fw[i*nf1+j].real();
+// 		}
+// 		printf("\n");
+// 	}
+// 	printf("fft(0,0) %.3g\n",temp_res);
+// #endif
 	// fft
 	CUFFT_EXEC(plan->fftplan, plan->fw, plan->fw, direction);
-#ifdef DEBUG 
-	printf("fft result printing...\n");
-	cudaMemcpy(fw,plan->fw,sizeof(CUCPX)*nf1*nf2,cudaMemcpyDeviceToHost);
-	for(int i=0; i<nf2; i++){
-		for(int j=0; j<nf1; j++){
-			printf("%.3g ",fw[i*nf1+j].real());
-		}
-		printf("\n");
-	}
-	free(fw);
-#endif
+// #ifdef DEBUG 
+// 	printf("fft result printing...\n");
+// 	cudaMemcpy(fw,plan->fw,sizeof(CUCPX)*nf1*nf2,cudaMemcpyDeviceToHost);
+// 	for(int i=0; i<nf2; i++){
+// 		for(int j=0; j<nf1; j++){
+// 			printf("%.3g ",fw[i*nf1+j].real());
+// 		}
+// 		printf("\n");
+// 	}
+// 	free(fw);
+// #endif
 	// printf("correction factor printing...\n");
 	// for(int i=0; i<N1/2; i++){
 	// 	printf("%.3g ",fwkerhalf1[i]);
@@ -283,35 +270,34 @@ int main(int argc, char *argv[])
 	// deconv
 	ier = curafft_deconv(plan);
 
-	CPX *fk = (CPX *)malloc(sizeof(CPX)*N1*N2);
-	checkCudaErrors(cudaMemcpy(fk,plan->fk,sizeof(CUCPX)*N1*N2, cudaMemcpyDeviceToHost));
+	CPX *fk = (CPX *)malloc(sizeof(CPX)*N1);
+	checkCudaErrors(cudaMemcpy(fk,plan->fk,sizeof(CUCPX)*N1, cudaMemcpyDeviceToHost));
 	
 	// result printing
 	printf("final result printing...\n");
-	for(int i=0; i<N2; i++){
+	
 		for(int j=0; j<N1; j++){
-			printf("%.10lf ",fk[i*N1+j].real());
+			printf("%.10lf ",fk[j].real());
 		}
 		printf("\n");
-	}
+	
 
 	printf("ground truth printing...\n");
 	CPX Ft = CPX(0,0), J = IMA*(PCS)iflag;
-	for(int i=0; i<N2; i++){
+	
 		for(int j=0; j<N1; j++){
 			for (int k=0; k<M; ++k)
-				Ft += c[k] * exp(J*((j-N1/2)*u[k]+(i-N2/2)*v[k]));   // crude direct
+				Ft += c[k] * exp(J*((j-N1/2)*u[k]));   // crude direct
 			printf("%.10lf ",Ft.real());
 			Ft.real(0);
 			Ft.imag(0);
 		}
 		printf("\n");
-	}
+	
 	//free
 	curafft_free(plan);
 	free(fk);
 	free(u);
-	free(v);
 	free(c);
 
 	return ier;

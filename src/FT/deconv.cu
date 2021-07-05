@@ -10,22 +10,35 @@ legendre_rule_fast cuda version should be implemented here
 #include "curafft_plan.h"
 
 
-__global__ void fourier_series_appro(PCS *fseries, PCS *k, int N, PCS *g, PCS *x, int p){
+__global__ void fourier_series_appro(PCS *fseries, int N, PCS *g, PCS *x, int p){
     int idx;
     for(idx = blockDim.x * blockIdx.x + threadIdx.x; idx < N; idx+=gridDim.x*blockDim.x){
-        
+        fseries[idx] = 0;
         for(int i=0; i<p; i++){
             //why N-1 - x will change the answer
-            if(k == NULL)
-            fseries[idx] += g[i]*cos((N-1-x[i])/(PCS)(N-1)*PI* idx);
-            else
-            fseries[idx] += g[i]*cos(x[i] * k[idx]); //slow
+            fseries[idx] += g[i]*cos((x[i]-N+1)/(PCS)(N-1)*PI* idx);
+            // if(idx==0) printf("fseries %lf\n",fseries[idx]);
         }
         fseries[idx] = 2*fseries[idx]; // add negative part
     }
 }
 
-int fourier_series_appro_invoker(PCS *fseries, PCS *k, conv_opts opts, int N)
+__global__ void fourier_series_appro(PCS *fseries, PCS *k, int N, int nf, PCS *g, PCS *x, int p){
+    // 2p nodes and with some error
+    int idx;
+    for(idx = blockDim.x * blockIdx.x + threadIdx.x; idx < N; idx+=gridDim.x*blockDim.x){
+        fseries[idx] = 0;
+        for(int i=0; i<2*p; i++){
+            //why N-1 - x will change the answer
+            fseries[idx] += g[i]*cos((x[i])/(PCS)(nf-1)*PI* k[idx]); //slow
+            //if(idx==0) printf("fseries %lf\n",fseries[idx]);
+
+        }
+        fseries[idx] = fseries[idx]; // add negative part
+    }
+}
+
+int fourier_series_appro_invoker(PCS *fseries, conv_opts opts, int N)
 {
     /*
         One dimensional Fourier series approximation. f(k) = int e^{ikx} f(x) dx.
@@ -60,7 +73,52 @@ int fourier_series_appro_invoker(PCS *fseries, PCS *k, conv_opts opts, int N)
     checkCudaErrors(cudaMemcpy(d_g, g, sizeof(PCS)*p, cudaMemcpyHostToDevice));
 
     int blocksize = 512;
-    fourier_series_appro<<<(N-1)/blocksize+1,blocksize>>>(fseries,k,N,d_g,d_x,p);
+    fourier_series_appro<<<(N-1)/blocksize+1,blocksize>>>(fseries,N,d_g,d_x,p);
+    checkCudaErrors(cudaDeviceSynchronize());
+    checkCudaErrors(cudaFree(d_g));
+    checkCudaErrors(cudaFree(d_x));
+
+    return ier;
+}
+
+
+int fourier_series_appro_invoker(PCS *fseries, PCS *k, conv_opts opts, int N, int nf)
+{
+    /*
+        One dimensional Fourier series approximation. f(k) = int e^{ikx} f(x) dx.
+
+        Input: 
+            opts - convolution options
+            k - location of the series (on device)
+            N - number of k
+            nf
+            flag - -1 or 1
+        Output: real(fk) // on device
+    */
+    // comments need to be revised
+    int ier = 0;
+    PCS alpha = opts.kw / 2.0; // J/2, half-width of ker z-support
+    // # quadr nodes in z (from 0 to J/2; reflections will be added)...
+    int p = (int)(2 + 3.0 * alpha); // not sure why so large? cannot exceed MAX_NQUAD
+    PCS g[MAX_NQUAD]; // intermediate result
+    double x[2 * MAX_NQUAD], w[2 * MAX_NQUAD];
+    legendre_compute_glr(2 * p, x, w); // only half the nodes used, eg on (0,1)
+    for (int n = 0; n < 2*p; ++n) //using 2q points testing
+    {                                                              // set up nodes z_n and vals f_n
+        x[n] *= alpha;                                                // rescale nodes
+        g[n] = alpha * (PCS)w[n] * exp(opts.ES_beta * (sqrt(1.0 - opts.ES_c * x[n] * x[n])));  // vals & quadr wei
+        // a[n] = exp(2 * PI * IMA * (PCS)(nf / 2 - z[n]) / (PCS)nf); // phase winding rates
+    }
+    double *d_x;
+    PCS *d_g;
+    checkCudaErrors(cudaMalloc((void**)&d_x, sizeof(double)*2*p)); // change to constant memory
+    checkCudaErrors(cudaMalloc((void**)&d_g, sizeof(PCS)*2*p));
+
+    checkCudaErrors(cudaMemcpy(d_x, x, sizeof(double)*2*p, cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(d_g, g, sizeof(PCS)*2*p, cudaMemcpyHostToDevice));
+
+    int blocksize = 512;
+    fourier_series_appro<<<(N-1)/blocksize+1,blocksize>>>(fseries,k,N,nf,d_g,d_x,p);
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaFree(d_g));
     checkCudaErrors(cudaFree(d_x));

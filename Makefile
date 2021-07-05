@@ -112,7 +112,10 @@ utiltest: $(BINDIR)/utils_test
 
 w_s_test: $(BINDIR)/w_s_test
 
-nufft_test: $(BINDIR)/nufft_2d_test
+nufft_test: $(BINDIR)/nufft_1d_test \
+	$(BINDIR)/nufft_2d_test
+
+conv_theorem_dft_test: $(BINDIR)/conv_theorem_dft_test
 
 $(BINDIR)/%: test/%.o $(CURAFFTOBJS_64) $(CURAFFTOBJS)
 	mkdir -p $(BINDIR)
@@ -157,9 +160,12 @@ checkeg: explicit_gridder_test
 	@echo "Explicit gridder testing..."
 	bin/explicit_gridder_test 2 64 130 0.5
 
-checknufft: nufft_test
+checknufft: nufft_test conv_theorem_dft_test
 	@echo "NUFFT testing..."
+	bin/nufft_1d_test 10 20
 	bin/nufft_2d_test 10 10 20
+	@echo "DFT theorem test..."
+	bin/conv_theorem_dft_test
 
 # --------------------------------------------- end of check tasks ---------
 

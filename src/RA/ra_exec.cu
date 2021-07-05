@@ -102,11 +102,19 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
             // 1. 2D deconv towards u and v
             plan->dim = 2;
             ier = curafft_deconv(plan);
+#ifdef DEBUG
+            printf("deconv result printing stage 1:...\n");
+            CPX *fk = (CPX *)malloc(sizeof(CPX)*plan->ms*plan->mt);
+            cudaMemcpy(fk,plan->fk,sizeof(CUCPX)*plan->ms*plan->mt,cudaMemcpyDeviceToHost);
+            for(int i=0;i<plan->ms*plan->mt;i++)
+            printf("%.3g ",fk[i].real());
+            printf("\n");
+#endif
             // 2. w term deconv on fk
             ier = curadft_w_deconv(plan);
 #ifdef DEBUG
-            printf("deconv result printing:...\n");
-            CPX *fk = (CPX *)malloc(sizeof(CPX)*plan->ms*plan->mt);
+            printf("deconv result printing stage 2:...\n");
+            //CPX *fk = (CPX *)malloc(sizeof(CPX)*plan->ms*plan->mt);
             cudaMemcpy(fk,plan->fk,sizeof(CUCPX)*plan->ms*plan->mt,cudaMemcpyDeviceToHost);
             for(int i=0;i<plan->ms*plan->mt;i++)
             printf("%.3g ",fk[i].real());

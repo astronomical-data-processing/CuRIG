@@ -151,8 +151,8 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     // // fw allocation
     // checkCudaErrors(cudaMalloc((void**)&plan->fw,sizeof(CUCPX)*nf1*nf2*nf3));
 
-    fourier_series_appro_invoker(plan->fwkerhalf1,NULL,plan->copts,plan->nf1/2+1);
-    fourier_series_appro_invoker(plan->fwkerhalf2,NULL,plan->copts,plan->nf2/2+1);
+    fourier_series_appro_invoker(plan->fwkerhalf1,plan->copts,plan->nf1/2+1);
+    fourier_series_appro_invoker(plan->fwkerhalf2,plan->copts,plan->nf2/2+1);
     
 	if(w_term_method){
 		// improved_ws
@@ -161,7 +161,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
         PCS *k;
         checkCudaErrors(cudaMalloc((void**)&k,sizeof(PCS)*(N1/2+1)*(N2/2+1)));
         w_term_k_generation(k,plan->nf1,plan->nf2,gridder_plan->pixelsize_x,gridder_plan->pixelsize_y);
-        fourier_series_appro_invoker(plan->fwkerhalf3,k,plan->copts,(N1/2+1)*(N2/2+1)); // correction with k, may be wrong, k will be free in this function
+        fourier_series_appro_invoker(plan->fwkerhalf3,k,plan->copts,(N1/2+1)*(N2/2+1),nf3); // correction with k, may be wrong, k will be free in this function
         checkCudaErrors(cudaFree(k));
     }
     

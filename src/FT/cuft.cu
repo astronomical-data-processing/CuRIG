@@ -123,15 +123,16 @@ int curafft_free(curafft_plan *plan)
 }
 
 //------------------------------Below this line, all are just for Radio astronomy-------------------------
-__global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int N1, int N2, PCS xpixelsize, PCS ypixelsize, int flag, int batchsize)
+__global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int nf3, int N1, int N2, PCS xpixelsize, PCS ypixelsize, int flag, int batchsize)
 {
     /*
         Specified for radio astronomy
         W term dft output driven method
         the output of cufft is FFTW format// just do dft on the in range pixels
-        //flag
+        //flag 
     */
     int idx;
+    flag = 1.0;
     for (idx = threadIdx.x + blockIdx.x * blockDim.x; idx < N1 * N2; idx += gridDim.x * blockDim.x)
     {
         int row = idx / N1;
@@ -152,9 +153,9 @@ __global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int N1, int N2, PCS xpix
         // double z_t_2pi = 2 * PI * (z); w have been scaling to pirange
         for (int i = 0; i < batchsize; i++)
         {
-            //for partial computing, the i should add a shift, and fw should change
-            temp.x += fw[idx_fw + i*nf1*nf2].x * cos(z * i) - fw[idx_fw + i*nf1*nf2].y * sin(z * i);
-            temp.y += fw[idx_fw + i*nf1*nf2].x * sin(z * i) + fw[idx_fw + i*nf1*nf2].y * cos(z * i);
+            //for partial computing, the i should add a shift, and fw should change  
+            temp.x += fw[idx_fw + i*nf1*nf2].x * cos(z * (i-nf3/2)/(PCS)nf3 * 2 * PI * flag) - fw[idx_fw + i*nf1*nf2].y * sin(z * (i-nf3/2)/(PCS)nf3 * 2 * PI *flag);
+            temp.y += fw[idx_fw + i*nf1*nf2].x * sin(z * (i-nf3/2)/(PCS)nf3 * 2 * PI * flag) + fw[idx_fw + i*nf1*nf2].y * cos(z * (i-nf3/2)/(PCS)nf3 * 2 * PI *flag);
         }
         fw[idx_fw] = temp;
     }
@@ -171,7 +172,7 @@ void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize)
     */
     int nf1 = plan->nf1;
     int nf2 = plan->nf2;
-
+    int nf3 = plan->nf3;
     int N1 = plan->ms;
     int N2 = plan->mt;
 
@@ -181,7 +182,7 @@ void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize)
 
     dim3 block(num_threads);
     dim3 grid((N1 * N2 - 1) / num_threads + 1);
-    w_term_dft<<<grid, block>>>(plan->fw, nf1, nf2, N1, N2, xpixelsize, ypixelsize, flag, batchsize);
+    w_term_dft<<<grid, block>>>(plan->fw, nf1, nf2, nf3, N1, N2, xpixelsize, ypixelsize, flag, batchsize);
     checkCudaErrors(cudaDeviceSynchronize());
     return;
 }

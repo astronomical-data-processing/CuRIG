@@ -64,6 +64,7 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
     plan->batchsize = min(4,num_w);
     int N1 = plan->ms;
     int N2 = plan->mt;
+
     if(gridder_plan->w_term_method){
 		// improved_ws
         checkCudaErrors(cudaFree(plan->fwkerhalf3));  
@@ -71,7 +72,21 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
         PCS *k;
         checkCudaErrors(cudaMalloc((void**)&k,sizeof(PCS)*(N1/2+1)*(N2/2+1)));
         w_term_k_generation(k,plan->nf1,plan->nf2,gridder_plan->pixelsize_x,gridder_plan->pixelsize_y);
-        fourier_series_appro_invoker(plan->fwkerhalf3,k,plan->copts,(N1/2+1)*(N2/2+1)); // correction with k, may be wrong, k will be free in this function
+#ifdef DEBUG
+        printf("k printing...\n");
+        PCS *h_k;
+        h_k = (PCS*)malloc(sizeof(PCS)*(N1/2+1)*(N2/2+1));
+        cudaMemcpy(h_k,k,sizeof(PCS)*(N1/2+1)*(N2/2+1),cudaMemcpyDeviceToHost);
+        for(int i=0; i<N2/2+1; i++){
+            for (size_t j = 0; j < N1/2+1; j++)
+            {
+                /* code */
+                printf("%.6lf ",h_k[i*(N1/2+1)+j]);
+            }
+            printf("\n");
+        }
+#endif
+        fourier_series_appro_invoker(plan->fwkerhalf3,k,plan->copts,(N1/2+1)*(N2/2+1),num_w); // correction with k, may be wrong, k will be free in this function
         checkCudaErrors(cudaFree(k));
         //
         
