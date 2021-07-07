@@ -27,14 +27,16 @@ __global__ void fourier_series_appro(PCS *fseries, PCS *k, int N, int nf, PCS *g
     // 2p nodes and with some error
     int idx;
     for(idx = blockDim.x * blockIdx.x + threadIdx.x; idx < N; idx+=gridDim.x*blockDim.x){
-        fseries[idx] = 0;
+        fseries[idx] = 0.0;
+        // printf("k %lf\n",k[idx]);
+
         for(int i=0; i<2*p; i++){
-            //why N-1 - x will change the answer
-            fseries[idx] += g[i]*cos((x[i])/(PCS)(nf-1)*PI* k[idx]); //slow
+            
+            fseries[idx] += g[i]*cos((x[i])/((PCS)(nf-1.0))*PI* k[idx]);
             //if(idx==0) printf("fseries %lf\n",fseries[idx]);
 
         }
-        fseries[idx] = fseries[idx]; // add negative part
+         fseries[idx] = 2*fseries[idx]; // add negative part
     }
 }
 
@@ -102,8 +104,8 @@ int fourier_series_appro_invoker(PCS *fseries, PCS *k, conv_opts opts, int N, in
     int p = (int)(2 + 3.0 * alpha); // not sure why so large? cannot exceed MAX_NQUAD
     PCS g[MAX_NQUAD]; // intermediate result
     double x[2 * MAX_NQUAD], w[2 * MAX_NQUAD];
-    legendre_compute_glr(2 * p, x, w); // only half the nodes used, eg on (0,1)
-    for (int n = 0; n < 2*p; ++n) //using 2q points testing
+    legendre_compute_glr(2 * p, x, w); 
+    for (int n = 0; n < p; ++n) //using 2q points testing
     {                                                              // set up nodes z_n and vals f_n
         x[n] *= alpha;                                                // rescale nodes
         g[n] = alpha * (PCS)w[n] * exp(opts.ES_beta * (sqrt(1.0 - opts.ES_c * x[n] * x[n])));  // vals & quadr wei
@@ -111,11 +113,11 @@ int fourier_series_appro_invoker(PCS *fseries, PCS *k, conv_opts opts, int N, in
     }
     double *d_x;
     PCS *d_g;
-    checkCudaErrors(cudaMalloc((void**)&d_x, sizeof(double)*2*p)); // change to constant memory
-    checkCudaErrors(cudaMalloc((void**)&d_g, sizeof(PCS)*2*p));
+    checkCudaErrors(cudaMalloc((void**)&d_x, sizeof(double)*p)); // change to constant memory
+    checkCudaErrors(cudaMalloc((void**)&d_g, sizeof(PCS)*p));
 
-    checkCudaErrors(cudaMemcpy(d_x, x, sizeof(double)*2*p, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(d_g, g, sizeof(PCS)*2*p, cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(d_x, x, sizeof(double)*p, cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(d_g, g, sizeof(PCS)*p, cudaMemcpyHostToDevice));
 
     int blocksize = 512;
     fourier_series_appro<<<(N-1)/blocksize+1,blocksize>>>(fseries,k,N,nf,d_g,d_x,p);

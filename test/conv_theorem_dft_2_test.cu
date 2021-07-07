@@ -16,6 +16,9 @@ using namespace thrust;
 #include "precomp.h"
 #include "utils.h"
 
+__global__ void dft(){
+
+}
 
 int main(int argc, char *argv[])
 {
@@ -27,11 +30,11 @@ int main(int argc, char *argv[])
 	*/
 	int ier = 0;
 	int N = 16;
-	PCS sigma = 2.0; // upsampling factor
+	PCS sigma = 2.667; // upsampling factor
 	int M = 30;
 
 	
-	PCS epsilon = 1e-6;
+	PCS epsilon = 1e-7;
 	
 	int kerevalmeth = 0;
 	
@@ -64,8 +67,8 @@ int main(int argc, char *argv[])
 	for (size_t i = 0; i < N; i++)
 	{
 		/* code */
-		 k[i] = (int)i-N/2;
-		// k[i] = -abs(randm11());
+		// k[i] = (int)i-N/2;
+		 k[i] = -abs(randm11());
 		// k[i] = i/(double)N;
 	}
 	
@@ -102,8 +105,8 @@ int main(int argc, char *argv[])
     
 
     int nf1 = get_num_cells(M,plan->copts);
-	//printf("nf: %d\n",nf1);
-    //printf("copt info kw %d, upsampfac %lf, beta %lf\n",plan->copts.kw,plan->copts.upsampfac,plan->copts.ES_beta);
+	// printf("nf: %d\n",nf1);
+     printf("copt info kw %d, upsampfac %lf, beta %lf, nf %d\n",plan->copts.kw,plan->copts.upsampfac,plan->copts.ES_beta,nf1);
     plan->dim = 1;
     setup_plan(nf1, 1, 1, M, d_u, NULL, NULL, d_c, plan);
 
@@ -124,7 +127,7 @@ int main(int argc, char *argv[])
     PCS *d_k;
     checkCudaErrors(cudaMalloc((void**)&d_k,sizeof(PCS)*(N)));
     checkCudaErrors(cudaMemcpy(d_k,k,sizeof(PCS)*(N),cudaMemcpyHostToDevice));
-    fourier_series_appro_invoker(d_fwkerhalf,d_k,plan->copts, N,nf1/2+1); // correction with k, may be wrong, k will be free in this function
+    fourier_series_appro_invoker(d_fwkerhalf,d_k,plan->copts, N,nf1/2+1); 
 	
 	
 	// printf("begining...\n");
@@ -139,7 +142,7 @@ int main(int argc, char *argv[])
 		printf("%lf ",fwkerhalf[i]);
 	}
 	printf("\n");
-#endif
+#endif	
 	// fw (conv res set)
 	checkCudaErrors(cudaMalloc((void**)&d_fw,sizeof(CUCPX)*nf1));
 	checkCudaErrors(cudaMemset(d_fw, 0, sizeof(CUCPX)*nf1));
@@ -171,15 +174,31 @@ int main(int argc, char *argv[])
 		/* code */
 		for (size_t j = 0; j < nf1; j++)
 		{
-			if(j<nf1/2){
-                fk[i] += fw[j+nf1/2]*exp(k[i]*((j)/((PCS)nf1)*2.0*PI*IMA));
-            }
-            else{
-                fk[i] += fw[j-nf1/2]*exp(k[i]*( (j-(PCS)nf1)/((PCS)nf1) )*2.0*PI*IMA); //fw[j-nf1/2]*exp(k[i]*( (j-nf1)/((PCS)nf1) )*2.0*PI*IMA); not work why
-            }
+			// decompose those calculation in order to reach better precision
+			double temp1;
+			int idx = j + nf1/2;
+			temp1 = ( double)j/( double)nf1;
+			if(j>=nf1/2){
+				temp1 = temp1 - 1.00000000;
+				idx -= nf1;
+			}
+			temp1 *=PI * 2.0000000000;
+			temp1 *= k[i];
+		    fk[i] = fk[i] + fw[idx]*exp((double)temp1*IMA);
+		    
+			// // decompose exp
+			// fk[i].real( temp2 );
+			// fk[i].imag( temp3 );
+            // if(j<nf1/2){
+            //     fk[i] += fw[j+nf1/2]*exp(k[i]*(((PCS)j)/((PCS)nf1)*2.0*PI*IMA));
+            // }
+            // else{
+            //     fk[i] += fw[j-nf1/2]*exp(k[i]*(((PCS)j-(PCS)nf1)/((PCS)nf1) )*2.0*PI*IMA); // decompose
+            // }
 		}
 		
 	}
+	//printf("%lf, %lf\n",(1)/((PCS)nf1),((PCS)1)/((PCS)nf1));
 #ifdef DEBUG
 	printf("dft result printing...\n");
 	for (size_t i = 0; i < N; i++)
@@ -216,21 +235,37 @@ int main(int argc, char *argv[])
 		
 	}
 	printf("\n");
+	CPX *truth = (CPX *) malloc(sizeof(CPX)*N);
 	printf("ground truth printing...\n");
 	for (size_t i = 0; i < N; i++)
 	{
-		/* code */
-		fk[i] = 0;
-		for(int j=0; j<M; j++){
-			fk[i] += c[j]*exp(k[i]*u[j]*IMA);
+		truth[i] = 0;
+		for (int j = 0; j < M; j++)
+		{
+			truth[i] += c[j] * exp(k[i] * u[j] * IMA);
 		}
 	}
-	
-	for(int i=0; i<N; i++){
-		printf("%.10lf ",fk[i].real());
-		
+
+	for (int i = 0; i < N; i++)
+	{
+		printf("%.10lf ", truth[i].real());
 	}
 	printf("\n");
+
+
+	double max=0;
+	double l2_max=0;
+	double fk_max = 0;
+	for(int i=0; i<M; i++){
+		if(abs(fk[i].real())>fk_max)fk_max = abs(fk[i].real());
+	}
+	printf("fk max %lf\n",fk_max);
+	for(int i=0; i<N; i++){
+		double temp = abs(truth[i].real()-fk[i].real());
+		if(temp>max) max = temp;
+		if(temp/fk_max > l2_max) l2_max = temp/fk_max;
+	}
+	printf("max abs error %lf, max l2 error %lf\n",max,l2_max);
 	
 	//free
 	curafft_free(plan);

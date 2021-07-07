@@ -18,7 +18,7 @@ NVCCFLAGS ?= -std=c++14 -ccbin=$(CXX) -O3 $(NVARCH) -Wno-deprecated-gpu-targets 
 #NVCCFLAGS+= -g -G
 # and enable cufinufft internal flags.
 #NVCCFLAGS+= -DINFO -DDEBUG -DRESULT -DTIME
-NVCCFLAGS+= -DDEBUG
+#NVCCFLAGS+= -DDEBUG
 
 #set your cuda path
 CUDA_ROOT := /usr/local/cuda
@@ -115,7 +115,8 @@ w_s_test: $(BINDIR)/w_s_test
 nufft_test: $(BINDIR)/nufft_1d_test \
 	$(BINDIR)/nufft_2d_test
 
-conv_theorem_dft_test: $(BINDIR)/conv_theorem_dft_test
+conv_theorem_dft_test: $(BINDIR)/conv_theorem_dft_test \
+	$(BINDIR)/conv_theorem_dft_2_test
 
 $(BINDIR)/%: test/%.o $(CURAFFTOBJS_64) $(CURAFFTOBJS)
 	mkdir -p $(BINDIR)
@@ -161,12 +162,13 @@ checkeg: explicit_gridder_test
 	bin/explicit_gridder_test 2 64 130 0.5
 
 checknufft: nufft_test conv_theorem_dft_test
-	@echo "NUFFT testing..."
-	bin/nufft_1d_test 10 20
-	bin/nufft_2d_test 10 10 20
-	@echo "DFT theorem test..."
+#	@echo "NUFFT testing..."
+#	bin/nufft_1d_test 10 20
+#	bin/nufft_2d_test 10 10 20
+	@echo "DFT theorem testing..."
 	bin/conv_theorem_dft_test
-
+	@echo "random k testing..."
+	bin/conv_theorem_dft_2_test
 # --------------------------------------------- end of check tasks ---------
 
 
