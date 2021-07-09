@@ -122,8 +122,8 @@ int curafft_free(curafft_plan *plan)
     return ier;
 }
 
-//------------------------------Below this line, all are just for Radio astronomy-------------------------
-__global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int nf3, int N1, int N2, PCS xpixelsize, PCS ypixelsize, int flag, int batchsize)
+//------------------------------Below this line, all contents are just for Radio astronomy-------------------------
+__global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int nf3, int N1, int N2, PCS xpixelsize, PCS ypixelsize, int flag, int batchsize, PCS scaling_ratio)
 {
     /*
         Specified for radio astronomy
@@ -149,19 +149,30 @@ __global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int nf3, int N1, int N2,
         temp.y = 0;
         // from N/2 to N/2, not 0 to N
         
-        PCS z = sqrt(1 - pow(((row - N2/2) * xpixelsize),2) - pow(((col-N2/2) * ypixelsize),2)) - 1; // revise for >1
+        PCS z = sqrt(1 - pow(((row - N2/2) * xpixelsize),2) - pow(((col-N1/2) * ypixelsize),2)) - 1; // revise for >1
+        z = scaling_ratio * z;
         // double z_t_2pi = 2 * PI * (z); w have been scaling to pirange
-        for (int i = 0; i < batchsize; i++)
-        {
-            //for partial computing, the i should add a shift, and fw should change  
-            temp.x += fw[idx_fw + i*nf1*nf2].x * cos(z * (i-nf3/2)/(PCS)nf3 * 2 * PI * flag) - fw[idx_fw + i*nf1*nf2].y * sin(z * (i-nf3/2)/(PCS)nf3 * 2 * PI *flag);
-            temp.y += fw[idx_fw + i*nf1*nf2].x * sin(z * (i-nf3/2)/(PCS)nf3 * 2 * PI * flag) + fw[idx_fw + i*nf1*nf2].y * cos(z * (i-nf3/2)/(PCS)nf3 * 2 * PI *flag);
+        // currently not support for partial computing
+        int i;
+        for(i=0; i<nf3/2; i++){
+            temp.x += fw[idx_fw + (i+nf3/2)*nf1*nf2].x * cos(z * (i)/(PCS)nf3 * 2 * PI * flag) - fw[idx_fw + (i+nf3/2)*nf1*nf2].y * sin(z * (i)/(PCS)nf3 * 2 * PI *flag);
+            temp.y += fw[idx_fw + (i+nf3/2)*nf1*nf2].x * sin(z * (i)/(PCS)nf3 * 2 * PI * flag) + fw[idx_fw + (i+nf3/2)*nf1*nf2].y * cos(z * (i)/(PCS)nf3 * 2 * PI *flag);
         }
+        for(;i<nf3;i++){
+            temp.x += fw[idx_fw + (i-nf3/2)*nf1*nf2].x * cos(z * (i-(PCS)nf3)/(PCS)nf3 * 2 * PI * flag) - fw[idx_fw + (i-nf3/2)*nf1*nf2].y * sin(z * (i-(PCS)nf3)/(PCS)nf3 * 2 * PI *flag);
+            temp.y += fw[idx_fw + (i-nf3/2)*nf1*nf2].x * sin(z * (i-(PCS)nf3)/(PCS)nf3 * 2 * PI * flag) + fw[idx_fw + (i-nf3/2)*nf1*nf2].y * cos(z * (i-(PCS)nf3)/(PCS)nf3 * 2 * PI *flag);
+        }
+        // for (int i = 0; i < batchsize; i++)
+        // {
+        //     //for partial computing, the i should add a shift, and fw should change  
+        //     temp.x += fw[idx_fw + i*nf1*nf2].x * cos(z * (i-nf3/2)/(PCS)nf3 * 2 * PI * flag) - fw[idx_fw + i*nf1*nf2].y * sin(z * (i-nf3/2)/(PCS)nf3 * 2 * PI *flag); //cautious
+        //     temp.y += fw[idx_fw + i*nf1*nf2].x * sin(z * (i-nf3/2)/(PCS)nf3 * 2 * PI * flag) + fw[idx_fw + i*nf1*nf2].y * cos(z * (i-nf3/2)/(PCS)nf3 * 2 * PI *flag);
+        // }
         fw[idx_fw] = temp;
     }
 }
 
-void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize)
+void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize, PCS scaling_ratio)
 {
     /*
         Specified for radio astronomy
@@ -182,7 +193,7 @@ void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize)
 
     dim3 block(num_threads);
     dim3 grid((N1 * N2 - 1) / num_threads + 1);
-    w_term_dft<<<grid, block>>>(plan->fw, nf1, nf2, nf3, N1, N2, xpixelsize, ypixelsize, flag, batchsize);
+    w_term_dft<<<grid, block>>>(plan->fw, nf1, nf2, nf3, N1, N2, xpixelsize, ypixelsize, flag, batchsize, scaling_ratio);
     checkCudaErrors(cudaDeviceSynchronize());
     return;
 }

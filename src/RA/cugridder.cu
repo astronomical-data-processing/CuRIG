@@ -33,15 +33,15 @@ int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow
     plan->nrow = nrow;
     // determain number of w 
     // ignore shift
-    plan->pixelsize_x = fov / 180.0 * PI / (PCS)N1;
-    plan->pixelsize_y = fov / 180.0 * PI / (PCS)N2;
+    plan->pixelsize_x = fov / 180.0 * PI / (PCS)N2;
+    plan->pixelsize_y = fov / 180.0 * PI / (PCS)N1;
     PCS xpixelsize = plan->pixelsize_x;
     PCS ypixelsize = plan->pixelsize_y;
-    PCS l_min = lshift - 0.5*xpixelsize * N1;
-    PCS l_max = l_min + xpixelsize * (N1-1);
+    PCS l_min = lshift - 0.5*xpixelsize * N2;
+    PCS l_max = l_min + xpixelsize * (N2-1);
     
-    PCS m_min = mshift - 0.5*ypixelsize * N2;
-    PCS m_max = m_min + ypixelsize * (N2-1);
+    PCS m_min = mshift - 0.5*ypixelsize * N1;
+    PCS m_max = m_min + ypixelsize * (N1-1);
 
     double upsampling_fac = copts.upsampfac;
     PCS n_lm = sqrt(1 - pow(l_max,2) + pow(m_max, 2));
@@ -53,9 +53,10 @@ int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow
 
     plan->w_max = max;
     plan->w_min = min;
+    plan->w_s_r = 1;
     PCS w_0 = plan->w_min - delta_w * (copts.kw - 1); // first plane
     plan->w_0 = w_0;
-    plan->num_w = (plan->w_max - plan->w_min)/delta_w + copts.kw; // another plan
+    plan->num_w = ((plan->w_max - plan->w_min)/delta_w + copts.kw); // another plan
 
     return 0;
 }
@@ -125,7 +126,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     
     if(w_term_method)plan->dim =3;
     else plan->dim = 2;
-    setup_plan(nf1, nf2, nf3, M, d_u, d_v, d_w, d_c, plan);
+    setup_plan(nf1, nf2, nf3, M, d_v, d_u, d_w, d_c, plan);
     
     // printf("input data checking cugridder...\n");
     //         PCS *temp = (PCS*)malloc(sizeof(PCS)*10);
@@ -143,7 +144,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     int fftsign = (iflag>=0) ? 1 : -1;
 
 	plan->iflag = fftsign; //may be useless| conflict with direction
-    if (batchsize == 0) batchsize = min(4,gridder_plan->num_w);
+    batchsize = gridder_plan->num_w;
 	plan->batchsize = batchsize;
 
     plan->copts.direction = direction; // 1 inverse, 0 forward
@@ -160,10 +161,20 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
         checkCudaErrors(cudaMalloc((void**)&plan->fwkerhalf3,sizeof(PCS)*(N1/2+1)*(N2/2+1)));
         PCS *k;
         checkCudaErrors(cudaMalloc((void**)&k,sizeof(PCS)*(N1/2+1)*(N2/2+1)));
-        w_term_k_generation(k,plan->nf1,plan->nf2,gridder_plan->pixelsize_x,gridder_plan->pixelsize_y);
-        fourier_series_appro_invoker(plan->fwkerhalf3,k,plan->copts,(N1/2+1)*(N2/2+1),nf3); // correction with k, may be wrong, k will be free in this function
+        w_term_k_generation(k,plan->nf1,plan->nf2,gridder_plan->pixelsize_x,gridder_plan->pixelsize_y,gridder_plan->w_s_r);
+        fourier_series_appro_invoker(plan->fwkerhalf3,k,plan->copts,(N1/2+1)*(N2/2+1),nf3/2+1); // correction with k, may be wrong, k will be free in this function
         checkCudaErrors(cudaFree(k));
     }
+
+    PCS *fwkerhalf1 = (PCS*) malloc(sizeof(PCS)*(plan->nf1/2+1));
+    PCS *fwkerhalf2 = (PCS*) malloc(sizeof(PCS)*(plan->nf2/2+1));
+
+    cudaMemcpy(fwkerhalf1,plan->fwkerhalf1,sizeof(PCS)*(plan->nf1/2+1),cudaMemcpyDeviceToHost);
+    cudaMemcpy(fwkerhalf2,plan->fwkerhalf2,sizeof(PCS)*(plan->nf2/2+1),cudaMemcpyDeviceToHost);
+
+    printf("correction factor printing...\n");
+    for(int i=0; i<plan->nf1/2+1; i++) printf("%lf ",fwkerhalf1[i]); printf("\n");
+    for(int i=0; i<plan->nf2/2+1; i++) printf("%lf ",fwkerhalf2[i]); printf("\n");
     
     // cufft plan setting
     cufftHandle fftplan;

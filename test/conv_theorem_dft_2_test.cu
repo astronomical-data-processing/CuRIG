@@ -16,9 +16,7 @@ using namespace thrust;
 #include "precomp.h"
 #include "utils.h"
 
-__global__ void dft(){
 
-}
 
 int main(int argc, char *argv[])
 {
@@ -28,13 +26,15 @@ int main(int argc, char *argv[])
 		N1, N2 - output size
 		epsilon - tolerance
 	*/
+
+	// issue related to accuary - how to set sigma, epsilon, number of plane, beta and kw. the number of w plane may need to increase.
 	int ier = 0;
 	int N = 16;
-	PCS sigma = 2.667; // upsampling factor
+	PCS sigma = 4; // upsampling factor
 	int M = 30;
 
 	
-	PCS epsilon = 1e-7;
+	PCS epsilon = 1e-6;
 	
 	int kerevalmeth = 0;
 	
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
 		if(temp>max) max = temp;
 		if(temp/fk_max > l2_max) l2_max = temp/fk_max;
 	}
-	printf("max abs error %lf, max l2 error %lf\n",max,l2_max);
+	printf("max abs error %.10lf, max l2 error %.10lf\n",max,l2_max);
 	
 	//free
 	curafft_free(plan);

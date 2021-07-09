@@ -39,6 +39,7 @@ struct ragridder_plan
     PCS pixelsize_y;
     PCS w_max;
     PCS w_min;
+    PCS w_s_r; //w term scaling ratio
     int num_w;
     PCS w_0;
     PCS delta_w;

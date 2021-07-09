@@ -52,8 +52,9 @@ int main(int argc, char *argv[])
 				"     1: Horner evaluation.\n");
 		return 1;
 	}
+	// issue related to accuary - how to set sigma, epsilon, number of plane, beta and kw. the number of w plane may need to increase.
 	int nxdirty, nydirty;
-	PCS sigma = 4; // upsampling factor
+	PCS sigma = 3.2777; // upsampling factor
 	int nrow, nchan;
 	PCS fov;
 
@@ -74,7 +75,7 @@ int main(int argc, char *argv[])
 		sscanf(argv[7], "%d", &nchan);
 	}
 
-	PCS epsilon = 1e-4;
+	PCS epsilon = 1e-8;
 	if (argc > 8)
 	{
 		sscanf(argv[8], "%lf", &inp);
@@ -119,20 +120,20 @@ int main(int argc, char *argv[])
 	// generating data
 	for (int i = 0; i < nrow; i++)
 	{
-		u[i] = randm11() * 0.5  * PI; //xxxxx remove
-		v[i] = randm11() * 0.5  * PI;
-		w[i] = randm11() * 0.5  * PI;
-		vis[i].real(i); // nrow vis per channel, weight?
-		vis[i].imag(i);
+		u[i] = randm11() *  PI; //xxxxx remove
+		v[i] = randm11() *  PI;
+		w[i] = randm11() *  PI;
+		vis[i].real(randm11()); // nrow vis per channel, weight?
+		vis[i].imag(randm11());
 		// wgt[i] = 1;
 	}
 #ifdef DEBUG
 	printf("origial input data...\n");
-	for(int i=0; i<nrow; i++){
-		printf("%.3lf ",w[i]);
+	for(int i=0; i<10; i++){
+		printf("%.3lf ",u[i]);
 	}
 	printf("\n");
-	for(int i=0; i<nrow; i++){
+	for(int i=0; i<10; i++){
 		printf("%.3lf ",vis[i].real());
 	}
 	printf("\n");
@@ -152,9 +153,7 @@ int main(int argc, char *argv[])
 	skip negative v
     uvw, nrow = M, shift, mask, f_over_c (fixed due to single channel)
     */
-	int shift = 0;
-	while ((int(1) << shift) < nchan)
-		++shift;
+	
 	// int mask = (int(1) << shift) - 1; // ???
 	PCS *f_over_c = (PCS*) malloc(sizeof(PCS)*nchan);
 	for(int i=0; i<nchan; i++){
@@ -187,31 +186,23 @@ int main(int argc, char *argv[])
 	// device data allocation and transfer should be done in gridder setting
 	ier = gridder_setting(nydirty,nxdirty,method,kerevalmeth,w_term_method,epsilon,direction,sigma,0,1,nrow,nchan,fov,pointer_v,d_u,d_v,d_w,d_vis
 		,plan,gridder_plan);
-
 	//print the setting result
 	free(pointer_v);
+
+
+
 	if(ier == 1){
 		printf("errors in gridder setting\n");
 		return ier;
 	}
+
+    checkCudaErrors(cudaMalloc((void**)&plan->fw,sizeof(CUCPX)*plan->nf1*plan->nf2*plan->nf3));
+    checkCudaErrors(cudaMemset(plan->fw, 0, plan->nf3 * plan->nf1 * plan->nf2 * sizeof(CUCPX)));
 	// fk(image) malloc and set
 	checkCudaErrors(cudaMalloc((void**)&d_fk,sizeof(CUCPX)*nydirty*nxdirty));
 	plan->fk = d_fk;
 
 	gridder_plan->dirty_image = (CPX *)malloc(sizeof(CPX)*nxdirty*nydirty*nchan); //
-	
-#ifdef DEBUG
-	explicit_gridder_invoker(gridder_plan);
-
-    // result printing
-	printf("GPU result printing...\n");
-    for(int i=0; i<nxdirty; i++){
-        for(int j=0; j<nydirty; j++){
-            printf("%.3lf ",gridder_plan->dirty_image[i*nydirty+j].real());
-        }
-        printf("\n");
-    }
-#endif
 
 	// how to use weight flag and frequency
 	for(int i=0; i<nchan; i++){
@@ -219,7 +210,7 @@ int main(int argc, char *argv[])
 		// 1. u, v, w * f_over_c
 		// 2. /pixelsize(*2pi)
 		// 3. * rescale ratio
-		pre_setting(d_u, d_v, d_w, d_vis, plan, gridder_plan);
+		// pre_setting(d_u, d_v, d_w, d_vis, plan, gridder_plan);
 		// memory transfer (vis belong to this channel and weight)
 		checkCudaErrors(cudaMemcpy(d_vis, vis, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice)); //
 		// shift to corresponding range
@@ -238,25 +229,26 @@ int main(int argc, char *argv[])
 		}
 		printf("\n");
 	}
-	
+
 	printf("ground truth printing...\n");
 	for(int i=0; i<nxdirty; i++){
 		for(int j=0; j<nydirty; j++){
 			CPX temp(0.0,0.0);
 
 			for(int k=0; k<nrow; k++){
-				temp += vis[k]*exp(f0/SPEEDOFLIGHT*(u[k]*gridder_plan->pixelsize_x*(i-nxdirty/2)+v[k]*gridder_plan->pixelsize_y*(j-nydirty/2)+w[k]*(sqrt(1-pow(gridder_plan->pixelsize_x*i,2)-pow(gridder_plan->pixelsize_y*j,2))-1))*IMA);
+				temp += vis[k]*exp((u[k]*(i-nxdirty/2)+v[k]*(j-nydirty/2)+w[k]*(sqrt(1-pow(gridder_plan->pixelsize_x*i,2)-pow(gridder_plan->pixelsize_y*j,2))-1))*IMA);
 			}
 			printf("%lf ",temp.real()/(sqrt(1-pow(gridder_plan->pixelsize_x*i,2)-pow(gridder_plan->pixelsize_y*j,2))));
 		}
 		printf("\n");
 	}
-
+	
 	ier = gridder_destroy(plan, gridder_plan);
 	if(ier == 1){
 		printf("errors in gridder destroy\n");
 		return ier;
 	}
+
 
 	return ier;
 }

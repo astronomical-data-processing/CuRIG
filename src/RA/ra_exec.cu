@@ -75,27 +75,62 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
     if (plan->execute_flow == 1)
     {
             /// curafft_conv workflow for enough memory
-            
+#ifdef DEBUG
+            printf("plan info printing...\n");
+            printf("nf (%d,%d,%d), upsampfac %lf\n", plan->nf1, plan->nf2, plan->nf3, plan->copts.upsampfac);
+            printf("gridder_plan info printing...\n");
+            printf("fov %lf, current channel %d, w_s_r %lf\n", gridder_plan->fov, gridder_plan->cur_channel, gridder_plan->w_s_r);
+#endif
             // 1. convlution
             ier = curafft_conv(plan);
-
+#ifdef DEBUG
+            printf("conv result printing (first w plane)...\n");
+            CPX *fw = (CPX *)malloc(sizeof(CPX)*plan->nf1*plan->nf2*plan->nf3);
+            cudaMemcpy(fw,plan->fw,sizeof(CUCPX)*plan->nf1*plan->nf2*plan->nf3,cudaMemcpyDeviceToHost);
+            PCS temp =0;
+            for(int i=0;i<plan->nf2;i++){
+                for(int j=0; j<plan->nf1; j++){
+                    temp += fw[i*plan->nf1+j].real();
+                    printf("%.3g ",fw[i*plan->nf1+j].real());
+                }
+                printf("\n");
+            }
+            printf("fft 000 %.3g\n",temp);
+#endif
             // printf("n1 n2 n3 M %d, %d, %d, %d\n",plan->nf1,plan->nf2,plan->nf3,plan->M);
             // 2. cufft
             int direction = plan->iflag;
             // cautious, a batch of fft, bath size is num_w when memory is sufficent.
             CUFFT_EXEC(plan->fftplan, plan->fw, plan->fw, direction); // sychronized or not
-
+            cudaDeviceSynchronize();
+#ifdef DEBUG
+            printf("fft result printing (first w plane)...\n");
+            //CPX *fw = (CPX *)malloc(sizeof(CPX)*plan->nf1*plan->nf2*plan->nf3);
+            cudaMemcpy(fw,plan->fw,sizeof(CUCPX)*plan->nf1*plan->nf2*plan->nf3,cudaMemcpyDeviceToHost);
+            for(int i=0;i<plan->nf2;i++){
+                for(int j=0; j<plan->nf1; j++)
+                    printf("%.3g ",fw[i*plan->nf1+j].real());
+                printf("\n");
+            }
+            temp = 0;
+            for(int i=0; i<plan->nf3; i++){
+                temp += fw[i*plan->nf1*plan->nf2].real();
+            }
+            printf("dft 00 %.3g\n",temp);
+#endif
             // keep the N1*N2*num_w. ignore the outputs that are out of range
-
+            
             // 3. dft on w (or 1 dimensional nufft type3)
-            curadft_invoker(plan, gridder_plan->pixelsize_x, gridder_plan->pixelsize_y);
+            curadft_invoker(plan, gridder_plan->pixelsize_x, gridder_plan->pixelsize_y, gridder_plan->w_s_r);
 #ifdef DEBUG
             printf("part of dft result printing:...\n");
-            CPX *fw = (CPX *)malloc(sizeof(CPX)*plan->nf1*plan->nf2*plan->nf3);
+            //CPX *fw = (CPX *)malloc(sizeof(CPX)*plan->nf1*plan->nf2*plan->nf3);
             cudaMemcpy(fw,plan->fw,sizeof(CUCPX)*plan->nf1*plan->nf2*plan->nf3,cudaMemcpyDeviceToHost);
-            for(int i=0;i<plan->ms*plan->mt;i++)
-            printf("%.3g ",fw[i].real());
-            printf("\n");
+            for(int i=0;i<plan->nf2;i++){
+                for(int j=0; j<plan->nf1; j++)
+                    printf("%.3g ",fw[i*plan->nf1+j].real());
+                printf("\n");
+            }
 #endif
             // 4. deconvolution (correction)
             // error detected, 1. w term deconv
@@ -106,9 +141,11 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
             printf("deconv result printing stage 1:...\n");
             CPX *fk = (CPX *)malloc(sizeof(CPX)*plan->ms*plan->mt);
             cudaMemcpy(fk,plan->fk,sizeof(CUCPX)*plan->ms*plan->mt,cudaMemcpyDeviceToHost);
-            for(int i=0;i<plan->ms*plan->mt;i++)
-            printf("%.3g ",fk[i].real());
-            printf("\n");
+            for(int i=0;i<plan->mt;i++){
+                for(int j=0; j<plan->ms; j++)
+                    printf("%.5lf ",fk[i*plan->ms+j].real());
+                printf("\n");
+            }
 #endif
             // 2. w term deconv on fk
             ier = curadft_w_deconv(plan);
@@ -116,9 +153,11 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
             printf("deconv result printing stage 2:...\n");
             //CPX *fk = (CPX *)malloc(sizeof(CPX)*plan->ms*plan->mt);
             cudaMemcpy(fk,plan->fk,sizeof(CUCPX)*plan->ms*plan->mt,cudaMemcpyDeviceToHost);
-            for(int i=0;i<plan->ms*plan->mt;i++)
-            printf("%.3g ",fk[i].real());
-            printf("\n");
+            for(int i=0;i<plan->mt;i++){
+                for(int j=0; j<plan->ms; j++)
+                    printf("%.5lf ",fk[i*plan->ms+j].real());
+                printf("\n");
+            }
 #endif
             // 5. ending work - scaling
             // /n_lm, fourier related rescale

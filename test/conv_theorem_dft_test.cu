@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 	*/
 	int ier = 0;
 	int N = 16;
-	PCS sigma = 2.0; // upsampling factor
+	PCS sigma = 2.0; // upsampling factor // for not on grid points needs larger upsampling factor
 	int M = 30;
 
 	
