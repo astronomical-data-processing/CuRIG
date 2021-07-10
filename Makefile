@@ -165,9 +165,9 @@ checkeg: explicit_gridder_test
 	bin/explicit_gridder_test 20 20 20 10
 
 checknufft: nufft_test conv_theorem_dft_test
-#	@echo "NUFFT testing..."
-#	bin/nufft_1d_test 10 20
-#	bin/nufft_2d_test 10 10 20
+	@echo "NUFFT testing..."
+	bin/nufft_1d_test 10 20
+	bin/nufft_2d_test 10 10 20
 	@echo "DFT theorem testing..."
 	bin/conv_theorem_dft_test
 	@echo "random k testing..."

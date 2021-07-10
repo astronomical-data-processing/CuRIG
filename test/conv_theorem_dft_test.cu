@@ -216,21 +216,37 @@ int main(int argc, char *argv[])
 		
 	}
 	printf("\n");
+	CPX *truth = (CPX *) malloc(sizeof(CPX)*N);
 	printf("ground truth printing...\n");
 	for (size_t i = 0; i < N; i++)
 	{
-		/* code */
-		fk[i] = 0;
-		for(int j=0; j<M; j++){
-			fk[i] += c[j]*exp(k[i]*u[j]*IMA);
+		truth[i] = 0;
+		for (int j = 0; j < M; j++)
+		{
+			truth[i] += c[j] * exp(k[i] * u[j] * IMA);
 		}
 	}
-	
-	for(int i=0; i<N; i++){
-		printf("%.10lf ",fk[i].real());
-		
+
+	for (int i = 0; i < N; i++)
+	{
+		printf("%.10lf ", truth[i].real());
 	}
 	printf("\n");
+
+
+	double max=0;
+	double l2_max=0;
+	//double fk_max = 0;
+	// for(int i=0; i<M; i++){
+	// 	if(abs(fk[i].real())>fk_max)fk_max = abs(fk[i].real());
+	// }
+	// printf("fk max %lf\n",fk_max);
+	for(int i=0; i<N; i++){
+		double temp = abs(truth[i].real()-fk[i].real());
+		if(temp>max) max = temp;
+		if(temp/fk[i].real() > l2_max) l2_max = temp/fk[i].real();
+	}
+	printf("max abs error %.10lf, max l2 error %.10lf\n",max,l2_max);
 	
 	//free
 	curafft_free(plan);

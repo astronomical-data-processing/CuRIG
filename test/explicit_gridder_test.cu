@@ -127,7 +127,6 @@ int main(int argc, char *argv[])
 
 				PCS phase = f0/SPEEDOFLIGHT*(u[k]*pi_ratio*plan->pixelsize_x*(i-nxdirty/2)+v[k]*pi_ratio*plan->pixelsize_y*(j-nydirty/2)+w[k]*pi_ratio*(n_lm-1));
 				temp += vis[k]*exp(phase*IMA);
-				if(j==0&&i==0)printf("phase & real part, %lf, %lf\n",phase, temp.real());
 			}
 			printf("%lf ",temp.real()/(n_lm));
 			truth[i*nydirty+j] = temp.real()/(n_lm);

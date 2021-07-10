@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 	// issue related to accuary - how to set sigma, epsilon, number of plane, beta and kw. the number of w plane may need to increase.
 	int ier = 0;
 	int N = 16;
-	PCS sigma = 2.0; // upsampling factor
+	PCS sigma = 2.78; // upsampling factor
 	int M = 30;
 
 	
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
     plan->opts.gpu_gridder_method = method;
 
     ier = setup_conv_opts(plan->copts, epsilon, sigma, 1, direction, kerevalmeth); //check the arguements
-	plan->copts.ES_beta = 20.80263;
+	//plan->copts.ES_beta = 20.80263;
 	if(ier!=0)printf("setup_error\n");
 
     // plan setting
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 
     int nf1 = get_num_cells(M,plan->copts);
 	// printf("nf: %d\n",nf1);
-     printf("copt info kw %d, upsampfac %lf, beta %lf, nf %d\n",plan->copts.kw,plan->copts.upsampfac,plan->copts.ES_beta,nf1);
+    // printf("copt info kw %d, upsampfac %lf, beta %lf, nf %d\n",plan->copts.kw,plan->copts.upsampfac,plan->copts.ES_beta,nf1);
     plan->dim = 1;
     setup_plan(nf1, 1, 1, M, d_u, NULL, NULL, d_c, plan);
 
@@ -255,15 +255,15 @@ int main(int argc, char *argv[])
 
 	double max=0;
 	double l2_max=0;
-	double fk_max = 0;
-	for(int i=0; i<M; i++){
-		if(abs(fk[i].real())>fk_max)fk_max = abs(fk[i].real());
-	}
-	printf("fk max %lf\n",fk_max);
+	// double fk_max = 0;
+	// for(int i=0; i<M; i++){
+	// 	if(abs(fk[i].real())>fk_max)fk_max = abs(fk[i].real());
+	// }
+	// printf("fk max %lf\n",fk_max);
 	for(int i=0; i<N; i++){
 		double temp = abs(truth[i].real()-fk[i].real());
 		if(temp>max) max = temp;
-		if(temp/fk_max > l2_max) l2_max = temp/fk_max;
+		if(temp/fk[i].real() > l2_max) l2_max = temp/fk[i].real();
 	}
 	printf("max abs error %.10lf, max l2 error %.10lf\n",max,l2_max);
 	
