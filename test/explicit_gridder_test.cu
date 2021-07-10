@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 	PCS *freq = (PCS *)malloc(sizeof(PCS) * nchan);
 	for (int i = 0; i < nchan; i++)
 	{
-		freq[i] = f0 + i / (double)nchan * fov; //!
+		freq[i] = f0 + i / (double)nchan * f0; //!
 	}
 	//improved WS stacking 1,
 	//gpu_method == 0, nupts driven
@@ -74,11 +74,11 @@ int main(int argc, char *argv[])
 	// generating data
 	for (int i = 0; i < nrow; i++)
 	{
-		u[i] = i * 0.5 / (f0 / SPEEDOFLIGHT);
-		v[i] = i * 0.5 / (f0 / SPEEDOFLIGHT);
-		w[i] = i * 0.5 / (f0 / SPEEDOFLIGHT);
-		vis[i].real(i % 10 * 0.5); // nrow vis per channel, weight?
-		vis[i].imag(i % 10 * 0.5);
+		u[i] = i ;
+		v[i] = i ;
+		w[i] = i ;
+		vis[i].real(i); // nrow vis per channel, weight?
+		vis[i].imag(i);
 		// wgt[i] = 1;
 	}
     // gridder plan setting
@@ -112,6 +112,46 @@ int main(int argc, char *argv[])
         }
         printf("\n");
     }
+
+	PCS *truth = (PCS *) malloc(sizeof(PCS)*nxdirty*nydirty);
 	// add ground truth result printing and error printing +++
+	printf("ground truth printing...\n");
+	PCS pi_ratio = 1;
+	if(!plan->kv.pirange)pi_ratio = 2 * PI;
+	for(int i=0; i<nxdirty; i++){
+		for(int j=0; j<nydirty; j++){
+			CPX temp(0.0,0.0);
+			PCS n_lm = sqrt(1-pow(plan->pixelsize_x*(i-nxdirty/2),2)-pow(plan->pixelsize_y*(j-nydirty/2),2));
+			
+			for(int k=0; k<nrow; k++){
+
+				PCS phase = f0/SPEEDOFLIGHT*(u[k]*pi_ratio*plan->pixelsize_x*(i-nxdirty/2)+v[k]*pi_ratio*plan->pixelsize_y*(j-nydirty/2)+w[k]*pi_ratio*(n_lm-1));
+				temp += vis[k]*exp(phase*IMA);
+				if(j==0&&i==0)printf("phase & real part, %lf, %lf\n",phase, temp.real());
+			}
+			printf("%lf ",temp.real()/(n_lm));
+			truth[i*nydirty+j] = temp.real()/(n_lm);
+		}
+		printf("\n");
+	}
+	
+	printf("error printing...\n");
+	for(int i=0; i<nxdirty; i++){
+		for(int j=0; j<nydirty; j++){
+			double temp = abs(truth[i]-plan->dirty_image[i].real());
+			printf("%lf ", temp);
+		}
+		printf("\n");
+	}
+
+	// double max=0;
+	// double l2_max=0;
+
+	// for(int i=0; i<nydirty*nxdirty; i++){
+	// 	double temp = abs(truth[i]-plan->dirty_image[i].real());
+	// 	if(temp>max) max = temp;
+	// 	if(temp/plan->dirty_image[i].real() > l2_max) l2_max = temp/plan->dirty_image[i].real();
+	// }
+	// printf("max abs error %.10lf, max l2 error %.10lf\n",max,l2_max);
     return 0;
 }

@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < M; i++)
 	{
 		u[i] = randm11()*PI; //xxxxx
-		c[i].real(randm11()); // M vis per channel, weight?
-		c[i].imag(randm11());
+		c[i].real(randm11()*1000); // M vis per channel, weight?
+		c[i].imag(randm11()*1000);
 		// wgt[i] = 1;
 	}
 
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
     plan->opts.gpu_gridder_method = method;
 
     ier = setup_conv_opts(plan->copts, epsilon, sigma, 1, direction, kerevalmeth); //check the arguements
-
+	
 	if(ier!=0)printf("setup_error\n");
 
     // plan setting

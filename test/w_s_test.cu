@@ -200,18 +200,18 @@ int main(int argc, char *argv[])
 
 	gridder_plan->dirty_image = (CPX *)malloc(sizeof(CPX)*nxdirty*nydirty*nchan); //
 	
-#ifdef DEBUG
+
 	explicit_gridder_invoker(gridder_plan);
 
     // result printing
 	printf("GPU result printing...\n");
     for(int i=0; i<nxdirty; i++){
         for(int j=0; j<nydirty; j++){
-            printf("%.3lf ",gridder_plan->dirty_image[i*nydirty+j].real());
+            printf("%.5lf ",gridder_plan->dirty_image[i*nydirty+j].real());
         }
         printf("\n");
     }
-#endif
+
 
 	// how to use weight flag and frequency
 	for(int i=0; i<nchan; i++){
@@ -234,20 +234,24 @@ int main(int argc, char *argv[])
 	printf("result printing...\n");
 	for(int i=0; i<nxdirty; i++){
 		for(int j=0; j<nydirty; j++){
-			printf("%.3lf ", gridder_plan->dirty_image[i*nydirty+j].real());
+			printf("%.5lf ", gridder_plan->dirty_image[i*nydirty+j].real());
 		}
 		printf("\n");
 	}
 	
+	PCS pi_ratio = 1;
+	if(!gridder_plan->kv.pirange)pi_ratio = 2 * PI;
+
 	printf("ground truth printing...\n");
 	for(int i=0; i<nxdirty; i++){
 		for(int j=0; j<nydirty; j++){
 			CPX temp(0.0,0.0);
-
+			PCS n_lm = sqrt(1-pow(gridder_plan->pixelsize_x*(i-nxdirty/2),2)-pow(gridder_plan->pixelsize_y*(j-nydirty/2),2));
 			for(int k=0; k<nrow; k++){
-				temp += vis[k]*exp(f0/SPEEDOFLIGHT*(u[k]*gridder_plan->pixelsize_x*(i-nxdirty/2)+v[k]*gridder_plan->pixelsize_y*(j-nydirty/2)+w[k]*(sqrt(1-pow(gridder_plan->pixelsize_x*i,2)-pow(gridder_plan->pixelsize_y*j,2))-1))*IMA);
+				PCS phase = f0/SPEEDOFLIGHT*(u[k]*pi_ratio*gridder_plan->pixelsize_x*(i-nxdirty/2)+v[k]*pi_ratio*gridder_plan->pixelsize_y*(j-nydirty/2)+w[k]*pi_ratio*(n_lm-1));
+				temp += vis[k]*exp(phase*IMA);
 			}
-			printf("%lf ",temp.real()/(sqrt(1-pow(gridder_plan->pixelsize_x*i,2)-pow(gridder_plan->pixelsize_y*j,2))));
+			printf("%lf ",temp.real()/(n_lm));
 		}
 		printf("\n");
 	}

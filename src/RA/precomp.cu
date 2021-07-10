@@ -26,9 +26,9 @@ __global__ void get_effective_coordinate(PCS *u, PCS *v, PCS *w, PCS f_over_c, i
         v[idx] *= f_over_c;
         w[idx] *= f_over_c;
         if(!pirange){
-            u[idx] *= PI;
-            v[idx] *= PI;
-            w[idx] *= PI;
+            u[idx] *= 2 * PI;
+            v[idx] *= 2 * PI;
+            w[idx] *= 2 * PI;
         }
         if(idx==0) printf("After scaling w %lf, f over c %lf\n",w[idx],f_over_c);
     }
@@ -194,8 +194,8 @@ __global__ void explicit_gridder(int N1, int N2, int nrow, PCS *u, PCS *v, PCS *
     CUCPX temp;
     for(idx=blockIdx.x * blockDim.x + threadIdx.x; idx<N1 * N2; idx+=gridDim.x * blockDim.x){
         temp.x = 0.0; temp.y = 0.0;
-        row = idx / N1 - (int)(0.5*N2);
-        col = idx % N1 - (int)(0.5*N1);
+        row = idx / N1 - N2/2;
+        col = idx % N1 - N1/2;
         l = row * row_pix_size;
         m = col * col_pix_size;
         n_lm = sqrt(1 - pow(l,2) - pow(m,2));
@@ -206,8 +206,8 @@ __global__ void explicit_gridder(int N1, int N2, int nrow, PCS *u, PCS *v, PCS *
             temp.y += vis[i].x * sin(phase) + vis[i].y * cos(phase);
         }
         
-        dirty[idx].x += temp.x/n_lm; // add values of all channels
-        dirty[idx].y += temp.y/n_lm;
+        dirty[idx].x = temp.x/n_lm; // add values of all channels
+        dirty[idx].y = temp.y/n_lm;
     }
 }
 

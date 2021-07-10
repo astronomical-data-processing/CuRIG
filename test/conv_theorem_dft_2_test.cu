@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 	// issue related to accuary - how to set sigma, epsilon, number of plane, beta and kw. the number of w plane may need to increase.
 	int ier = 0;
 	int N = 16;
-	PCS sigma = 4; // upsampling factor
+	PCS sigma = 2.0; // upsampling factor
 	int M = 30;
 
 	
@@ -57,8 +57,8 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < M; i++)
 	{
 		u[i] = randm11()*PI; //xxxxx
-		c[i].real(randm11()); // M vis per channel, weight?
-		c[i].imag(randm11());
+		c[i].real(randm11()*1000); // M vis per channel, weight?
+		c[i].imag(randm11()*1000);
 		// wgt[i] = 1;
 	}
 
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
     plan->opts.gpu_gridder_method = method;
 
     ier = setup_conv_opts(plan->copts, epsilon, sigma, 1, direction, kerevalmeth); //check the arguements
-
+	plan->copts.ES_beta = 20.80263;
 	if(ier!=0)printf("setup_error\n");
 
     // plan setting

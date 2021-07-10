@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 	}
 	// issue related to accuary - how to set sigma, epsilon, number of plane, beta and kw. the number of w plane may need to increase.
 	int nxdirty, nydirty;
-	PCS sigma = 3.2777; // upsampling factor
+	PCS sigma = 4; // upsampling factor
 	int nrow, nchan;
 	PCS fov;
 
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 		sscanf(argv[7], "%d", &nchan);
 	}
 
-	PCS epsilon = 1e-8;
+	PCS epsilon = 1e-6;
 	if (argc > 8)
 	{
 		sscanf(argv[8], "%lf", &inp);
@@ -123,8 +123,8 @@ int main(int argc, char *argv[])
 		u[i] = randm11() *  PI; //xxxxx remove
 		v[i] = randm11() *  PI;
 		w[i] = randm11() *  PI;
-		vis[i].real(randm11()); // nrow vis per channel, weight?
-		vis[i].imag(randm11());
+		vis[i].real(randm11()*1000); // nrow vis per channel, weight?
+		vis[i].imag(randm11()*1000);
 		// wgt[i] = 1;
 	}
 #ifdef DEBUG
@@ -225,20 +225,23 @@ int main(int argc, char *argv[])
 	printf("result printing...\n");
 	for(int i=0; i<nxdirty; i++){
 		for(int j=0; j<nydirty; j++){
-			printf("%.3lf ", gridder_plan->dirty_image[i*nydirty+j].real());
+			printf("%.5lf ", gridder_plan->dirty_image[i*nydirty+j].real());
 		}
 		printf("\n");
 	}
+
+	PCS pi_ratio = 1;
+	if(!gridder_plan->kv.pirange)pi_ratio = 2 * PI;
 
 	printf("ground truth printing...\n");
 	for(int i=0; i<nxdirty; i++){
 		for(int j=0; j<nydirty; j++){
 			CPX temp(0.0,0.0);
-
+			PCS n_lm = sqrt(1-pow(gridder_plan->pixelsize_x*(i-nxdirty/2),2)-pow(gridder_plan->pixelsize_y*(j-nydirty/2),2));
 			for(int k=0; k<nrow; k++){
-				temp += vis[k]*exp((u[k]*(i-nxdirty/2)+v[k]*(j-nydirty/2)+w[k]*(sqrt(1-pow(gridder_plan->pixelsize_x*i,2)-pow(gridder_plan->pixelsize_y*j,2))-1))*IMA);
+				temp += vis[k]*exp((u[k]*pi_ratio*(i-nxdirty/2)+v[k]*pi_ratio*(j-nydirty/2)+w[k]*pi_ratio*(n_lm-1))*IMA);
 			}
-			printf("%lf ",temp.real()/(sqrt(1-pow(gridder_plan->pixelsize_x*i,2)-pow(gridder_plan->pixelsize_y*j,2))));
+			printf("%lf ",temp.real()/(n_lm));
 		}
 		printf("\n");
 	}
