@@ -11,18 +11,18 @@
 //#include <thrust/extrema.h>
 #include "conv.h"
 
-static __inline__ __device__ int kerval(PCS x, PCS es_c, PCS es_beta){
+static __forceinline__ __device__ int kerval(PCS x, PCS es_c, PCS es_beta, PCS half_kw){
 	//not using the fast kernel evaluation
-	return exp(es_beta * (sqrt(1.0 - es_c*x*x)));
+	return (abs(x)>=half_kw) ? 0.0 : exp(es_beta * (sqrt(1.0 - es_c*x*x))); // when epsilon > 1e-10 will cause error
 }
 
 static __inline__ __device__
-void val_kernel_vec(PCS *ker, const PCS x, const double w, const double es_c, 
+void val_kernel_vec(PCS *ker, const PCS x, const double kw, const double es_c, 
 					 const double es_beta)
 {
 	//get vector of kernel function values
-	for(int i=0; i<w; i++){
-		ker[i] = kerval(abs(x+i), es_c, es_beta);		
+	for(int i=0; i<kw; i++){
+		ker[i] = (abs(x+i)>=kw/2.0) ? 0.0 : exp(es_beta * (sqrt(1.0 - es_c*(x+i)*(x+i))));		
 	}
 }
 
@@ -71,6 +71,7 @@ __global__ void conv_1d_nputsdriven(PCS *x, CUCPX *c, CUCPX *fw, int M,
 		xend = floor(temp1 + ns/2.0);
 		
 		PCS x_1=(PCS)xstart-temp1; //cell
+
 		val_kernel_vec(ker1,x_1,ns,es_c,es_beta);
 			for(int xx=xstart; xx<=xend; xx++){
 				ix = xx < 0 ? xx+nf1 : (xx>nf1-1 ? xx-nf1 : xx);
@@ -205,7 +206,6 @@ void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw, int M,
 		PCS y1=(PCS)ystart-temp2;
 		PCS z1=(PCS)zstart-temp3;
 		
-
 
 		val_kernel_vec(ker1,x1,ns,es_c,es_beta);
 		val_kernel_vec(ker2,y1,ns,es_c,es_beta);

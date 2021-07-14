@@ -21,7 +21,7 @@ __global__ void get_effective_coordinate(PCS *u, PCS *v, PCS *w, PCS f_over_c, i
     
     int idx;
     for(idx = blockDim.x * blockIdx.x + threadIdx.x; idx<nrow; idx+= gridDim.x * blockDim.x){
-        if(idx==0) printf("Before scaling w %lf, f over c %lf\n",w[idx],f_over_c);
+        //if(idx==0) printf("Before scaling w %lf, f over c %lf\n",w[idx],f_over_c);
         u[idx] *= f_over_c;
         v[idx] *= f_over_c;
         w[idx] *= f_over_c;
@@ -30,7 +30,7 @@ __global__ void get_effective_coordinate(PCS *u, PCS *v, PCS *w, PCS f_over_c, i
             v[idx] *= 2 * PI;
             w[idx] *= 2 * PI;
         }
-        if(idx==0) printf("After scaling w %lf, f over c %lf\n",w[idx],f_over_c);
+        //if(idx==0) printf("After scaling w %lf, f over c %lf\n",w[idx],f_over_c);
     }
     
 
@@ -58,14 +58,16 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
     PCS w_0 = gridder_plan->w_min - gridder_plan->delta_w * (plan->copts.kw - 1); // first plane
     gridder_plan->w_0 = w_0;
     int num_w = ((gridder_plan->w_max - gridder_plan->w_min)/gridder_plan->delta_w + plan->copts.kw) + 4;
+    
+    num_w = num_w * plan->copts.upsampfac;
     gridder_plan->num_w = num_w;
 
     if(gridder_plan->cur_channel!=0){
         gridder_plan->w_max /= gridder_plan->kv.frequency[gridder_plan->cur_channel-1]/SPEEDOFLIGHT;
         gridder_plan->w_min /= gridder_plan->kv.frequency[gridder_plan->cur_channel-1]/SPEEDOFLIGHT;
     }
-    printf("frequency over  speed of light %lf\n",f_over_c);
-    printf("scaling method: w_max %lf, w_min %lf\n",gridder_plan->w_max, gridder_plan->w_min);
+    // printf("frequency over  speed of light %lf\n",f_over_c);
+    // printf("scaling method: w_max %lf, w_min %lf\n",gridder_plan->w_max, gridder_plan->w_min);
     PCS previous_sr = gridder_plan->w_s_r;
     gridder_plan->w_s_r = std::max(abs(gridder_plan->w_max),abs(gridder_plan->w_min))/PI;
     //----------plan reset--------------
@@ -88,7 +90,7 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
         h_k = (PCS*)malloc(sizeof(PCS)*(N1/2+1)*(N2/2+1));
         cudaMemcpy(h_k,d_k,sizeof(PCS)*(N1/2+1)*(N2/2+1),cudaMemcpyDeviceToHost);
         for(int i=0; i<N2/2+1; i++){
-            for (size_t j = 0; j < N1/2+1; j++)
+            for (int j = 0; j < N1/2+1; j++)
             {
                 /* code */
                 printf("%.6lf ",h_k[i*(N1/2+1)+j]);

@@ -26,12 +26,12 @@ int main(int argc, char *argv[])
 		epsilon - tolerance
 	*/
 	int ier = 0;
-	int N = 16;
+	int N = 1000;
 	PCS sigma = 2.0; // upsampling factor // for not on grid points needs larger upsampling factor
-	int M = 30;
+	int M = 2000;
 
 	
-	PCS epsilon = 1e-6;
+	PCS epsilon = 1e-10;
 	
 	int kerevalmeth = 0;
 	
@@ -54,17 +54,17 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < M; i++)
 	{
 		u[i] = randm11()*PI; //xxxxx
-		c[i].real(randm11()*1000); // M vis per channel, weight?
-		c[i].imag(randm11()*1000);
+		c[i].real(randm11()); // M vis per channel, weight?
+		c[i].imag(randm11());
 		// wgt[i] = 1;
 	}
 
 	PCS *k = (PCS*) malloc(sizeof(PCS)*N*10);
 	// PCS pixelsize = 0.01;
-	for (size_t i = 0; i < N; i++)
+	for (int i = 0; i < N; i++)
 	{
 		/* code */
-		 k[i] = (int)i-N/2;
+		 k[i] = i-N/2;
 		// k[i] = -abs(randm11());
 		// k[i] = i/(double)N;
 	}
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 	cudaMemcpy(fwkerhalf, d_fwkerhalf, sizeof(PCS)*(N), cudaMemcpyDeviceToHost);
 #ifdef DEBUG
 	printf("correction factor printing method1...\n");
-	for (size_t i = 0; i < N; i++)
+	for (int i = 0; i < N; i++)
 	{
 		/* code */
 		printf("%lf ",fwkerhalf[i]);
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 #ifdef DEBUG
 	printf("conv result printing...\n");
 	
-	for (size_t i = 0; i < nf1; i++)
+	for (int i = 0; i < nf1; i++)
 	{
 		/* code */
 		printf("%lf ",fw[i].real());
@@ -166,10 +166,10 @@ int main(int argc, char *argv[])
 	CPX *fk = (CPX *)malloc(sizeof(CPX)*N);
 	memset(fk,0,sizeof(CPX)*N);
 	// dft
-	for (size_t i = 0; i < N; i++)
+	for (int i = 0; i < N; i++)
 	{
 		/* code */
-		for (size_t j = 0; j < nf1; j++)
+		for (int j = 0; j < nf1; j++)
 		{
 			if(j<nf1/2){
                 fk[i] += fw[j+nf1/2]*exp(k[i]*((j)/((PCS)nf1)*2.0*PI*IMA));
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 	}
 #ifdef DEBUG
 	printf("dft result printing...\n");
-	for (size_t i = 0; i < N; i++)
+	for (int i = 0; i < N; i++)
 	{
 		/* code */
 		printf("%lf ",fk[i].real());
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 	printf("\n");
 	CPX *truth = (CPX *) malloc(sizeof(CPX)*N);
 	printf("ground truth printing...\n");
-	for (size_t i = 0; i < N; i++)
+	for (int i = 0; i < N; i++)
 	{
 		truth[i] = 0;
 		for (int j = 0; j < M; j++)
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 		if(temp>max) max = temp;
 		if(temp/fk[i].real() > l2_max) l2_max = temp/fk[i].real();
 	}
-	printf("max abs error %.10lf, max l2 error %.10lf\n",max,l2_max);
+	printf("maximal abs error %.6g, maximal l2 error %.6g\n",max,l2_max);
 	
 	//free
 	curafft_free(plan);

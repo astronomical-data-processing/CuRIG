@@ -129,11 +129,11 @@ int main(int argc, char *argv[])
 	}
 #ifdef DEBUG
 	printf("origial input data...\n");
-	for(int i=0; i<10; i++){
+	for(int i=0; i<nrow; i++){
 		printf("%.3lf ",u[i]);
 	}
 	printf("\n");
-	for(int i=0; i<10; i++){
+	for(int i=0; i<nrow; i++){
 		printf("%.3lf ",vis[i].real());
 	}
 	printf("\n");

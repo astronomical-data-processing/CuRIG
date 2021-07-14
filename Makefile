@@ -18,7 +18,7 @@ NVCCFLAGS ?= -std=c++14 -ccbin=$(CXX) -O3 $(NVARCH) -Wno-deprecated-gpu-targets 
 #NVCCFLAGS+= -g -G
 # and enable cufinufft internal flags.
 #NVCCFLAGS+= -DINFO -DDEBUG -DRESULT -DTIME
-#NVCCFLAGS+= -DDEBUG
+NVCCFLAGS+= -DDEBUG
 
 #set your cuda path
 CUDA_ROOT := /usr/local/cuda
@@ -155,19 +155,19 @@ checkutils: utiltest
 	bin/utils_test
 
 checkwst: w_s_test
-	@echo "W simple checking..."
-	bin/w_s_sim_test 0 1 10 10 30 10
+#	@echo "W simple checking..."
+#	bin/w_s_sim_test 0 1 10 10 30 10
 	@echo "W stacking checking..."
-	bin/w_s_test 0 1 10 10 30 10
+	bin/w_s_test 0 1 100 100 100000 10
 
 checkeg: explicit_gridder_test
 	@echo "Explicit gridder testing..."
 	bin/explicit_gridder_test 20 20 20 10
 
-checknufft: nufft_test conv_theorem_dft_test
-	@echo "NUFFT testing..."
-	bin/nufft_1d_test 10 20
-	bin/nufft_2d_test 10 10 20
+checkfft: nufft_test conv_theorem_dft_test
+#	@echo "NUFFT testing..."
+#	bin/nufft_1d_test 4096 4096 1e-13
+#	bin/nufft_2d_test 10 10 100 1e-12
 	@echo "DFT theorem testing..."
 	bin/conv_theorem_dft_test
 	@echo "random k testing..."

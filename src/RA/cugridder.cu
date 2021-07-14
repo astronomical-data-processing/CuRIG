@@ -118,8 +118,8 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     gridder_plan->kv.frequency = pointer_v->frequency;
     gridder_plan->kv.pirange = pointer_v->pirange;
     setup_gridder_plan(N1,N2,fov,0,0,M,d_w,plan->copts,gridder_plan);
-    
-
+    gridder_plan->num_w = gridder_plan->num_w*plan->copts.upsampfac; 
+    // gridder_plan->num_w = 80;
     int nf1 = get_num_cells(N1,plan->copts);
     int nf2 = get_num_cells(N2,plan->copts);
     int nf3 = gridder_plan->num_w;
@@ -172,9 +172,9 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     cudaMemcpy(fwkerhalf1,plan->fwkerhalf1,sizeof(PCS)*(plan->nf1/2+1),cudaMemcpyDeviceToHost);
     cudaMemcpy(fwkerhalf2,plan->fwkerhalf2,sizeof(PCS)*(plan->nf2/2+1),cudaMemcpyDeviceToHost);
 
-    printf("correction factor printing...\n");
-    for(int i=0; i<plan->nf1/2+1; i++) printf("%lf ",fwkerhalf1[i]); printf("\n");
-    for(int i=0; i<plan->nf2/2+1; i++) printf("%lf ",fwkerhalf2[i]); printf("\n");
+    // printf("correction factor printing...\n");
+    // for(int i=0; i<plan->nf1/2+1; i++) printf("%lf ",fwkerhalf1[i]); printf("\n");
+    // for(int i=0; i<plan->nf2/2+1; i++) printf("%lf ",fwkerhalf2[i]); printf("\n");
     
     // cufft plan setting
     cufftHandle fftplan;

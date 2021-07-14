@@ -48,7 +48,7 @@ int main(int argc, char* argv[]){
 		sscanf(argv[5],"%lf",&w); M  = (int)w;  // so can read 1e6 right!
 	}
 
-	PCS tol=1e-6;
+	PCS tol=1e-10;
 	if(argc>6){
 		sscanf(argv[6],"%lf",&w); tol  = (PCS)w;  // so can read 1e6 right!
 	}

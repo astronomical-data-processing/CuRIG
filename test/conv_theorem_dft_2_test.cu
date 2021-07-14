@@ -17,7 +17,6 @@ using namespace thrust;
 #include "utils.h"
 
 
-
 int main(int argc, char *argv[])
 {
 	/* Input: M, N1, N2, epsilon method
@@ -30,11 +29,11 @@ int main(int argc, char *argv[])
 	// issue related to accuary - how to set sigma, epsilon, number of plane, beta and kw. the number of w plane may need to increase.
 	int ier = 0;
 	int N = 16;
-	PCS sigma = 2.78; // upsampling factor
-	int M = 30;
+	PCS sigma = 2.0; // upsampling factor
+	int M = 16;
 
 	
-	PCS epsilon = 1e-6;
+	PCS epsilon = 1e-10;
 	
 	int kerevalmeth = 0;
 	
@@ -57,21 +56,24 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < M; i++)
 	{
 		u[i] = randm11()*PI; //xxxxx
-		c[i].real(randm11()*1000); // M vis per channel, weight?
-		c[i].imag(randm11()*1000);
+		c[i].real(randm11()); // M vis per channel, weight?
+		c[i].imag(randm11());
 		// wgt[i] = 1;
 	}
 
 	PCS *k = (PCS*) malloc(sizeof(PCS)*N*10);
 	// PCS pixelsize = 0.01;
-	for (size_t i = 0; i < N; i++)
+	for (int i = 0; i < N; i++)
 	{
 		/* code */
 		// k[i] = (int)i-N/2;
 		 k[i] = -abs(randm11());
 		// k[i] = i/(double)N;
+		// k[i] = i-N/2 + randm11();
+		 printf("%.10lf ",k[i]);
+
 	}
-	
+	printf("\n");
 	
 	//data transfer
 	checkCudaErrors(cudaMemcpy(d_u, u, M * sizeof(PCS), cudaMemcpyHostToDevice)); //u
@@ -105,6 +107,7 @@ int main(int argc, char *argv[])
     
 
     int nf1 = get_num_cells(M,plan->copts);
+	//nf1 = 100;
 	// printf("nf: %d\n",nf1);
     // printf("copt info kw %d, upsampfac %lf, beta %lf, nf %d\n",plan->copts.kw,plan->copts.upsampfac,plan->copts.ES_beta,nf1);
     plan->dim = 1;
@@ -117,7 +120,7 @@ int main(int argc, char *argv[])
 	int iflag = direction;
     int fftsign = (iflag>=0) ? 1 : -1;
 
-	plan->iflag = fftsign; //may be useless| conflict with direction
+	plan->iflag = fftsign; //may be useless
 	plan->batchsize = 1;
 
     plan->copts.direction = direction; // 1 inverse, 0 forward
@@ -134,9 +137,11 @@ int main(int argc, char *argv[])
 	// fourier_series_appro_invoker(d_fwkerhalf,plan->copts,nf1/2+1);
 	PCS *fwkerhalf = (PCS *)malloc(sizeof(PCS)*(N));
 	cudaMemcpy(fwkerhalf, d_fwkerhalf, sizeof(PCS)*(N), cudaMemcpyDeviceToHost);
+
+	//fourier_series(fwkerhalf,k,plan->copts,N,nf1/2+1);
 #ifdef DEBUG
 	printf("correction factor printing method1...\n");
-	for (size_t i = 0; i < N; i++)
+	for (int i = 0; i < N; i++)
 	{
 		/* code */
 		printf("%lf ",fwkerhalf[i]);
@@ -158,7 +163,7 @@ int main(int argc, char *argv[])
 #ifdef DEBUG
 	printf("conv result printing...\n");
 	
-	for (size_t i = 0; i < nf1; i++)
+	for (int i = 0; i < nf1; i++)
 	{
 		/* code */
 		printf("%lf ",fw[i].real());
@@ -169,15 +174,15 @@ int main(int argc, char *argv[])
 	CPX *fk = (CPX *)malloc(sizeof(CPX)*N);
 	memset(fk,0,sizeof(CPX)*N);
 	// dft
-	for (size_t i = 0; i < N; i++)
+	for (int i = 0; i < N; i++)
 	{
 		/* code */
-		for (size_t j = 0; j < nf1; j++)
+		for (int j = 0; j < nf1; j++)
 		{
 			// decompose those calculation in order to reach better precision
 			double temp1;
 			int idx = j + nf1/2;
-			temp1 = ( double)j/( double)nf1;
+			temp1 = (double)j/(double)nf1;
 			if(j>=nf1/2){
 				temp1 = temp1 - 1.00000000;
 				idx -= nf1;
@@ -186,22 +191,21 @@ int main(int argc, char *argv[])
 			temp1 *= k[i];
 		    fk[i] = fk[i] + fw[idx]*exp((double)temp1*IMA);
 		    
-			// // decompose exp
+			// 
 			// fk[i].real( temp2 );
 			// fk[i].imag( temp3 );
             // if(j<nf1/2){
             //     fk[i] += fw[j+nf1/2]*exp(k[i]*(((PCS)j)/((PCS)nf1)*2.0*PI*IMA));
             // }
             // else{
-            //     fk[i] += fw[j-nf1/2]*exp(k[i]*(((PCS)j-(PCS)nf1)/((PCS)nf1) )*2.0*PI*IMA); // decompose
+            //     fk[i] += fw[j-nf1/2]*exp(k[i]*((j-nf1)/((PCS)nf1) )*2.0*PI*IMA); // decompose
             // }
 		}
 		
 	}
-	//printf("%lf, %lf\n",(1)/((PCS)nf1),((PCS)1)/((PCS)nf1));
 #ifdef DEBUG
 	printf("dft result printing...\n");
-	for (size_t i = 0; i < N; i++)
+	for (int i = 0; i < N; i++)
 	{
 		/* code */
 		printf("%lf ",fk[i].real());
@@ -237,7 +241,7 @@ int main(int argc, char *argv[])
 	printf("\n");
 	CPX *truth = (CPX *) malloc(sizeof(CPX)*N);
 	printf("ground truth printing...\n");
-	for (size_t i = 0; i < N; i++)
+	for (int i = 0; i < N; i++)
 	{
 		truth[i] = 0;
 		for (int j = 0; j < M; j++)
@@ -265,7 +269,7 @@ int main(int argc, char *argv[])
 		if(temp>max) max = temp;
 		if(temp/fk[i].real() > l2_max) l2_max = temp/fk[i].real();
 	}
-	printf("max abs error %.10lf, max l2 error %.10lf\n",max,l2_max);
+	printf("maximal abs error %.6g, maximal l2 error %.6g\n",max,l2_max);
 	
 	//free
 	curafft_free(plan);

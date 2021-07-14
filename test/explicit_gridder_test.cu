@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
     explicit_gridder_invoker(plan);
 
     // result printing
+	printf("result printing...\n");
     for(int i=0; i<nxdirty; i++){
         for(int j=0; j<nydirty; j++){
             printf("%.3lf ",plan->dirty_image[i*nydirty+j].real());
@@ -134,15 +135,14 @@ int main(int argc, char *argv[])
 		printf("\n");
 	}
 	
-	printf("error printing...\n");
+	double max = 0.0;
 	for(int i=0; i<nxdirty; i++){
 		for(int j=0; j<nydirty; j++){
 			double temp = abs(truth[i]-plan->dirty_image[i].real());
-			printf("%lf ", temp);
+			if(temp>max) max =temp;
 		}
-		printf("\n");
 	}
-
+	printf("maximal absolute error %.5g\n",max);
 	// double max=0;
 	// double l2_max=0;
 

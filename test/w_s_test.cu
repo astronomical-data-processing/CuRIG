@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	int nxdirty, nydirty;
-	PCS sigma = 4; // upsampling factor
+	PCS sigma = 2; // upsampling factor
 	int nrow, nchan;
 	PCS fov;
 
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 		sscanf(argv[7], "%d", &nchan);
 	}
 
-	PCS epsilon = 1e-4;
+	PCS epsilon = 1e-5;
 	if (argc > 8)
 	{
 		sscanf(argv[8], "%lf", &inp);
@@ -122,8 +122,8 @@ int main(int argc, char *argv[])
 		u[i] = randm11() * 0.5  * PI; //xxxxx remove
 		v[i] = randm11() * 0.5  * PI;
 		w[i] = randm11() * 0.5  * PI;
-		vis[i].real(i); // nrow vis per channel, weight?
-		vis[i].imag(i);
+		vis[i].real(randm11()); // nrow vis per channel, weight?
+		vis[i].imag(randm11());
 		// wgt[i] = 1;
 	}
 #ifdef DEBUG
@@ -241,6 +241,7 @@ int main(int argc, char *argv[])
 	
 	PCS pi_ratio = 1;
 	if(!gridder_plan->kv.pirange)pi_ratio = 2 * PI;
+	PCS *truth = (PCS*) malloc (sizeof(PCS)*nxdirty*nydirty);
 
 	printf("ground truth printing...\n");
 	for(int i=0; i<nxdirty; i++){
@@ -251,16 +252,31 @@ int main(int argc, char *argv[])
 				PCS phase = f0/SPEEDOFLIGHT*(u[k]*pi_ratio*gridder_plan->pixelsize_x*(i-nxdirty/2)+v[k]*pi_ratio*gridder_plan->pixelsize_y*(j-nydirty/2)+w[k]*pi_ratio*(n_lm-1));
 				temp += vis[k]*exp(phase*IMA);
 			}
-			printf("%lf ",temp.real()/(n_lm));
+			truth[i*nydirty+j] = temp.real()/n_lm;
+			printf("%.5lf ",temp.real()/(n_lm));
 		}
 		printf("\n");
 	}
+	double max=0;
+	double l2_max=0;
+	double fk_max = 0;
+	for(int i=0; i<nxdirty*nydirty; i++){
+		if(abs(gridder_plan->dirty_image[i].real())>fk_max)fk_max = abs(gridder_plan->dirty_image[i].real());
+	}
+	printf("fk max %lf\n",fk_max);
+	for(int i=0; i<nxdirty*nydirty; i++){
+		double temp = abs(truth[i] - gridder_plan->dirty_image[i].real());
+		if(temp>max) max = temp;
+		if(temp/gridder_plan->dirty_image[i].real() > l2_max && gridder_plan->dirty_image[i].real()!=0) l2_max = temp/gridder_plan->dirty_image[i].real();
+	}
+	printf("maximal abs error %.10lf, maximal l2 error %.10lf\n",max,l2_max);
 
 	ier = gridder_destroy(plan, gridder_plan);
 	if(ier == 1){
 		printf("errors in gridder destroy\n");
 		return ier;
 	}
+
 
 	return ier;
 }

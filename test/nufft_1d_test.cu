@@ -273,11 +273,14 @@ int main(int argc, char *argv[])
 	CPX *fk = (CPX *)malloc(sizeof(CPX)*N1);
 	checkCudaErrors(cudaMemcpy(fk,plan->fk,sizeof(CUCPX)*N1, cudaMemcpyDeviceToHost));
 	
+
+	PCS fk_max = 0;
 	// result printing
 	printf("final result printing...\n");
 	
 		for(int j=0; j<N1; j++){
 			printf("%.10lf ",fk[j].real());
+			if(abs(fk[j].real())>fk_max)fk_max = fk[j].real();
 		}
 		printf("\n");
 	
@@ -306,9 +309,9 @@ int main(int argc, char *argv[])
 	for(int i=0; i<N1; i++){
 		double temp = abs(truth[i].real()-fk[i].real());
 		if(temp>max) max = temp;
-		if(temp/fk[i].real() > l2_max) l2_max = temp/fk[i].real();
+		if(temp/fk_max > l2_max) l2_max = temp/fk_max;
 	}
-	printf("max abs error %.10lf, max l2 error %.10lf\n",max,l2_max);
+	printf("maximal abs error %.5g, maximal l2 error %.5g\n",max,l2_max);
 	
 	//free
 	curafft_free(plan);

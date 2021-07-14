@@ -312,17 +312,17 @@ int main(int argc, char *argv[])
 
 	double max=0;
 	double l2_max=0;
-	//double fk_max = 0;
-	// for(int i=0; i<M; i++){
-	// 	if(abs(fk[i].real())>fk_max)fk_max = abs(fk[i].real());
-	// }
-	// printf("fk max %lf\n",fk_max);
+	double fk_max = 0;
+	for(int i=0; i<M; i++){
+		if(abs(fk[i].real())>fk_max)fk_max = abs(fk[i].real());
+	}
+	printf("fk max %lf\n",fk_max);
 	for(int i=0; i<N1*N2; i++){
 		double temp = abs(truth[i].real()-fk[i].real());
 		if(temp>max) max = temp;
-		if(temp/fk[i].real() > l2_max) l2_max = temp/fk[i].real();
+		if(temp/fk_max > l2_max) l2_max = temp/fk_max;
 	}
-	printf("max abs error %.10lf, max l2 error %.10lf\n",max,l2_max);
+	printf("maximal abs error %.5g, maximal l2 error %.5g\n",max,l2_max);
 
 	//free
 	curafft_free(plan);
