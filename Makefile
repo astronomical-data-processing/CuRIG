@@ -158,7 +158,7 @@ checkwst: w_s_test
 #	@echo "W simple checking..."
 #	bin/w_s_sim_test 0 1 10 10 30 10
 	@echo "W stacking checking..."
-	bin/w_s_test 0 1 100 100 100000 10
+	bin/w_s_test 0 1 200 200 10000 10
 
 checkeg: explicit_gridder_test
 	@echo "Explicit gridder testing..."

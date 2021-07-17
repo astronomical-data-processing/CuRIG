@@ -15,6 +15,17 @@
 
 #define MAX_KERNEL_WIDTH 16
 
+struct t3attrib{
+	PCS i_half_width[3];
+	PCS o_half_width[3];
+
+	PCS i_center[3];
+	PCS o_center[3];
+
+	PCS gamma[3];
+	PCS h[3];
+};
+
 struct conv_opts{
   /*
     options for convolutional gridding process
@@ -47,14 +58,21 @@ struct curafft_plan
 	//in different streams can be interleaved and, when possible, they can even run concurrently.
 	cudaStream_t *streams;
 
-    //int type;
+	t3attrib ta; //type 3 attributes
 
 	//suppose the N_u = N_l
 	PCS *d_u;
 	PCS *d_v;
 	PCS *d_w;
 	CUCPX *d_c;
+
+	// specify for type 3
+	PCS *d_x; // out
+	PCS *d_y;
+	PCS *d_z;
+
 	int dim; //dimension support for 1,2,3D
+	int type;
 	int mode_flag; // FFTW (0) style or CMCL-compatible mode ordering (1)
 	int M; //NU
 	int nf1; // UPTS after upsampling

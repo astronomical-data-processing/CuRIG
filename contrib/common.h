@@ -38,6 +38,7 @@
 struct conv_opts;
 
 // common.cpp provides...
+void set_nhg_type3(PCS S, PCS X, conv_opts spopts, int &nf, PCS &h, PCS &gam);
 void onedim_fseries_kernel_seq(int nf, PCS *fwkerhalf, conv_opts opts);
 void onedim_fseries_kernel(int nf, PCS *fwkerhalf, conv_opts opts);
 #endif // COMMON_H

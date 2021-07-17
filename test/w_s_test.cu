@@ -231,13 +231,13 @@ int main(int argc, char *argv[])
 		checkCudaErrors(cudaMemcpy(gridder_plan->dirty_image+i*nxdirty*nydirty, d_fk, sizeof(CUCPX)*nydirty*nxdirty,
 			cudaMemcpyDeviceToHost));
 	}
-	printf("result printing...\n");
-	for(int i=0; i<nxdirty; i++){
-		for(int j=0; j<nydirty; j++){
-			printf("%.5lf ", gridder_plan->dirty_image[i*nydirty+j].real());
-		}
-		printf("\n");
-	}
+	// printf("result printing...\n");
+	// for(int i=0; i<nxdirty; i++){
+	// 	for(int j=0; j<nydirty; j++){
+	// 		printf("%.5lf ", gridder_plan->dirty_image[i*nydirty+j].real());
+	// 	}
+	// 	printf("\n");
+	// }
 	
 	PCS pi_ratio = 1;
 	if(!gridder_plan->kv.pirange)pi_ratio = 2 * PI;
@@ -259,17 +259,15 @@ int main(int argc, char *argv[])
 	}
 	double max=0;
 	double l2_max=0;
-	double fk_max = 0;
-	for(int i=0; i<nxdirty*nydirty; i++){
-		if(abs(gridder_plan->dirty_image[i].real())>fk_max)fk_max = abs(gridder_plan->dirty_image[i].real());
-	}
-	printf("fk max %lf\n",fk_max);
+	double sum_fk = 0;
+	
 	for(int i=0; i<nxdirty*nydirty; i++){
 		double temp = abs(truth[i] - gridder_plan->dirty_image[i].real());
 		if(temp>max) max = temp;
-		if(temp/gridder_plan->dirty_image[i].real() > l2_max && gridder_plan->dirty_image[i].real()!=0) l2_max = temp/gridder_plan->dirty_image[i].real();
+		l2_max += temp ;
+		sum_fk += abs(gridder_plan->dirty_image[i].real());
 	}
-	printf("maximal abs error %.10lf, maximal l2 error %.10lf\n",max,l2_max);
+	printf("maximal abs error %.10lf, maximal l2 error %.10lf\n",max,l2_max/sum_fk);
 
 	ier = gridder_destroy(plan, gridder_plan);
 	if(ier == 1){

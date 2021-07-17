@@ -44,7 +44,8 @@
 #define rand01() ((PCS)rand() / RAND_MAX)
 // unif[-1,1):
 #define randm11() (2 * rand01() - (PCS)1.0)
-
+void rescaling_real_invoker(PCS *d_x, PCS scale_ratio, int N);
+void rescaling_complex_invoker(CUCPX *d_x, PCS scale_ratio, int N);
 int next235beven(int n, int b);
 void prefix_scan(PCS *d_arr, PCS *d_res, int n, int flag);
 void get_max_min(PCS &max, PCS &min, PCS *d_array, int n);

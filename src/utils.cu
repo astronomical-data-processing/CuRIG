@@ -40,6 +40,52 @@ void get_max_min(PCS &max, PCS &min, PCS *d_array, int n)
   min = *(thrust::min_element(d_ptr, d_ptr + n)); //revise
 }
 
+__global__ void rescaling_real(PCS *x, PCS scale_ratio, int N){
+    int idx;
+    
+    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx<N; idx += gridDim.x * blockDim.x){
+        x[idx] *= scale_ratio;
+    }
+}
+
+
+__global__ void rescaling_complex(CUCPX *x, PCS scale_ratio, int N){
+    int idx;
+    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx<N; idx += gridDim.x * blockDim.x){
+        x[idx].x *= scale_ratio;
+        x[idx].y *= scale_ratio;
+    }
+}
+
+void rescaling_real_invoker(PCS *d_x, PCS scale_ratio, int N){
+  int blocksize = 512;
+  rescaling_real<<<(N-1)/blocksize+1,blocksize>>>(d_x, scale_ratio, N);
+  CHECK(cudaDeviceSynchronize());
+}
+
+void rescaling_complex_invoker(CUCPX *d_x, PCS scale_ratio, int N){
+  int blocksize = 512;
+  rescaling_complex<<<(N-1)/blocksize+1,blocksize>>>(d_x, scale_ratio, N);
+  CHECK(cudaDeviceSynchronize());
+}
+
+__global__ void shift_and_scale(PCS i_center, PCS o_center, PCS gamma, PCS *d_u, PCS *d_x, int M, int N){
+  int idx;
+  for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx<M; idx+=gridDim.x*blockDim.x){
+    d_u[idx] = (d_u[idx] - i_center) / gamma;
+  }
+  for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx<N; idx+=gridDim.x * blockDim.x){
+    d_x[idx] = (d_x[idx] - o_center) * gamma;
+  }
+}
+
+void shift_and_scale_invoker(PCS i_center, PCS o_center, PCS gamma, PCS *d_u, PCS *d_x, int M, int N){
+  // Specified for input and output transform
+  int blocksize = 512;
+  shift_and_scale<<<(max(M,N)-1)/blocksize+1,blocksize>>>(i_center,o_center,gamma,d_u,d_x,M,N);
+  CHECK(cudaDeviceSynchronize());
+}
+
 void GPU_info()
 {
   

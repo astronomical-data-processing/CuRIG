@@ -12,6 +12,26 @@ extern "C"
 #include "legendre_rule_fast.h"
 #endif
 
+int next235even(int &n)
+// finds even integer not less than n, with prime factors no larger than 5
+// (ie, "smooth"). Adapted from fortran in hellskitchen.  Barnett 2/9/17
+// changed INT64 type 3/28/17. Runtime is around n*1e-11 sec for big n.
+{
+  if (n<=2) return 2;
+  if (n%2 == 1) n+=1;   // even
+  int nplus = n-2;   // to cancel out the +=2 at start of loop
+  int numdiv = 2;    // a dummy that is >1
+  while (numdiv>1) {
+    nplus += 2;         // stays even
+    numdiv = nplus;
+    while (numdiv%2 == 0) numdiv /= 2;  // remove all factors of 2,3,5...
+    while (numdiv%3 == 0) numdiv /= 3;
+    while (numdiv%5 == 0) numdiv /= 5;
+  }
+  return nplus;
+}
+
+
 PCS evaluate_kernel(PCS x, const conv_opts &opts)
 /* ES ("exp sqrt") kernel evaluation at single real argument:
       phi(x) = exp(beta.sqrt(1 - (2x/n_s)^2)),    for |x| < nspread/2
@@ -137,4 +157,40 @@ void onedim_fseries_kernel(int nf, PCS *fwkerhalf, conv_opts opts)
       }
     }
   }
+}
+void set_nhg_type3(PCS S, PCS X, conv_opts spopts,
+		     int &nf, PCS &h, PCS &gam)
+/* sets nf, h (upsampled grid spacing), and gamma (x_j rescaling factor),
+   for type 3 only.
+   Inputs:
+   X and S are the xj and sk interval half-widths respectively.
+   opts and spopts are the NUFFT and spreader opts strucs, respectively.
+   Outputs:
+   nf is the size of upsampled grid for a given single dimension.
+   h is the grid spacing = 2pi/nf
+   gam is the x rescale factor, ie x'_j = x_j/gam  (modulo shifts).
+   Barnett 2/13/17. Caught inf/nan 3/14/17. io int types changed 3/28/17
+   New logic 6/12/17
+*/
+{
+  int nss = spopts.kw + 1;      // since ns may be odd
+  PCS Xsafe=X, Ssafe=S;              // may be tweaked locally
+  if (X==0.0)                        // logic ensures XS>=1, handle X=0 a/o S=0
+    if (S==0.0) {
+      Xsafe=1.0;
+      Ssafe=1.0;
+    } else Xsafe = std::max(Xsafe, 1/S);
+  else
+    Ssafe = std::max(Ssafe, 1/X);
+  // use the safe X and S...
+  PCS nfd = 2.0*spopts.upsampfac*Ssafe*Xsafe/PI + nss;
+  if (!isfinite(nfd)) nfd=0.0;                // use FLT to catch inf
+  nf = (int)nfd;
+  //printf("initial nf=%lld, ns=%d\n",*nf,spopts.nspread);
+  // catch too small nf, and nan or +-inf, otherwise spread fails...
+  if (nf<2*spopts.kw) nf=2*spopts.kw;
+  if (nf<MAX_NF)                             // otherwise will fail anyway
+    nf = next235even(nf);                   // expensive at huge nf
+  h = 2*PI / nf;                            // upsampled grid spacing
+  gam = (PCS)nf / (2.0*spopts.upsampfac*Ssafe);  // x scale fac to x'
 }
