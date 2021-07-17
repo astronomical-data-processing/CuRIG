@@ -26,12 +26,12 @@ int main(int argc, char *argv[])
 		epsilon - tolerance
 	*/
 	int ier = 0;
-	int N = 1000;
+	int N = 100;
 	PCS sigma = 2.0; // upsampling factor // for not on grid points needs larger upsampling factor
-	int M = 2000;
+	int M = 100;
 
 	
-	PCS epsilon = 1e-10;
+	PCS epsilon = 1e-7;
 	
 	int kerevalmeth = 0;
 	
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
     // cuda stream malloc in setup_plan
     
 
-    int nf1 = get_num_cells(M,plan->copts);
+    int nf1 = get_num_cells(N*2,plan->copts);
 	//printf("nf: %d\n",nf1);
     //printf("copt info kw %d, upsampfac %lf, beta %lf\n",plan->copts.kw,plan->copts.upsampfac,plan->copts.ES_beta);
     plan->dim = 1;
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 	
 	// result printing
 	printf("final result printing...\n");
-	for(int i=0; i<N; i++){
+	for(int i=0; i<10; i++){
 		printf("%.10lf ",fk[i].real());
 		
 	}
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < 10; i++)
 	{
 		printf("%.10lf ", truth[i].real());
 	}

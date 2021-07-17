@@ -22,7 +22,7 @@ struct curafft_opts {
 	int gpu_binsizez;
 	int gpu_kerevalmeth; // 0: direct exp(sqrt()), 1: Horner ppval default 0
 	int gpu_conv_only; // 0: NUFFT, 1: conv only
-	int gpu_gridder_method;
+	int gpu_gridder_method; // 0: nupt
 
 	
     curafft_opts(){

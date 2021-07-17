@@ -5,4 +5,6 @@
 #include "curafft_plan.h"
 int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan);
 void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize, PCS scaling_ratio);
+int cunufft_setting(int N1, int N2, int N3, int M, int kerevalmeth, int method, int direction, PCS tol,  PCS sigma, int type, int dim,
+                        PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan);
 #endif

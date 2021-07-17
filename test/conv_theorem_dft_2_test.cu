@@ -28,12 +28,12 @@ int main(int argc, char *argv[])
 
 	// issue related to accuary - how to set sigma, epsilon, number of plane, beta and kw. the number of w plane may need to increase.
 	int ier = 0;
-	int N = 16;
-	PCS sigma = 2.0; // upsampling factor
-	int M = 16;
+	int N = 15000;
+	PCS sigma = 2; // upsampling factor
+	int M = 10000;
 
 	
-	PCS epsilon = 1e-10;
+	PCS epsilon = 1e-12;
 	
 	int kerevalmeth = 0;
 	
@@ -55,9 +55,9 @@ int main(int argc, char *argv[])
 	// generating data
 	for (int i = 0; i < M; i++)
 	{
-		u[i] = randm11()*PI; //xxxxx
-		c[i].real(randm11()); // M vis per channel, weight?
-		c[i].imag(randm11());
+		u[i] = 2.0 + i*PI/(double)M; //xxxxx
+		c[i].real(i);
+		c[i].imag(i);
 		// wgt[i] = 1;
 	}
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 	{
 		/* code */
 		// k[i] = (int)i-N/2;
-		 k[i] = -abs(randm11());
+		 k[i] = -(double)i/(double)N;
 		// k[i] = i/(double)N;
 		// k[i] = i-N/2 + randm11();
 		 printf("%.10lf ",k[i]);
@@ -85,58 +85,20 @@ int main(int argc, char *argv[])
 	plan = new curafft_plan();
     memset(plan, 0, sizeof(curafft_plan));
 
+
+	PCS *d_k;
+	checkCudaErrors(cudaMalloc((void**)&d_k,sizeof(PCS)*N));
+	checkCudaErrors(cudaMemcpy(d_k,k,sizeof(PCS)*N,cudaMemcpyHostToDevice));
+	plan->d_x = d_k;
 	int direction = 1; //inverse
+
+	cunufft_setting(N,1,1,M,kerevalmeth,method,direction,epsilon,sigma,3,1,d_u,NULL,NULL,d_c,plan);
+	int nf1 = plan->nf1;
+	printf("conv info printing, sigma %lf, kw %d, beta %lf, nf1 %d\n",plan->copts.upsampfac,plan->copts.kw,plan->copts.ES_beta, nf1);
 	
-	// opts and copts setting
-    plan->opts.gpu_device_id = 0;
-    plan->opts.upsampfac = sigma;
-    plan->opts.gpu_sort = 1;
-    plan->opts.gpu_binsizex = -1;
-    plan->opts.gpu_binsizey = -1;
-    plan->opts.gpu_binsizez = -1;
-    plan->opts.gpu_kerevalmeth = kerevalmeth;
-    plan->opts.gpu_conv_only = 0;
-    plan->opts.gpu_gridder_method = method;
-
-    ier = setup_conv_opts(plan->copts, epsilon, sigma, 1, direction, kerevalmeth); //check the arguements
-	//plan->copts.ES_beta = 20.80263;
-	if(ier!=0)printf("setup_error\n");
-
-    // plan setting
-    // cuda stream malloc in setup_plan
-    
-
-    int nf1 = get_num_cells(M,plan->copts);
-	//nf1 = 100;
-	// printf("nf: %d\n",nf1);
-    // printf("copt info kw %d, upsampfac %lf, beta %lf, nf %d\n",plan->copts.kw,plan->copts.upsampfac,plan->copts.ES_beta,nf1);
-    plan->dim = 1;
-    setup_plan(nf1, 1, 1, M, d_u, NULL, NULL, d_c, plan);
-
-	plan->ms = N; ///!!!
-	plan->mt = 1;
-	plan->mu = 1;
-    plan->execute_flow = 1;
-	int iflag = direction;
-    int fftsign = (iflag>=0) ? 1 : -1;
-
-	plan->iflag = fftsign; //may be useless
-	plan->batchsize = 1;
-
-    plan->copts.direction = direction; // 1 inverse, 0 forward
-    PCS *d_fwkerhalf;
-    checkCudaErrors(cudaMalloc((void**)&d_fwkerhalf,sizeof(PCS)*(N)));
-	cudaMemset(d_fwkerhalf,0,sizeof(PCS)*N);
-    PCS *d_k;
-    checkCudaErrors(cudaMalloc((void**)&d_k,sizeof(PCS)*(N)));
-    checkCudaErrors(cudaMemcpy(d_k,k,sizeof(PCS)*(N),cudaMemcpyHostToDevice));
-    fourier_series_appro_invoker(d_fwkerhalf,d_k,plan->copts, N,nf1/2+1); 
-	
-	
-	// printf("begining...\n");
-	// fourier_series_appro_invoker(d_fwkerhalf,plan->copts,nf1/2+1);
-	PCS *fwkerhalf = (PCS *)malloc(sizeof(PCS)*(N));
-	cudaMemcpy(fwkerhalf, d_fwkerhalf, sizeof(PCS)*(N), cudaMemcpyDeviceToHost);
+	// // fourier_series_appro_invoker(d_fwkerhalf,plan->copts,nf1/2+1);
+	 PCS *fwkerhalf = (PCS *)malloc(sizeof(PCS)*(N));
+	 checkCudaErrors(cudaMemcpy(fwkerhalf, plan->fwkerhalf1, sizeof(PCS)*(N), cudaMemcpyDeviceToHost));
 
 	//fourier_series(fwkerhalf,k,plan->copts,N,nf1/2+1);
 #ifdef DEBUG
@@ -149,8 +111,8 @@ int main(int argc, char *argv[])
 	printf("\n");
 #endif	
 	// fw (conv res set)
-	checkCudaErrors(cudaMalloc((void**)&d_fw,sizeof(CUCPX)*nf1));
-	checkCudaErrors(cudaMemset(d_fw, 0, sizeof(CUCPX)*nf1));
+	checkCudaErrors(cudaMalloc((void**)&d_fw,sizeof(CUCPX)*plan->nf1));
+	checkCudaErrors(cudaMemset(d_fw, 0, sizeof(CUCPX)*plan->nf1));
 	plan->fw = d_fw;
 	// fk malloc and set
 	checkCudaErrors(cudaMalloc((void**)&d_fk,sizeof(CUCPX)*N));
@@ -158,8 +120,8 @@ int main(int argc, char *argv[])
 
 	// calulating result
 	curafft_conv(plan);
-	CPX *fw = (CPX *)malloc(sizeof(CPX)*nf1);
-	cudaMemcpy(fw,plan->fw,sizeof(CUCPX)*nf1,cudaMemcpyDeviceToHost);
+	CPX *fw = (CPX *)malloc(sizeof(CPX)*plan->nf1);
+	cudaMemcpy(fw,plan->fw,sizeof(CUCPX)*plan->nf1,cudaMemcpyDeviceToHost);
 #ifdef DEBUG
 	printf("conv result printing...\n");
 	
@@ -171,25 +133,30 @@ int main(int argc, char *argv[])
 	printf("\n");
 	
 #endif
+	PCS *kp = (PCS *) malloc(sizeof(PCS)*N);
+	checkCudaErrors(cudaMemcpy(kp,plan->d_x,sizeof(PCS)*N,cudaMemcpyDeviceToHost));
+	
 	CPX *fk = (CPX *)malloc(sizeof(CPX)*N);
 	memset(fk,0,sizeof(CPX)*N);
 	// dft
 	for (int i = 0; i < N; i++)
 	{
 		/* code */
-		for (int j = 0; j < nf1; j++)
+		for (int j = 0; j < plan->nf1; j++)
 		{
+			if(j<nf1/2)fk[i] += fw[j+nf1/2] * exp((PCS)j * kp[i] * IMA);
+			else fk[i] += fw[j-nf1/2] * exp(((PCS)j-(PCS)nf1) * kp[i] * IMA); // does j need to change?
 			// decompose those calculation in order to reach better precision
-			double temp1;
-			int idx = j + nf1/2;
-			temp1 = (double)j/(double)nf1;
-			if(j>=nf1/2){
-				temp1 = temp1 - 1.00000000;
-				idx -= nf1;
-			}
-			temp1 *=PI * 2.0000000000;
-			temp1 *= k[i];
-		    fk[i] = fk[i] + fw[idx]*exp((double)temp1*IMA);
+			// double temp1;
+			// int idx = j + plan->nf1/2;
+			// temp1 = (double)j/(double)nf1;
+			// if(j>=nf1/2){
+			// 	temp1 = temp1 - 1.00000000;
+			// 	idx -= nf1;
+			// }
+			// temp1 *=PI * 2.0000000000;
+			// temp1 *= k[i];
+		    // fk[i] = fk[i] + fw[idx]*exp((double)temp1*IMA);
 		    
 			// 
 			// fk[i].real( temp2 );
@@ -226,15 +193,16 @@ int main(int argc, char *argv[])
 	// deconv
 	//PCS *fwkerhalf = (PCS *)malloc(sizeof(PCS)*(N));
 	//cudaMemcpy(fwkerhalf, d_fwkerhalf, sizeof(PCS)*(N), cudaMemcpyDeviceToHost);
-
+	printf("i center %lf, o center %lf\n",plan->ta.i_center[0],plan->ta.o_center[0]);
 	for(int i=0; i<N; i++){
-		fk[i] = fk[i] / fwkerhalf[i];
+		fk[i] = fk[i] / fwkerhalf[i] * exp((k[i]-plan->ta.o_center[0])*plan->ta.i_center[0]*IMA);
 	}
 
 	
 	// result printing
+
 	printf("final result printing...\n");
-	for(int i=0; i<N; i++){
+	for(int i=0; i<10; i++){
 		printf("%.10lf ",fk[i].real());
 		
 	}
@@ -250,26 +218,27 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < 10; i++)
 	{
 		printf("%.10lf ", truth[i].real());
 	}
 	printf("\n");
 
 
-	double max=0;
-	double l2_max=0;
 	// double fk_max = 0;
 	// for(int i=0; i<M; i++){
 	// 	if(abs(fk[i].real())>fk_max)fk_max = abs(fk[i].real());
 	// }
 	// printf("fk max %lf\n",fk_max);
+	CPX diff;
+	double err=0;
+	double nrm=0;
 	for(int i=0; i<N; i++){
-		double temp = abs(truth[i].real()-fk[i].real());
-		if(temp>max) max = temp;
-		if(temp/fk[i].real() > l2_max) l2_max = temp/fk[i].real();
+		diff = truth[i] - fk[i];
+		err += real(conj(diff)*diff);
+		nrm += real(conj(fk[i])*fk[i]);
 	}
-	printf("maximal abs error %.6g, maximal l2 error %.6g\n",max,l2_max);
+	printf("l2 error %.6g\n",sqrt(err/nrm));
 	
 	//free
 	curafft_free(plan);
