@@ -51,7 +51,7 @@ int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow
     PCS i_max, i_min;
     PCS o_min;
     get_max_min(i_max, i_min, d_w, gridder_plan->nrow);
-    printf("max min %lf, %lf\n",i_max,i_min);
+
     //PCS u_max = max(abs(i_max),abs(i_min));
     plan->ta.i_center[0] = (i_max + i_min) / (PCS)2.0;
     plan->ta.i_half_width[0] = (i_max - i_min) / (PCS)2.0;
@@ -120,15 +120,10 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     // get effective coordinates: *1/lambda
     PCS f_over_c = pointer_v->frequency[0]/SPEEDOFLIGHT;
     printf("foverc %lf\n",f_over_c);
-    PCS i_max, i_min;
-    get_max_min(i_max, i_min, d_w, M);
-    printf("max min %lf, %lf\n",i_max,i_min);
+   
 
     get_effective_coordinate_invoker(d_u,d_v,d_w,f_over_c,pointer_v->pirange,M);
 
-    
-    get_max_min(i_max, i_min, d_w, M);
-    printf("max min %lf, %lf\n",i_max,i_min);
     // PCS *w = (PCS *) malloc(sizeof(PCS)*M);
     // checkCudaErrors(cudaMemcpy(w,d_w,sizeof(PCS)*M,cudaMemcpyDeviceToHost));
    
@@ -287,6 +282,7 @@ int gridder_destroy(curafft_plan *plan, ragridder_plan *gridder_plan)
 {
     // free memory
     int ier = 0;
+    checkCudaErrors(cudaFree(plan->d_x));
     curafft_free(plan);
     free(plan);
     free(gridder_plan->dirty_image);

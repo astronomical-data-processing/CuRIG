@@ -232,11 +232,16 @@ int main(int argc, char *argv[])
 #endif
 	PCS pi_ratio = 1;
 	if(!gridder_plan->kv.pirange)pi_ratio = 2 * PI;
+	int print_sizex = nxdirty;int print_sizey = nydirty;
+	if(nrow>=1e4){
+		print_sizex = 1;
+		print_sizey = 10;
+	}
 	PCS *truth = (PCS*) malloc (sizeof(PCS)*nxdirty*nydirty);
 
 	//printf("ground truth printing...\n");
-	for(int i=0; i<nxdirty; i++){
-		for(int j=0; j<nydirty; j++){
+	for(int i=0; i<print_sizex; i++){
+		for(int j=0; j<print_sizey; j++){
 			CPX temp(0.0,0.0);
 			PCS n_lm = sqrt(1.0-pow(gridder_plan->pixelsize_x*(i-nxdirty/2),2)-pow(gridder_plan->pixelsize_y*(j-nydirty/2),2));
 			for(int k=0; k<nrow; k++){
@@ -257,14 +262,14 @@ int main(int argc, char *argv[])
 	double l2_max=0;
 	double sum_fk = 0;
 	
-	for(int i=0; i<nxdirty*nydirty; i++){
+	for(int i=0; i<print_sizex*print_sizey; i++){
 		double temp = abs(truth[i] - gridder_plan->dirty_image[i].real());
 		if(temp>max) max = temp;
 		l2_max += temp ;
 		sum_fk += abs(gridder_plan->dirty_image[i].real());
 	}
-	printf("maximal abs error %.3g, maximal l2 error %.3g\n",max,l2_max/sum_fk);
-
+	printf("maximal abs error %.3g, l2 error %.3g\n",max,l2_max/sum_fk);
+	printf("---------------------------------------------------------------------------------------------------\n");
 	plan->dim=3;
 	ier = gridder_destroy(plan, gridder_plan);
 	if(ier == 1){
