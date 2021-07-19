@@ -30,12 +30,18 @@ __global__ void get_effective_coordinate(PCS *u, PCS *v, PCS *w, PCS f_over_c, i
             v[idx] *= 2 * PI;
             w[idx] *= 2 * PI;
         }
-        //if(idx==0) printf("After scaling w %lf, f over c %lf\n",w[idx],f_over_c);
+        if(idx==0) printf("After scaling w %lf, f over c %lf\n",w[idx],f_over_c);
     }
     
 
 }
 
+void get_effective_coordinate_invoker(PCS *d_u, PCS *d_v, PCS *d_w, PCS f_over_c, int pirange, int nrow){
+    int blocksize = 512;
+    printf("nrow %d, foc %lf",nrow,f_over_c);
+    get_effective_coordinate<<<(nrow-1)/blocksize+1,nrow>>>(d_u,d_v,d_w,f_over_c,pirange,nrow);
+    checkCudaErrors(cudaDeviceSynchronize());
+}
 
 __global__ void gridder_rescaling_real(PCS *x, PCS scale_ratio, int N){
     int idx;
@@ -83,7 +89,7 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
         checkCudaErrors(cudaMalloc((void**)&plan->fwkerhalf3,sizeof(PCS)*(N1/2+1)*(N2/2+1)));
         PCS *d_k;
         checkCudaErrors(cudaMalloc((void**)&d_k,sizeof(PCS)*(N1/2+1)*(N2/2+1)));
-        w_term_k_generation(d_k,plan->ms,plan->mt,gridder_plan->pixelsize_x,gridder_plan->pixelsize_y, gridder_plan->w_s_r); //some issues
+        w_term_k_generation(d_k,plan->ms,plan->mt,gridder_plan->pixelsize_x,gridder_plan->pixelsize_y); //some issues
 #ifdef DEBUG
         printf("k printing...\n");
         PCS *h_k;
@@ -156,17 +162,17 @@ void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan,
 	checkCudaErrors(cudaMemcpy(d_vis, gridder_plan->kv.vis + nrow*gridder_plan->cur_channel, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice)); //
 }
 
-__global__ void k_generation(PCS *k, int N1, int N2, PCS xpixelsize, PCS ypixelsize, PCS scaling_ratio){
+__global__ void k_generation(PCS *k, int N1, int N2, PCS xpixelsize, PCS ypixelsize){
     int idx;
     int N = (N1/2+1)*(N2/2+1);
     for(idx = threadIdx.x + blockDim.x*blockIdx.x; idx<N; idx+=gridDim.x*blockDim.x){
         int row = idx / (N1/2 + 1);
         int col = idx % (N1/2 + 1);
-        k[idx] = (sqrt(1 - pow(row*xpixelsize,2)-pow(col*ypixelsize,2)) - 1)*scaling_ratio;
+        k[idx] = (sqrt(1.0 - pow(row*xpixelsize,2)-pow(col*ypixelsize,2)) - 1);
     }
 }
 
-int w_term_k_generation(PCS *k, int N1, int N2, PCS xpixelsize, PCS ypixelsize, PCS scaling_ratio){
+int w_term_k_generation(PCS *k, int N1, int N2, PCS xpixelsize, PCS ypixelsize){
     /*
         W term k array generation
         Output:
@@ -178,7 +184,7 @@ int w_term_k_generation(PCS *k, int N1, int N2, PCS xpixelsize, PCS ypixelsize, 
     
     int N = (N1/2+1)*(N2/2+1);
     int blocksize = 512;
-    k_generation<<<(N-1)/blocksize+1, blocksize>>>(k,N1,N2,xpixelsize,ypixelsize,scaling_ratio);
+    k_generation<<<(N-1)/blocksize+1, blocksize>>>(k,N1,N2,xpixelsize,ypixelsize);
     checkCudaErrors(cudaDeviceSynchronize());
     return 0;
 }
@@ -200,7 +206,7 @@ __global__ void explicit_gridder(int N1, int N2, int nrow, PCS *u, PCS *v, PCS *
         col = idx % N1 - N1/2;
         l = row * row_pix_size;
         m = col * col_pix_size;
-        n_lm = sqrt(1 - pow(l,2) - pow(m,2));
+        n_lm = sqrt(1.0 - pow(l,2) - pow(m,2));
         for(int i=0; i<nrow; i++){
             PCS phase = f_over_c*(l*u[i] + m*v[i] + (n_lm-1)*w[i]);
             if(pirange != 1) phase = phase * 2 * PI;

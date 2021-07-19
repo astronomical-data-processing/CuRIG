@@ -45,6 +45,7 @@ void pre_stage_invoker(PCS *i_center, PCS *o_center, PCS *gamma, PCS *h, PCS *d_
         pre_stage_1<<<(M-1)/blocksize+1,blocksize>>>(o_center[0],o_center[1],o_center[2],d_u,d_v,d_w,d_c,M,flag);
         checkCudaErrors(cudaDeviceSynchronize());
     }
+    // uj to uj', xj to xj'
     pre_stage_2<<<(max(M,N1)-1)/blocksize+1,blocksize>>>(i_center[0],o_center[0],gamma[0],h[0],d_u,d_x,M,N1);
     CHECK(cudaDeviceSynchronize());
     if(d_v!=NULL){
@@ -345,13 +346,17 @@ int curafft_free(curafft_plan *plan)
 }
 
 //------------------------------Below this line, all contents are just for Radio astronomy-------------------------
-__global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int nf3, int N1, int N2, PCS xpixelsize, PCS ypixelsize, int flag, int batchsize, PCS scaling_ratio)
+__global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int nf3, int N1, int N2, PCS *z, int flag, int batchsize)
 {
     /*
         Specified for radio astronomy
-        W term dft output driven method
+        W term dft output driven method (idx takes charge of idx's dft in CMCL mode)
         the output of cufft is FFTW format// just do dft on the in range pixels
-        //flag 
+        Input:
+            fw - result after ffts towards each w plane (FFTW mode)
+            z - output coordinate after rescaling, size - (N1/2+1,N2/2+1)
+            flag - fourier flag
+            i|o_center - center of input|output
     */
     int idx;
     flag = 1.0;
@@ -369,20 +374,19 @@ __global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int nf3, int N1, int N2,
         CUCPX temp;
         temp.x = 0;
         temp.y = 0;
-        // from N/2 to N/2, not 0 to N
         
-        PCS z = sqrt(1 - pow(((row - N2/2) * xpixelsize),2) - pow(((col-N1/2) * ypixelsize),2)) - 1; // revise for >1
-        z = scaling_ratio * z;
         // double z_t_2pi = 2 * PI * (z); w have been scaling to pirange
         // currently not support for partial computing
         int i;
+        int idx_z = abs(col-N1/2) + abs(row-N2/2) * (N1/2+1);
+        // in w axis the fw is 0 to N, not FFTW mode
         for(i=0; i<nf3/2; i++){
-            temp.x += fw[idx_fw + (i+nf3/2)*nf1*nf2].x * cos(z * (i)/(PCS)nf3 * 2 * PI * flag) - fw[idx_fw + (i+nf3/2)*nf1*nf2].y * sin(z * (i)/(PCS)nf3 * 2 * PI *flag);
-            temp.y += fw[idx_fw + (i+nf3/2)*nf1*nf2].x * sin(z * (i)/(PCS)nf3 * 2 * PI * flag) + fw[idx_fw + (i+nf3/2)*nf1*nf2].y * cos(z * (i)/(PCS)nf3 * 2 * PI *flag);
+            temp.x += fw[idx_fw + (i+nf3/2)*nf1*nf2].x * cos(z[idx_z] * i * flag) - fw[idx_fw + (i+nf3/2)*nf1*nf2].y * sin(z[idx_z] * i * flag);
+            temp.y += fw[idx_fw + (i+nf3/2)*nf1*nf2].x * sin(z[idx_z] * i * flag) + fw[idx_fw + (i+nf3/2)*nf1*nf2].y * cos(z[idx_z] * i * flag);
         }
         for(;i<nf3;i++){
-            temp.x += fw[idx_fw + (i-nf3/2)*nf1*nf2].x * cos(z * (i-(PCS)nf3)/(PCS)nf3 * 2 * PI * flag) - fw[idx_fw + (i-nf3/2)*nf1*nf2].y * sin(z * (i-(PCS)nf3)/(PCS)nf3 * 2 * PI *flag);
-            temp.y += fw[idx_fw + (i-nf3/2)*nf1*nf2].x * sin(z * (i-(PCS)nf3)/(PCS)nf3 * 2 * PI * flag) + fw[idx_fw + (i-nf3/2)*nf1*nf2].y * cos(z * (i-(PCS)nf3)/(PCS)nf3 * 2 * PI *flag);
+            temp.x += fw[idx_fw + (i-nf3/2)*nf1*nf2].x * cos(z[idx_z] * (i-nf3) * flag) - fw[idx_fw + (i-nf3/2)*nf1*nf2].y * sin(z[idx_z] * (i-nf3) * flag);
+            temp.y += fw[idx_fw + (i-nf3/2)*nf1*nf2].x * sin(z[idx_z] * (i-nf3) * flag) + fw[idx_fw + (i-nf3/2)*nf1*nf2].y * cos(z[idx_z] * (i-nf3) * flag);
         }
         // for (int i = 0; i < batchsize; i++)
         // {
@@ -394,7 +398,7 @@ __global__ void w_term_dft(CUCPX *fw, int nf1, int nf2, int nf3, int N1, int N2,
     }
 }
 
-void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize, PCS scaling_ratio)
+void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize)
 {
     /*
         Specified for radio astronomy
@@ -408,14 +412,13 @@ void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize, PCS sca
     int nf3 = plan->nf3;
     int N1 = plan->ms;
     int N2 = plan->mt;
-
     int batchsize = plan->batchsize;
     int flag = plan->mode_flag;
     int num_threads = 512;
 
     dim3 block(num_threads);
     dim3 grid((N1 * N2 - 1) / num_threads + 1);
-    w_term_dft<<<grid, block>>>(plan->fw, nf1, nf2, nf3, N1, N2, xpixelsize, ypixelsize, flag, batchsize, scaling_ratio);
+    w_term_dft<<<grid, block>>>(plan->fw, nf1, nf2, nf3, N1, N2, plan->d_x, flag, batchsize);
     checkCudaErrors(cudaDeviceSynchronize());
     return;
 }

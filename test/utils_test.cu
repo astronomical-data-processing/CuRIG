@@ -10,11 +10,11 @@
 int main(int argc, char* argv[]){
 
     PCS *arr, *d_arr;
-    int n = 10;
+    int n = 100000;
     arr = (PCS *) malloc (sizeof(PCS)*n);
     for(int i=0; i<n; i++){
-        arr[i] = int(randm11()*100); //convert to int for checking
-        printf("%.3g ", arr[i]);
+        arr[i] = randm11()*0.5*PI; //convert to int for checking
+        //printf("%.3g ", arr[i]);
     }
     printf("\n");
     checkCudaErrors(cudaMalloc((void **)&d_arr, sizeof(PCS)*n));
@@ -30,7 +30,7 @@ int main(int argc, char* argv[]){
     printf("Prefix scan testing...\n");
     prefix_scan(d_arr, d_arr, n, 1);
     checkCudaErrors(cudaMemcpy(arr, d_arr, sizeof(PCS)*n, cudaMemcpyDeviceToHost));
-    for(int i=0; i<n; i++){
+    for(int i=0; i<10; i++){
         printf("%.3g ", arr[i]);
     }
     printf("\n");
