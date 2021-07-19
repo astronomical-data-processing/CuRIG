@@ -70,7 +70,7 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int pirange, int di
   // Set kernel width w (aka kw) and ES kernel beta parameter, in opts...
   int kw = std::ceil(-log10(eps / (PCS)10.0));                  // 1 digit per power of ten
   if (upsampfac != 2.0)                                         // override ns for custom sigma
-    kw = std::ceil(-log(eps) / (PI * sqrt(1 - 1 / upsampfac))); // formula, gamma=1
+    kw = std::ceil(-log(eps) / (PI * sqrt(1.0 - 1.0 / upsampfac))); // formula, gamma=1
   kw = max(2, kw);                                              
   if (kw > MAX_KERNEL_WIDTH)
   { // clip to match allocated arrays

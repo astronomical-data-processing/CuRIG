@@ -28,12 +28,12 @@ int main(int argc, char *argv[])
 
 	// issue related to accuary - how to set sigma, epsilon, number of plane, beta and kw. the number of w plane may need to increase.
 	int ier = 0;
-	int N = 15000;
+	int N = 100;
 	PCS sigma = 2; // upsampling factor
-	int M = 10000;
+	int M = 100;
 
 	
-	PCS epsilon = 1e-12;
+	PCS epsilon = 1e-6;
 	
 	int kerevalmeth = 0;
 	
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < M; i++)
 	{
 		u[i] = 2.0 + i*PI/(double)M; //xxxxx
-		c[i].real(i);
+		c[i].real(randm11()*1000);
 		c[i].imag(i);
 		// wgt[i] = 1;
 	}
@@ -127,7 +127,6 @@ int main(int argc, char *argv[])
 	
 	for (int i = 0; i < nf1; i++)
 	{
-		/* code */
 		printf("%lf ",fw[i].real());
 	}
 	printf("\n");

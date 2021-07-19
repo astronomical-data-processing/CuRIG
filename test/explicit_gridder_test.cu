@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 	for(int i=0; i<nxdirty; i++){
 		for(int j=0; j<nydirty; j++){
 			CPX temp(0.0,0.0);
-			PCS n_lm = sqrt(1-pow(plan->pixelsize_x*(i-nxdirty/2),2)-pow(plan->pixelsize_y*(j-nydirty/2),2));
+			PCS n_lm = sqrt(1.0-pow(plan->pixelsize_x*(i-nxdirty/2),2)-pow(plan->pixelsize_y*(j-nydirty/2),2));
 			
 			for(int k=0; k<nrow; k++){
 

@@ -36,7 +36,7 @@ __global__ void div_n_lm(CUCPX *fk, PCS xpixelsize, PCS ypixelsize, int N1, int 
         col = idx % N1;
         // printf("%d, %.5lf, %.5lf, %d, %d\n",idx,xpixelsize,ypixelsize,row,col);
         // printf("idx %d, %.4lf\n",idx,sqrt(1 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize, 2)));
-        n_lm = sqrt(1 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize, 2));
+        n_lm = sqrt(1.0 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize, 2));
         fk[idx].x /= n_lm;
         fk[idx].y /= n_lm;
     }
@@ -62,13 +62,13 @@ int curaew_scaling(curafft_plan *plan, ragridder_plan *gridder_plan){
     return 0;
 }
 
-int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
+int exec_vis2dirty(curafft_plan *plan, ragridder_plan *gridder_plan)
 {
     /*
     Currently, just suitable for improved W stacking
     Two different execution flows
-        Flow1: the data size is small and memory is sufficent for whole conv
-        Flow2: the data size is large, the data is divided into parts 
+        Flow1: the data size is relatively small and memory is sufficent for whole conv
+        Flow2: the data size is too large, the data is divided into parts 
     */
     int ier=0;
     //printf("execute flow %d\n",plan->execute_flow);
@@ -121,7 +121,7 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
             // keep the N1*N2*num_w. ignore the outputs that are out of range
             
             // 3. dft on w (or 1 dimensional nufft type3)
-            curadft_invoker(plan, gridder_plan->pixelsize_x, gridder_plan->pixelsize_y, gridder_plan->w_s_r);
+            curadft_invoker(plan, gridder_plan->pixelsize_x, gridder_plan->pixelsize_y);
 #ifdef DEBUG
             printf("part of dft result printing:...\n");
             //CPX *fw = (CPX *)malloc(sizeof(CPX)*plan->nf1*plan->nf2*plan->nf3);
@@ -148,7 +148,7 @@ int exec_inverse(curafft_plan *plan, ragridder_plan *gridder_plan)
             }
 #endif
             // 2. w term deconv on fk
-            ier = curadft_w_deconv(plan);
+            ier = curadft_w_deconv(plan, gridder_plan->pixelsize_x, gridder_plan->pixelsize_y);
 #ifdef DEBUG
             printf("deconv result printing stage 2:...\n");
             //CPX *fk = (CPX *)malloc(sizeof(CPX)*plan->ms*plan->mt);

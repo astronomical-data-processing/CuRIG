@@ -11,10 +11,10 @@
 //#include <thrust/extrema.h>
 #include "conv.h"
 
-static __forceinline__ __device__ int kerval(PCS x, PCS es_c, PCS es_beta, PCS half_kw){
-	//not using the fast kernel evaluation
-	return (abs(x)>=half_kw) ? 0.0 : exp(es_beta * (sqrt(1.0 - es_c*x*x))); // when epsilon > 1e-10 will cause error
-}
+// static __forceinline__ __device__ int kerval(PCS x, PCS es_c, PCS es_beta, PCS half_kw){
+// 	//not using the fast kernel evaluation
+// 	return (abs(x)>=half_kw) ? 0.0 : exp(es_beta * (sqrt(1.0 - es_c*x*x))); // when epsilon > 1e-10 will cause error
+// }
 
 static __inline__ __device__
 void val_kernel_vec(PCS *ker, const PCS x, const double kw, const double es_c, 

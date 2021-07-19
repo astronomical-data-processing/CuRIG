@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
 	for(int i=0; i<nxdirty; i++){
 		for(int j=0; j<nydirty; j++){
 			CPX temp(0.0,0.0);
-			PCS n_lm = sqrt(1-pow(gridder_plan->pixelsize_x*(i-nxdirty/2),2)-pow(gridder_plan->pixelsize_y*(j-nydirty/2),2));
+			PCS n_lm = sqrt(1.0-pow(gridder_plan->pixelsize_x*(i-nxdirty/2),2)-pow(gridder_plan->pixelsize_y*(j-nydirty/2),2));
 			for(int k=0; k<nrow; k++){
 				temp += vis[k]*exp((u[k]*pi_ratio*(i-nxdirty/2)+v[k]*pi_ratio*(j-nydirty/2)+w[k]*pi_ratio*(n_lm-1))*IMA);
 			}

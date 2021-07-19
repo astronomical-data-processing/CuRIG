@@ -9,5 +9,6 @@
 
 void explicit_gridder_invoker(ragridder_plan *gridder_plan);
 void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan, ragridder_plan *gridder_plan);
-int w_term_k_generation(PCS *k, int nf1, int nf2, PCS xpixelsize, PCS ypixelsize, PCS scaling_ratio);
+int w_term_k_generation(PCS *k, int nf1, int nf2, PCS xpixelsize, PCS ypixelsize);
+void get_effective_coordinate_invoker(PCS *d_u, PCS *d_v, PCS *d_w, PCS f_over_c, int pirange, int nrow);
 #endif

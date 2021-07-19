@@ -342,7 +342,7 @@ int curafft_deconv(curafft_plan *plan){
 
 //------------------Below this line, the content is just for Radio Astronomy---------------------
 
-__global__ void w_term_deconv(int N1, int N2, CUCPX* fk, PCS* fwkerhalf){
+__global__ void w_term_deconv(int N1, int N2, CUCPX* fk, PCS* fwkerhalf, PCS i_center, PCS o_center ,PCS xpixelsize, PCS ypixelsize){
     // Input is CMCL format
     int idx;
     int nmodes = N1*N2; 
@@ -350,17 +350,21 @@ __global__ void w_term_deconv(int N1, int N2, CUCPX* fk, PCS* fwkerhalf){
     for(idx = blockIdx.x*blockDim.x + threadIdx.x; idx < nmodes; idx+=gridDim.x*blockDim.x){
         int row = idx / N1;
         int col = idx % N1;
+        PCS phase = ((sqrt(1.0 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize,2)) - 1)-o_center)*i_center;
+        // if(idx==0)printf("sqrt %lf, ic %lf, oc %lf, phase %lf\n",sqrt(1.0 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize,2)),i_center,o_center,phase);
         idx_fw = abs(col-N1/2)+abs(row-N2/2)*(N1/2+1);
-        fk[idx].x = fk[idx].x / fwkerhalf[idx_fw];
-        fk[idx].y = fk[idx].y / fwkerhalf[idx_fw];
+        fk[idx].x = (fk[idx].x*cos(phase)-fk[idx].y*sin(phase)) / fwkerhalf[idx_fw];
+        fk[idx].y = (fk[idx].x*sin(phase)+fk[idx].y*cos(phase))  / fwkerhalf[idx_fw];
     }
 }
 
-int curadft_w_deconv(curafft_plan *plan){
+int curadft_w_deconv(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize){
     int ier = 0;
     int blocksize = 512;
     int N = plan->ms*plan->mt;
-    w_term_deconv<<<(N-1)/blocksize+1,blocksize>>>(plan->ms,plan->mt,plan->fk,plan->fwkerhalf3);
+    PCS i_center = plan->ta.i_center[0];
+    PCS o_center = plan->ta.o_center[0];
+    w_term_deconv<<<(N-1)/blocksize+1,blocksize>>>(plan->ms,plan->mt,plan->fk,plan->fwkerhalf3,i_center,o_center,xpixelsize,ypixelsize);
     checkCudaErrors(cudaDeviceSynchronize());
     return ier;
 }
