@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	int nxdirty, nydirty;
-	PCS sigma = 2; // upsampling factor
+	PCS sigma = 1.25; // upsampling factor
 	int nrow, nchan;
 	PCS fov;
 
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 		sscanf(argv[7], "%d", &nchan);
 	}
 
-	PCS epsilon = 1e-10;
+	PCS epsilon = 1e-6;
 	if (argc > 8)
 	{
 		sscanf(argv[8], "%lf", &inp);
@@ -146,9 +146,7 @@ int main(int argc, char *argv[])
 	checkCudaErrors(cudaMemcpy(d_v, v, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //v
 	checkCudaErrors(cudaMemcpy(d_w, w, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //w
 	checkCudaErrors(cudaMemcpy(d_vis,  vis, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice));
-	PCS i_max, i_min;
-    get_max_min(i_max, i_min, d_w, nrow);
-    printf("max min %lf, %lf\n",i_max,i_min);
+	
 	/* -----------Step1: Baseline setting--------------
 	skip negative v
     uvw, nrow = M, shift, mask, f_over_c (fixed due to single channel)

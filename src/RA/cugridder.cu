@@ -130,7 +130,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     // opts and copts setting
     plan->opts.gpu_device_id = 0;
     plan->opts.upsampfac = sigma;
-    plan->opts.gpu_sort = 1;
+    plan->opts.gpu_sort = 0;
     plan->opts.gpu_binsizex = -1;
     plan->opts.gpu_binsizey = -1;
     plan->opts.gpu_binsizez = -1;
@@ -234,8 +234,9 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     // u and v scaling *pixelsize
     rescaling_real_invoker(d_u,gridder_plan->pixelsize_x,gridder_plan->nrow);
     rescaling_real_invoker(d_v,gridder_plan->pixelsize_y,gridder_plan->nrow);
-
+    show_mem_usage();
     // fw malloc
+    printf("nf1, nf2, nf3: (%d,%d,%d) %d\n",plan->nf1,plan->nf2,plan->nf3,plan->nf1*plan->nf2*plan->nf3);
     checkCudaErrors(cudaMalloc((void**)&plan->fw,sizeof(CUCPX)*plan->nf1*plan->nf2*plan->nf3));
     checkCudaErrors(cudaMemset(plan->fw, 0, plan->nf3 * plan->nf1 * plan->nf2 * sizeof(CUCPX)));
 
@@ -294,5 +295,86 @@ int gridder_destroy(curafft_plan *plan, ragridder_plan *gridder_plan)
     free(gridder_plan->kv.weight);
     // free(gridder_plan->kv.flag);
     free(gridder_plan);
+    return ier;
+}
+
+
+// -------------gridder warpper-----------------
+int ms2dirty_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *u, PCS *v, PCS *w,
+             CPX *vis,  CUCPX *d_dirty, PCS epsilon, PCS sigma){
+    
+    int ier = 0;
+    //------------device memory malloc------------
+    PCS *d_u, *d_v, *d_w;
+	CUCPX *d_vis;
+    checkCudaErrors(cudaMalloc((void**)&d_u, nrow * sizeof(PCS)));
+	checkCudaErrors(cudaMalloc((void**)&d_v, nrow * sizeof(PCS)));
+	checkCudaErrors(cudaMalloc((void**)&d_w, nrow * sizeof(PCS)));
+	checkCudaErrors(cudaMalloc((void**)&d_vis, nrow * sizeof(CUCPX)));
+    //---------------data transfer----------------
+    checkCudaErrors(cudaMemcpy(d_u, u, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //u
+	checkCudaErrors(cudaMemcpy(d_v, v, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //v
+	checkCudaErrors(cudaMemcpy(d_w, w, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //w
+	checkCudaErrors(cudaMemcpy(d_vis,  vis, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice));
+
+    PCS *f_over_c = (PCS*) malloc(sizeof(PCS));
+    f_over_c[0] = freq / SPEEDOFLIGHT;
+
+    /* -------------- cugridder-----------------*/
+	// plan setting
+	curafft_plan *plan;
+
+	ragridder_plan *gridder_plan;
+
+	plan = new curafft_plan();
+    gridder_plan = new ragridder_plan();
+    memset(plan, 0, sizeof(curafft_plan));
+    memset(gridder_plan, 0, sizeof(ragridder_plan));
+	
+	visibility *pointer_v;
+	pointer_v = (visibility *)malloc(sizeof(visibility));
+	pointer_v->u = u;
+	pointer_v->v = v;
+	pointer_v->w = w;
+	pointer_v->vis = vis;
+	pointer_v->frequency = &freq;
+	pointer_v->weight = NULL;
+	pointer_v->pirange = 1;
+
+	int direction = 1; //vis to image
+    //---------STEP1: gridder setting---------------
+    ier = gridder_setting(nydirty,nxdirty,0,0,1,epsilon,direction,sigma,0,1,nrow,1,fov,pointer_v,d_u,d_v,d_w,d_vis
+		,plan,gridder_plan);
+
+	//print the setting result
+	free(pointer_v);
+	if(ier == 1){
+		printf("errors in gridder setting\n");
+		return ier;
+	}
+
+    plan->fk = d_dirty;
+    //---------STEP2: gridder execution---------------
+    ier = gridder_execution(plan,gridder_plan);
+	if(ier == 1){
+		printf("errors in gridder execution\n");
+		return ier;
+	}
+
+    plan->opts.gpu_conv_only = 1; // to avoid fk be free
+    plan->dim=3; // back to 3D
+    //---------STEP3: gridder destroy-----------------
+	ier = gridder_destroy(plan, gridder_plan);
+	if(ier == 1){
+		printf("errors in gridder destroy\n");
+		return ier;
+	}
+    return ier;
+}
+
+int ms2dirty(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *u, PCS *v, PCS *w,
+             CPX *vis,  CUCPX *d_dirty, PCS epsilon = 1e6, PCS sigma =1.25){
+    int ier = 0;
+    ier = ms2dirty_exec(nrow,nxdirty,nydirty,fov,freq,u,v,w,vis,d_dirty,epsilon,sigma);
     return ier;
 }

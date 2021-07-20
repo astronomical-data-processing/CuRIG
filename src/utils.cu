@@ -169,3 +169,24 @@ int next235beven(int n, int b)
   }
   return nplus;
 }
+
+void show_mem_usage(){
+  // show memory usage of GPU
+
+        size_t free_byte ;
+
+        size_t total_byte ;
+
+        CHECK(cudaMemGetInfo( &free_byte, &total_byte )) ;
+
+
+        double free_db = (double)free_byte ;
+
+        double total_db = (double)total_byte ;
+
+        double used_db = total_db - free_db ;
+
+        printf("GPU memory usage: used = %f, free = %f MB, total = %f MB\n",
+        used_db/1024.0/1024.0, free_db/1024.0/1024.0, total_db/1024.0/1024.0);
+
+}

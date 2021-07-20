@@ -156,7 +156,7 @@ int cunufft_setting(int N1, int N2, int N3, int M, int kerevalmeth, int method, 
 
     plan->opts.gpu_device_id = 0;
     plan->opts.upsampfac = sigma;
-    plan->opts.gpu_sort = 1;
+    plan->opts.gpu_sort = 0;
     plan->opts.gpu_binsizex = -1;
     plan->opts.gpu_binsizey = -1;
     plan->opts.gpu_binsizez = -1;

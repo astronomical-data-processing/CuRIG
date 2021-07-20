@@ -50,5 +50,6 @@ int next235beven(int n, int b);
 void prefix_scan(PCS *d_arr, PCS *d_res, int n, int flag);
 void get_max_min(PCS &max, PCS &min, PCS *d_array, int n);
 void GPU_info();
+void show_mem_usage();
 
 #endif

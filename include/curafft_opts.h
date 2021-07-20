@@ -28,7 +28,7 @@ struct curafft_opts {
     curafft_opts(){
         gpu_device_id = 0;
         upsampfac = 2.0;
-		gpu_sort = 1;
+		gpu_sort = 0;
 		gpu_binsizex = -1;
 		gpu_binsizey = -1;
 		gpu_binsizez = -1;
