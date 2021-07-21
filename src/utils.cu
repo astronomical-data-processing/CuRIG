@@ -86,6 +86,47 @@ void shift_and_scale_invoker(PCS i_center, PCS o_center, PCS gamma, PCS *d_u, PC
   CHECK(cudaDeviceSynchronize());
 }
 
+__global__ void transpose(PCS *odata, PCS *idata, int width, int height)
+{
+  //* Copyright 1993-2007 NVIDIA Corporation.  All rights reserved.
+  // refer https://github.com/JonathanWatkins/CUDA/blob/master/NvidiaCourse/Exercises/transpose/transpose.cu
+	__shared__ PCS block[BLOCKSIZE][BLOCKSIZE];
+	
+	// read the matrix tile into shared memory
+        // load one element per thread from device memory (idata) and store it
+        // in transposed order in block[][]
+	unsigned int xIndex = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int yIndex = blockIdx.y * blockDim.y + threadIdx.y;
+	if((xIndex < width) && (yIndex < height))
+	{
+		unsigned int index_in = yIndex * width + xIndex;
+		block[threadIdx.y][threadIdx.x] = idata[index_in];
+	}
+
+        // synchronise to ensure all writes to block[][] have completed
+	__syncthreads();
+
+	// write the transposed matrix tile to global memory (odata) in linear order
+	xIndex = blockIdx.y * blockDim.x + threadIdx.x;
+	yIndex = blockIdx.x * blockDim.y + threadIdx.y;
+	if((xIndex < height) && (yIndex < width))
+	{
+		unsigned int index_out = yIndex * height + xIndex;
+		odata[index_out] = block[threadIdx.x][threadIdx.y];
+	}
+}
+
+int matrix_transpose_invoker(PCS *d_arr, int width, int height){
+  int ier = 0;
+  int blocksize = BLOCKSIZE;
+  dim3 block(blocksize,blocksize);
+  dim3 grid((width-1)/blocksize+1,(height-1)/blocksize+1);
+  transpose<<<grid,block>>>(d_arr,d_arr,width,height);
+  CHECK(cudaDeviceSynchronize());
+  return ier;
+}
+
+
 void GPU_info()
 {
   

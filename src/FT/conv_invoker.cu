@@ -77,7 +77,8 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int pirange, int di
     fprintf(stderr, "%s warning: at upsampfac=%.3g, tol=%.3g would need kernel width ns=%d; clipping to max %d, better to revise sigma and tol.\n", __func__,
             upsampfac, (double)eps, kw, MAX_KERNEL_WIDTH);
     kw = MAX_KERNEL_WIDTH;
-    ier = 1;
+    printf("warning: at upsampfac=%.3g, tol=%.3g would need kernel width ns=%d; clipping to max %d, better to revise sigma and tol.\n",
+            upsampfac, (double)eps, kw, MAX_KERNEL_WIDTH);
   }
   opts.kw = kw;
   opts.ES_halfwidth = (PCS)kw / 2; // constants to help ker eval (except Horner)

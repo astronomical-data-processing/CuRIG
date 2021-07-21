@@ -1,13 +1,16 @@
+import pycuda.autoinit # NOQA:401
+import pycuda.gpuarray as gpuarray
+
 import ctypes
 import os
 import warnings
 
 import numpy as np
-
 from ctypes import c_double
 from ctypes import c_int
 from ctypes import c_float
 from ctypes import c_void_p
+
 
 c_int_p = ctypes.POINTER(c_int)
 c_float_p = ctypes.POINTER(c_float)
@@ -43,10 +46,34 @@ def _get_ctypes(dtype):
 
 ms2dirty = lib.ms2dirty
 # the last two parameters have default value
-ms2dirty.argtypes = [c_int, c_int, c_int, c_double, c_double, c_double_p, c_double_p, c_double_p,
-                     np.ctypeslib.ndpointer(np.complex128, ndim=1, flags='C'), c_void_p, c_double, c_double] 
+ms2dirty.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.double, flags='C'),
+                     np.ctypeslib.ndpointer(np.complex128, flags='C'), c_void_p, c_double, c_double] 
 ms2dirty.restype = c_int
 
 
-def imaging_ms2dirty():
-    print("xiqi")
+def imaging_ms2dirty(uvw, freq, ms, wgt, nxdirty, nydirty, fov, epsilon=1e-6,sigma=1.25):
+    """
+    Generate an image from visibility by non-uniform fourier transform
+    Arguments:
+        uvw - 3D coordinates, numpy array, shape - (nrow,3)
+        freq - frequencies
+        ms - visibility, shape - (nrow,)
+        wgt - weight
+        nxdirty, nydirty - image size
+        fov - field of view
+        epsilon - tolerance of relative error (expect, default 1e-6)
+        sigma - upsampling factor for grid (default 1.25)
+    Return:
+        dirty image - shape-[nxdirty,nydirty]
+    """
+    nrow = uvw.shape[0]
+    # u = np.ctypeslib.as_ctypes(uvw[:,0])
+    # v = np.ctypeslib.as_ctypes(uvw[:,1])
+    # w = np.ctypeslib.as_ctypes(uvw[:,2])
+    dirty_gpu = gpuarray.GPUArray([nxdirty*nydirty,],dtype=np.complex128) #shape is 2d, cautious
+
+    ms2dirty(nrow,nxdirty,nydirty,fov,freq[0],uvw
+            ,ms,dirty_gpu.ptr,epsilon,sigma)
+
+    dirty = dirty_gpu.get()
+    return dirty

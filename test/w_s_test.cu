@@ -120,9 +120,9 @@ int main(int argc, char *argv[])
 	// generating data
 	for (int i = 0; i < nrow; i++)
 	{
-		u[i] = randm11() * 0.5  * PI; //xxxxx remove
-		v[i] = randm11() * 0.5  * PI;
-		w[i] = randm11() * 0.5  * PI;
+		u[i] = randm11() * 0.5  * SPEEDOFLIGHT / f0; //xxxxx remove
+		v[i] = randm11() * 0.5  * SPEEDOFLIGHT / f0;
+		w[i] = randm11() * 0.5  * SPEEDOFLIGHT / f0;
 		vis[i].real(randm11()); // nrow vis per channel, weight?
 		vis[i].imag(randm11());
 		// wgt[i] = 1;

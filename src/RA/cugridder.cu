@@ -298,23 +298,51 @@ int gridder_destroy(curafft_plan *plan, ragridder_plan *gridder_plan)
     return ier;
 }
 
+int py_gridder_destroy(curafft_plan *plan, ragridder_plan *gridder_plan)
+{
+    int ier=0;
+    if (plan->opts.gpu_sort)
+    {
+        checkCudaErrors(cudaFree(plan->cell_loc));
+    }
 
+    checkCudaErrors(cudaFree(plan->fwkerhalf3));
+    checkCudaErrors(cudaFree(plan->fwkerhalf2));
+    checkCudaErrors(cudaFree(plan->fwkerhalf1));
+    // checkCudaErrors(cudaFree(plan->d_u));
+    // checkCudaErrors(cudaFree(plan->d_v));
+    // checkCudaErrors(cudaFree(plan->d_w));
+    checkCudaErrors(cudaFree(plan->d_c));
+    checkCudaErrors(cudaFree(plan->fw));
+    free(plan);
+    free(gridder_plan);
+    return ier;
+}
 // -------------gridder warpper-----------------
-int ms2dirty_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *u, PCS *v, PCS *w,
+int ms2dirty_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
              CPX *vis,  CUCPX *d_dirty, PCS epsilon, PCS sigma){
     
     int ier = 0;
+    //------------transpose uvw------------
+    PCS *d_uvw;
+    checkCudaErrors(cudaMalloc((void**)&d_uvw, 3 * nrow * sizeof(PCS)));
+    checkCudaErrors(cudaMemcpy(d_uvw,uvw,3 * nrow * sizeof(PCS),cudaMemcpyHostToDevice));
+    matrix_transpose_invoker(d_uvw,3,nrow);
+
     //------------device memory malloc------------
     PCS *d_u, *d_v, *d_w;
+    d_u = d_uvw;
+    d_v = d_uvw+nrow;
+    d_w = d_uvw+2*nrow;
 	CUCPX *d_vis;
-    checkCudaErrors(cudaMalloc((void**)&d_u, nrow * sizeof(PCS)));
-	checkCudaErrors(cudaMalloc((void**)&d_v, nrow * sizeof(PCS)));
-	checkCudaErrors(cudaMalloc((void**)&d_w, nrow * sizeof(PCS)));
+    // checkCudaErrors(cudaMalloc((void**)&d_u, nrow * sizeof(PCS)));
+	// checkCudaErrors(cudaMalloc((void**)&d_v, nrow * sizeof(PCS)));
+	// checkCudaErrors(cudaMalloc((void**)&d_w, nrow * sizeof(PCS)));
 	checkCudaErrors(cudaMalloc((void**)&d_vis, nrow * sizeof(CUCPX)));
-    //---------------data transfer----------------
-    checkCudaErrors(cudaMemcpy(d_u, u, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //u
-	checkCudaErrors(cudaMemcpy(d_v, v, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //v
-	checkCudaErrors(cudaMemcpy(d_w, w, nrow * sizeof(PCS), cudaMemcpyHostToDevice)); //w
+
+    // checkCudaErrors(cudaMemcpy(d_u, d_uvw, nrow * sizeof(PCS), cudaMemcpyDeviceToDevice)); //u
+	// checkCudaErrors(cudaMemcpy(d_v, d_uvw+nrow, nrow * sizeof(PCS), cudaMemcpyDeviceToDevice)); //v
+	// checkCudaErrors(cudaMemcpy(d_w, d_uvw+2*nrow, nrow * sizeof(PCS), cudaMemcpyDeviceToDevice)); //w
 	checkCudaErrors(cudaMemcpy(d_vis,  vis, nrow * sizeof(CUCPX), cudaMemcpyHostToDevice));
 
     PCS *f_over_c = (PCS*) malloc(sizeof(PCS));
@@ -333,13 +361,13 @@ int ms2dirty_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *u,
 	
 	visibility *pointer_v;
 	pointer_v = (visibility *)malloc(sizeof(visibility));
-	pointer_v->u = u;
-	pointer_v->v = v;
-	pointer_v->w = w;
+	pointer_v->u = uvw;
+	pointer_v->v = uvw+nrow;
+	pointer_v->w = uvw+2*nrow;
 	pointer_v->vis = vis;
 	pointer_v->frequency = &freq;
 	pointer_v->weight = NULL;
-	pointer_v->pirange = 1;
+	pointer_v->pirange = 0;
 
 	int direction = 1; //vis to image
     //---------STEP1: gridder setting---------------
@@ -361,10 +389,9 @@ int ms2dirty_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *u,
 		return ier;
 	}
 
-    plan->opts.gpu_conv_only = 1; // to avoid fk be free
-    plan->dim=3; // back to 3D
     //---------STEP3: gridder destroy-----------------
-	ier = gridder_destroy(plan, gridder_plan);
+    checkCudaErrors(cudaFree(d_uvw));
+    ier = py_gridder_destroy(plan,gridder_plan);
 	if(ier == 1){
 		printf("errors in gridder destroy\n");
 		return ier;
@@ -372,9 +399,9 @@ int ms2dirty_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *u,
     return ier;
 }
 
-int ms2dirty(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *u, PCS *v, PCS *w,
-             CPX *vis,  CUCPX *d_dirty, PCS epsilon = 1e6, PCS sigma =1.25){
+int ms2dirty(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
+             CPX *vis,  CUCPX *d_dirty, PCS epsilon, PCS sigma){
     int ier = 0;
-    ier = ms2dirty_exec(nrow,nxdirty,nydirty,fov,freq,u,v,w,vis,d_dirty,epsilon,sigma);
+    ier = ms2dirty_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,d_dirty,epsilon,sigma);
     return ier;
 }

@@ -34,7 +34,7 @@
 
 #define EPSILON (double)1.1e-16
 
-#define BLOCKSIZE 1024
+#define BLOCKSIZE 16
 
 #define SPEEDOFLIGHT 299792458.0
 
@@ -49,6 +49,7 @@ void rescaling_complex_invoker(CUCPX *d_x, PCS scale_ratio, int N);
 int next235beven(int n, int b);
 void prefix_scan(PCS *d_arr, PCS *d_res, int n, int flag);
 void get_max_min(PCS &max, PCS &min, PCS *d_array, int n);
+int matrix_transpose_invoker(PCS *d_arr, int width, int height);
 void GPU_info();
 void show_mem_usage();
 
