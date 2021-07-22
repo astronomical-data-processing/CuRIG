@@ -1,3 +1,14 @@
+/*
+  Utility functions
+  1. prefix_scan
+  2. get_max_min
+  3. rescale
+  4. shift_and_scale
+  5. matrix transpose
+  6. GPU info
+  7. GPU memory status
+*/
+
 #include "utils.h"
 #include <cstdlib>
 #include <assert.h>
@@ -14,16 +25,15 @@
 void prefix_scan(PCS *d_arr, PCS *d_res, int n, int flag)
 {
   /*
-        n - number of elements
-        flag - 1 inclusive, 0 exclusive
-        Will the output at d_res
-        thrust::inclusive_scan(d_arr, d_arr + n, d_res);???
-    */
+    n - number of elements
+    flag - 1 inclusive, 0 exclusive
+    thrust::inclusive_scan(d_arr, d_arr + n, d_res);
+  */
   thrust::device_ptr<PCS> d_ptr(d_arr); // not convert
   thrust::device_ptr<PCS> d_result(d_res);
 
   if (flag)
-    thrust::inclusive_scan(d_ptr, d_ptr + n, d_result); // error may
+    thrust::inclusive_scan(d_ptr, d_ptr + n, d_result); 
   else
     thrust::exclusive_scan(d_ptr, d_ptr + n, d_result);
 }
@@ -31,58 +41,68 @@ void prefix_scan(PCS *d_arr, PCS *d_res, int n, int flag)
 void get_max_min(PCS &max, PCS &min, PCS *d_array, int n)
 {
   /*
-        Get the maximum and minimum values of array by thrust
-        Will be fast with one invokation getting max and min?
-    */
+    Get the maximum and minimum of array by thrust
+    d_array - array on device
+    n - length of array
+  */
   thrust::device_ptr<PCS> d_ptr = thrust::device_pointer_cast(d_array);
-  max = *(thrust::max_element(d_ptr, d_ptr + n)); //revise
- 
-  min = *(thrust::min_element(d_ptr, d_ptr + n)); //revise
+  max = *(thrust::max_element(d_ptr, d_ptr + n));
+
+  min = *(thrust::min_element(d_ptr, d_ptr + n));
 }
 
-__global__ void rescaling_real(PCS *x, PCS scale_ratio, int N){
-    int idx;
-    
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx<N; idx += gridDim.x * blockDim.x){
-        x[idx] *= scale_ratio;
-    }
-}
-
-
-__global__ void rescaling_complex(CUCPX *x, PCS scale_ratio, int N){
-    int idx;
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx<N; idx += gridDim.x * blockDim.x){
-        x[idx].x *= scale_ratio;
-        x[idx].y *= scale_ratio;
-    }
-}
-
-void rescaling_real_invoker(PCS *d_x, PCS scale_ratio, int N){
-  int blocksize = 512;
-  rescaling_real<<<(N-1)/blocksize+1,blocksize>>>(d_x, scale_ratio, N);
-  CHECK(cudaDeviceSynchronize());
-}
-
-void rescaling_complex_invoker(CUCPX *d_x, PCS scale_ratio, int N){
-  int blocksize = 512;
-  rescaling_complex<<<(N-1)/blocksize+1,blocksize>>>(d_x, scale_ratio, N);
-  CHECK(cudaDeviceSynchronize());
-}
-
-__global__ void shift_and_scale(PCS i_center, PCS o_center, PCS gamma, PCS *d_u, PCS *d_x, int M, int N){
+// real and complex array scaling
+__global__ void rescaling_real(PCS *x, PCS scale_ratio, int N)
+{
   int idx;
-  for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx<M; idx+=gridDim.x*blockDim.x){
+  for (idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += gridDim.x * blockDim.x)
+  {
+    x[idx] *= scale_ratio;
+  }
+}
+
+__global__ void rescaling_complex(CUCPX *x, PCS scale_ratio, int N)
+{
+  int idx;
+  for (idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += gridDim.x * blockDim.x)
+  {
+    x[idx].x *= scale_ratio;
+    x[idx].y *= scale_ratio;
+  }
+}
+
+void rescaling_real_invoker(PCS *d_x, PCS scale_ratio, int N)
+{
+  int blocksize = 512;
+  rescaling_real<<<(N - 1) / blocksize + 1, blocksize>>>(d_x, scale_ratio, N);
+  CHECK(cudaDeviceSynchronize());
+}
+
+void rescaling_complex_invoker(CUCPX *d_x, PCS scale_ratio, int N)
+{
+  int blocksize = 512;
+  rescaling_complex<<<(N - 1) / blocksize + 1, blocksize>>>(d_x, scale_ratio, N);
+  CHECK(cudaDeviceSynchronize());
+}
+
+__global__ void shift_and_scale(PCS i_center, PCS o_center, PCS gamma, PCS *d_u, PCS *d_x, int M, int N)
+{
+  int idx;
+  for (idx = blockIdx.x * blockDim.x + threadIdx.x; idx < M; idx += gridDim.x * blockDim.x)
+  {
     d_u[idx] = (d_u[idx] - i_center) / gamma;
   }
-  for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx<N; idx+=gridDim.x * blockDim.x){
+  for (idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += gridDim.x * blockDim.x)
+  {
     d_x[idx] = (d_x[idx] - o_center) * gamma;
   }
 }
 
-void shift_and_scale_invoker(PCS i_center, PCS o_center, PCS gamma, PCS *d_u, PCS *d_x, int M, int N){
-  // Specified for input and output transform
+void shift_and_scale_invoker(PCS i_center, PCS o_center, PCS gamma, PCS *d_u, PCS *d_x, int M, int N)
+{
+  // Specified for nu to nu fourier transform
   int blocksize = 512;
-  shift_and_scale<<<(max(M,N)-1)/blocksize+1,blocksize>>>(i_center,o_center,gamma,d_u,d_x,M,N);
+  shift_and_scale<<<(max(M, N) - 1) / blocksize + 1, blocksize>>>(i_center, o_center, gamma, d_u, d_x, M, N);
   CHECK(cudaDeviceSynchronize());
 }
 
@@ -90,46 +110,46 @@ __global__ void transpose(PCS *odata, PCS *idata, int width, int height)
 {
   //* Copyright 1993-2007 NVIDIA Corporation.  All rights reserved.
   // refer https://github.com/JonathanWatkins/CUDA/blob/master/NvidiaCourse/Exercises/transpose/transpose.cu
-	__shared__ PCS block[BLOCKSIZE][BLOCKSIZE];
-	
-	// read the matrix tile into shared memory
-        // load one element per thread from device memory (idata) and store it
-        // in transposed order in block[][]
-	unsigned int xIndex = blockIdx.x * blockDim.x + threadIdx.x;
-	unsigned int yIndex = blockIdx.y * blockDim.y + threadIdx.y;
-	if((xIndex < width) && (yIndex < height))
-	{
-		unsigned int index_in = yIndex * width + xIndex;
-		block[threadIdx.y][threadIdx.x] = idata[index_in];
-	}
+  __shared__ PCS block[BLOCKSIZE][BLOCKSIZE];
 
-        // synchronise to ensure all writes to block[][] have completed
-	__syncthreads();
+  // read the matrix tile into shared memory
+  // load one element per thread from device memory (idata) and store it
+  // in transposed order in block[][]
+  unsigned int xIndex = blockIdx.x * blockDim.x + threadIdx.x;
+  unsigned int yIndex = blockIdx.y * blockDim.y + threadIdx.y;
+  if ((xIndex < width) && (yIndex < height))
+  {
+    unsigned int index_in = yIndex * width + xIndex;
+    block[threadIdx.y][threadIdx.x] = idata[index_in];
+  }
 
-	// write the transposed matrix tile to global memory (odata) in linear order
-	xIndex = blockIdx.y * blockDim.x + threadIdx.x;
-	yIndex = blockIdx.x * blockDim.y + threadIdx.y;
-	if((xIndex < height) && (yIndex < width))
-	{
-		unsigned int index_out = yIndex * height + xIndex;
-		odata[index_out] = block[threadIdx.x][threadIdx.y];
-	}
+  // synchronise to ensure all writes to block[][] have completed
+  __syncthreads();
+
+  // write the transposed matrix tile to global memory (odata) in linear order
+  xIndex = blockIdx.y * blockDim.x + threadIdx.x;
+  yIndex = blockIdx.x * blockDim.y + threadIdx.y;
+  if ((xIndex < height) && (yIndex < width))
+  {
+    unsigned int index_out = yIndex * height + xIndex;
+    odata[index_out] = block[threadIdx.x][threadIdx.y];
+  }
 }
 
-int matrix_transpose_invoker(PCS *d_arr, int width, int height){
+int matrix_transpose_invoker(PCS *d_arr, int width, int height)
+{
   int ier = 0;
   int blocksize = BLOCKSIZE;
-  dim3 block(blocksize,blocksize);
-  dim3 grid((width-1)/blocksize+1,(height-1)/blocksize+1);
-  transpose<<<grid,block>>>(d_arr,d_arr,width,height);
+  dim3 block(blocksize, blocksize);
+  dim3 grid((width - 1) / blocksize + 1, (height - 1) / blocksize + 1);
+  transpose<<<grid, block>>>(d_arr, d_arr, width, height);
   CHECK(cudaDeviceSynchronize());
   return ier;
 }
 
-
 void GPU_info()
 {
-  
+
   printf("Starting... \n");
   int deviceCount = 0;
   cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
@@ -149,7 +169,7 @@ void GPU_info()
   dev = 0;
 
   printf("Input the device index:");
-  std::cin>>dev;
+  std::cin >> dev;
   cudaSetDevice(dev);
 
   cudaDeviceProp deviceProp;
@@ -211,23 +231,22 @@ int next235beven(int n, int b)
   return nplus;
 }
 
-void show_mem_usage(){
+void show_mem_usage()
+{
   // show memory usage of GPU
 
-        size_t free_byte ;
+  size_t free_byte;
 
-        size_t total_byte ;
+  size_t total_byte;
 
-        CHECK(cudaMemGetInfo( &free_byte, &total_byte )) ;
+  CHECK(cudaMemGetInfo(&free_byte, &total_byte));
 
+  double free_db = (double)free_byte;
 
-        double free_db = (double)free_byte ;
+  double total_db = (double)total_byte;
 
-        double total_db = (double)total_byte ;
+  double used_db = total_db - free_db;
 
-        double used_db = total_db - free_db ;
-
-        printf("GPU memory usage: used = %f, free = %f MB, total = %f MB\n",
-        used_db/1024.0/1024.0, free_db/1024.0/1024.0, total_db/1024.0/1024.0);
-
+  printf("GPU memory usage: used = %f, free = %f MB, total = %f MB\n",
+         used_db / 1024.0 / 1024.0, free_db / 1024.0 / 1024.0, total_db / 1024.0 / 1024.0);
 }

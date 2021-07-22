@@ -4,7 +4,7 @@ CC   ?= gcc
 CXX  ?= g++
 NVCC ?= nvcc
 
-#set based on GPU card, sm_60 (Tesla P100) or sm_61 (consumer Pascal) or sm_70 (Tesla V100, Titan V)
+#set based on GPU card, sm_60 (Tesla P100) or sm_61 (consumer Pascal) or sm_70 (Tesla V100, Titan V) or sm_80 (A100)
 NVARCH ?= -gencode=arch=compute_70,code=sm_70
 
 
@@ -14,9 +14,7 @@ CXXFLAGS  ?= $(CFLAGS) -std=c++14
 NVCCFLAGS ?= -std=c++14 -ccbin=$(CXX) -O3 $(NVARCH) -Wno-deprecated-gpu-targets \
 	     --default-stream per-thread -Xcompiler "$(CXXFLAGS)"
 
-# For debugging, tell nvcc to add symbols to host and device code respectively,
-#NVCCFLAGS+= -g -G
-# and enable cufinufft internal flags.
+
 #NVCCFLAGS+= -DINFO -DDEBUG -DRESULT -DTIME
 #NVCCFLAGS+= -DDEBUG
 
@@ -26,7 +24,7 @@ CUDA_ROOT := /usr/local/cuda
 # Common includes
 INC += -I$(CUDA_ROOT)/include -Iinclude/cuda_sample
 
-# NVCC-specific libs
+# libs
 NVCC_LIBS_PATH += -L$(CUDA_ROOT)/lib64
 
 ifdef NVCC_STUBS
@@ -52,20 +50,15 @@ HEADERS = include/curafft_opts.h include/curafft_plan.h include/cugridder.h \
 	include/conv_invoker.h include/conv.h include/cuft.h include/dataType.h \
 	include/deconv.h include/precomp.h include/ragridder_plan.h include/utils.h \
 	contrib/common.h contrib/legendre_rule_fast.h contrib/utils_fp.h
-#later put some file into the contrib
+# later put some file into the contrib
 CONTRIBOBJS=contrib/common.o contrib/utils_fp.o
 
-# We create three collections of objects:
-#  Double (_64), Single (_32), and floating point agnostic (no suffix)
-# add contrib/legendre_rule_fast.o to curafftobjs later
 CURAFFTOBJS=src/utils.o contrib/legendre_rule_fast.o
 
 CURAFFTOBJS_64=src/FT/conv_invoker.o src/FT/conv.o src/FT/cuft.o src/FT/deconv.o \
 	src/RA/cugridder.o src/RA/precomp.o src/RA/ra_exec.o $(CONTRIBOBJS)
 
 #ignore single precision first
-# $(CONTRIBOBJS)
-#CURAFFTOBJS_32=$(CURAFFTOBJS_64:%.o=%_32.o)
 
 
 
@@ -96,13 +89,12 @@ test/%.o: test/%.cu $(HEADERS)
 
 default: all
 
-# Build all, but run no tests. Note: CI currently uses this default...
+
 all: libtest convtest utiltest
 
 # testers for the lib (does not execute)
 libtest: lib $(BINDIR)/utils_test
 
-# low-level (not-library) testers (does not execute)
 convtest: $(BINDIR)/conv_2d_test \
 	$(BINDIR)/conv_3d_test
 
@@ -127,7 +119,7 @@ $(BINDIR)/%: test/%.o $(CURAFFTOBJS_64) $(CURAFFTOBJS)
 
 # user-facing library...
 lib: $(STATICLIB) $(DYNAMICLIB)
- # add $(CONTRIBOBJS) to static and dynamic later
+# add $(CONTRIBOBJS) to static and dynamic later
 $(STATICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CONTRIBOBJS)
 	mkdir -p lib-static
 	ar rcs $(STATICLIB) $^
@@ -136,8 +128,7 @@ $(DYNAMICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CONTRIBOBJS)
 	$(NVCC) -shared $(NVCCFLAGS) $^ -o $(DYNAMICLIB) $(LIBS)
 
 
-# --------------------------------------------- start of check tasks ---------
-# Check targets: in contrast to the above, these tasks just execute things:
+# ---------------------------------------------------------------
 check:
 	@echo "Building lib, all testers, and running all tests..."
 	$(MAKE) checkconv
@@ -158,10 +149,10 @@ checkwst: w_s_test
 #	@echo "W simple checking..."
 #	bin/w_s_sim_test 0 1 10 10 30 10
 	@echo "W stacking checking..."
-	bin/w_s_test 0 1 10 10 100 0.5
-	bin/w_s_test 0 1 100 100 11000 10
+# bin/w_s_test 0 1 10 10 100 0.5
+# bin/w_s_test 0 1 100 100 11000 10
 # bin/w_s_test 0 1 500 500 30000 10
-# bin/w_s_test 0 1 1000 1000 1000000 10
+	bin/w_s_test 0 1 3000 3000 3000000 10
 # bin/w_s_test 0 1 5000 5000 50000000 10
 
 checkeg: explicit_gridder_test
@@ -176,10 +167,7 @@ checkfft: nufft_test conv_theorem_dft_test
 	bin/conv_theorem_dft_test
 	@echo "random k testing..."
 	bin/conv_theorem_dft_2_test
-# --------------------------------------------- end of check tasks ---------
-
-
-# Cleanup and phony targets
+# -----------------------------------------------------------------
 
 clean:
 	rm -f *.o

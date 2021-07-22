@@ -3,7 +3,7 @@ Deconvlution related kernels
     1D, 2D and 3D deconvlution
     Input is FFTW format (from 0 to N/2-1 and then -N/2 to -1), flag = 0
     Output is FFTW format or CMCL-compatible mode ordering (-N/2 to N/2-1), flag = 1
-legendre_rule_fast cuda version should be implemented here
+legendre_rule_fast cuda version should be implemented here, g and x to constant memory
 */
 #include "deconv.h"
 #include "helper_cuda.h"
@@ -254,11 +254,9 @@ __global__ void deconv_2d(int N1, int N2, int nf1, int nf2, CUCPX* fw, CUCPX* fk
         
         
 		PCS kervalue = fwkerhalf1[abs(k1-N1/2)]*fwkerhalf2[abs(k2-N2/2)];
-        //if(idx==20)printf("correction factor %.3g\n",kervalue);
+
 		fk[idx].x = fw[idx_fw].x/kervalue;
 		fk[idx].y = fw[idx_fw].y/kervalue;
-        //if(idx==20)printf("idx_fw %d, fw %.3g, fk %.3g\n", idx_fw, fw[idx_fw].x, fk[idx].x);
-        //if(idx==20)printf("nf1 %d, nf2 %d\n",nf1, nf2);
 
     }
 }
@@ -297,6 +295,9 @@ __global__ void deconv_3d(int N1, int N2, int N3, int nf1, int nf2, int nf3, CUC
 
 
 int curafft_deconv(curafft_plan *plan){
+    /*
+        invoke deconv based on dimension(s)
+    */
     int ier = 0;
     int N1 = plan->ms;
     int nf1 = plan->nf1;
@@ -311,6 +312,7 @@ int curafft_deconv(curafft_plan *plan){
             nmodes = N1;
             deconv_1d<<<(nmodes-1)/blocksize+1, blocksize>>>(N1, nf1, plan->fw,plan->fk,
         plan->fwkerhalf1, flag);
+            checkCudaErrors(cudaDeviceSynchronize());
             break;
         }
         case 2:{
@@ -319,6 +321,7 @@ int curafft_deconv(curafft_plan *plan){
             nmodes = N1*N2;
             deconv_2d<<<(nmodes-1)/blocksize+1, blocksize>>>(N1, N2, nf1, nf2, plan->fw,plan->fk,
         plan->fwkerhalf1, plan->fwkerhalf2, flag);
+            checkCudaErrors(cudaDeviceSynchronize());
             break;
         }
         case 3:{
@@ -329,6 +332,7 @@ int curafft_deconv(curafft_plan *plan){
             nmodes = N1*N2*N3;
             deconv_3d<<<(nmodes-1)/blocksize+1, blocksize>>>(N1, N2, N3, nf1, nf2, nf3, plan->fw,plan->fk,
         plan->fwkerhalf1, plan->fwkerhalf2, plan->fwkerhalf3, flag);
+            checkCudaErrors(cudaDeviceSynchronize());
             break;
         }
         default:{
@@ -343,15 +347,25 @@ int curafft_deconv(curafft_plan *plan){
 //------------------Below this line, the content is just for Radio Astronomy---------------------
 
 __global__ void w_term_deconv(int N1, int N2, CUCPX* fk, PCS* fwkerhalf, PCS i_center, PCS o_center ,PCS xpixelsize, PCS ypixelsize){
-    // Input is CMCL format
+    /*
+        w term deconvolution
+        Due to the symetric property, just calculate (N1/2+1)*(N2/2+1), input and output are CMCL format
+        Parameters:
+            N1 and N2 are image size
+            fk - the result after ft
+            fwkerhalf - correction factor
+            i|o_center - input or output center
+            pixelsize - degrees per pixel
+    */
+    // 
     int idx;
     int nmodes = N1*N2; 
     int idx_fw = 0;
     for(idx = blockIdx.x*blockDim.x + threadIdx.x; idx < nmodes; idx+=gridDim.x*blockDim.x){
         int row = idx / N1;
         int col = idx % N1;
-        PCS phase = ((sqrt(1.0 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize,2)) - 1)-o_center)*i_center;
-        // if(idx==0)printf("sqrt %lf, ic %lf, oc %lf, phase %lf\n",sqrt(1.0 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize,2)),i_center,o_center,phase);
+        PCS phase = ((sqrt(1.0 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize,2)) - 1)-o_center)*i_center; // caused by shifting ({i*(u+u_c)*x_c})
+
         idx_fw = abs(col-N1/2)+abs(row-N2/2)*(N1/2+1);
         fk[idx].x = (fk[idx].x*cos(phase)-fk[idx].y*sin(phase)) / fwkerhalf[idx_fw];
         fk[idx].y = (fk[idx].x*sin(phase)+fk[idx].y*cos(phase))  / fwkerhalf[idx_fw];
@@ -359,6 +373,9 @@ __global__ void w_term_deconv(int N1, int N2, CUCPX* fk, PCS* fwkerhalf, PCS i_c
 }
 
 int curadft_w_deconv(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize){
+    /*
+        w term deconvolution invoker
+    */
     int ier = 0;
     int blocksize = 512;
     int N = plan->ms*plan->mt;

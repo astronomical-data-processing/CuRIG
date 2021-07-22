@@ -20,6 +20,13 @@ FORWARD: type 2
 #include "cuft.h"
 
 __global__ void gridder_rescaling_complex(CUCPX *x, PCS scale_ratio, int N){
+    /*
+    scaling the arr x,    x[i]*scale_ratio
+    Parameters:
+        x - arr
+        scale_ratio
+        N - length of arr x
+    */
     int idx;
     for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx<N; idx += gridDim.x * blockDim.x){
         x[idx].x *= scale_ratio;
@@ -34,8 +41,6 @@ __global__ void div_n_lm(CUCPX *fk, PCS xpixelsize, PCS ypixelsize, int N1, int 
     for(idx = blockDim.x*blockIdx.x+threadIdx.x; idx<N1*N2; idx+=gridDim.x*blockDim.x){
         row = idx / N1;
         col = idx % N1;
-        // printf("%d, %.5lf, %.5lf, %d, %d\n",idx,xpixelsize,ypixelsize,row,col);
-        // printf("idx %d, %.4lf\n",idx,sqrt(1 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize, 2)));
         n_lm = sqrt(1.0 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize, 2));
         fk[idx].x /= n_lm;
         fk[idx].y /= n_lm;
@@ -43,19 +48,14 @@ __global__ void div_n_lm(CUCPX *fk, PCS xpixelsize, PCS ypixelsize, int N1, int 
 }
 
 int curaew_scaling(curafft_plan *plan, ragridder_plan *gridder_plan){
-    // ending work
-    // 1. fourier transform related rescaling
+    // ending work  * 1/n
+    
     int N1 = gridder_plan->width;
     int N2 = gridder_plan->height;
     int N = N1*N2;
-    //PCS scaling_ratio = 1.0 / gridder_plan->pixelsize_x / gridder_plan->pixelsize_y;
     int blocksize = 256;
     int gridsize = (N-1)/blocksize + 1;
     
-    // gridder_rescaling_complex<<<gridsize,blocksize>>>(plan->fk, scaling_ratio, N);
-    // checkCudaErrors(cudaDeviceSynchronize());
-    
-    // 2. dividing n_lm
     div_n_lm<<<gridsize,blocksize>>>(plan->fk, gridder_plan->pixelsize_x, gridder_plan->pixelsize_y, N1,N2);
     checkCudaErrors(cudaDeviceSynchronize());
     

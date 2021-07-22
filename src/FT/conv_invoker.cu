@@ -1,5 +1,11 @@
 /*
-Invoke conv related kernel
+Invoke conv related kernel (device) function
+Functions:
+  1. get_num_cells
+  2. setup_conv_opts
+  3. conv_*d_invoker
+  4. curafft_conv
+  5. curafft_partial_conv
 Issue: Revise for batch
 */
 
@@ -23,6 +29,11 @@ int get_num_cells(int ms, conv_opts copts)
 // type 1 & 2 recipe for how to set 1d size of upsampled array, nf, given opts
 // and requested number of Fourier modes ms.
 {
+  /*
+    Determain the size of the grid
+    ms - number of fourier modes (image size)
+    copt - contains convolution related parameters
+  */
   int nf = (int)(copts.upsampfac*ms);
   if (nf<2*copts.kw) nf=2*copts.kw; // otherwise spread fails
   if (nf<1e11){                                // otherwise will fail anyway
@@ -35,7 +46,9 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int pirange, int di
 {
   /*
     setup conv related components
+    follow the setting in  Yu-hsuan Shih (https://github.com/flatironinstitute/cufinufft)
   */
+  // handling errors or warnings
   if (upsampfac != 2.0)
   { // nonstandard sigma
     if (kerevalmeth == 1)
@@ -53,10 +66,9 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int pirange, int di
       fprintf(stderr, "setup_conv_opts: warning, upsampfac=%.3g is too large\n", (double)upsampfac);
   }
 
-  
   opts.direction = direction; 
-  opts.pirange = pirange;   
-  opts.upsampfac = upsampfac;
+  opts.pirange = pirange; // in range [-pi,pi) or [0,N)
+  opts.upsampfac = upsampfac; // upsamling factor
 
   
   int ier = 0;
@@ -67,7 +79,7 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int pirange, int di
     ier = 1;
   }
 
-  // Set kernel width w (aka kw) and ES kernel beta parameter, in opts...
+  // kernel width  (kw) and ES kernel beta parameter setting
   int kw = std::ceil(-log10(eps / (PCS)10.0));                  // 1 digit per power of ten
   if (upsampfac != 2.0)                                         // override ns for custom sigma
     kw = std::ceil(-log(eps) / (PI * sqrt(1.0 - 1.0 / upsampfac))); // formula, gamma=1
@@ -102,18 +114,19 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int pirange, int di
   return ier;
 }
 
-// int ws_conv(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
-// {
-//   return 0;
-// }
 
 int conv_1d_invoker(int nf1, int M, curafft_plan *plan){
+  /*
+    convolution invoker, invoke the kernel function
+    nf1 - grid size in 1D
+    M - number of points
+  */
   dim3 grid;
   dim3 block;
   if (plan->opts.gpu_gridder_method == 0)
   {
-    block.x = 256;
-    grid.x = (M - 1) / block.x + 1;
+    block.x = 256; // 256 threads per block
+    grid.x = (M - 1) / block.x + 1; // number of blocks
 
     // if the image resolution is small, the memory is sufficiently large for output after conv. 
     conv_1d_nputsdriven<<<grid, block>>>(plan->d_u, plan->d_c, plan->fw, plan->M,
@@ -130,12 +143,11 @@ int conv_2d_invoker(int nf1, int nf2, int M, curafft_plan *plan)
 
   dim3 grid;
   dim3 block;
-  // printf("gpu_method %d\n",plan->opts.gpu_method);
+  
   if (plan->opts.gpu_gridder_method == 0)
   {
     block.x = 256;
     grid.x = (M - 1) / block.x + 1;
-    //for debug
 
     // if the image resolution is small, the memory is sufficiently large for output after conv. 
     conv_2d_nputsdriven<<<grid, block>>>(plan->d_u, plan->d_v, plan->d_c, plan->fw, plan->M,
@@ -154,7 +166,7 @@ int conv_3d_invoker(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
 
   dim3 grid;
   dim3 block;
-  // printf("gpu_method %d\n",plan->opts.gpu_method);
+  
   if (plan->opts.gpu_gridder_method == 0)
   {
     block.x = 256;
