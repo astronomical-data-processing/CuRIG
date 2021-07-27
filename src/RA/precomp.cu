@@ -30,7 +30,7 @@ __global__ void get_effective_coordinate(PCS *u, PCS *v, PCS *w, PCS f_over_c, i
             v[idx] *= 2 * PI;
             w[idx] *= 2 * PI;
         }
-        if(idx==0) printf("After scaling w %lf, f over c %lf\n",w[idx],f_over_c);
+        // if(idx==0) printf("After scaling w %lf, f over c %lf\n",w[idx],f_over_c);
     }
     
 
@@ -38,7 +38,7 @@ __global__ void get_effective_coordinate(PCS *u, PCS *v, PCS *w, PCS f_over_c, i
 
 void get_effective_coordinate_invoker(PCS *d_u, PCS *d_v, PCS *d_w, PCS f_over_c, int pirange, int nrow){
     int blocksize = 512;
-    printf("nrow %d, foc %lf",nrow,f_over_c);
+    // printf("nrow %d, foc %lf",nrow,f_over_c);
     get_effective_coordinate<<<(nrow-1)/blocksize+1,blocksize>>>(d_u,d_v,d_w,f_over_c,pirange,nrow);
     checkCudaErrors(cudaDeviceSynchronize());
 }

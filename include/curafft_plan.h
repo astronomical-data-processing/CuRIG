@@ -13,7 +13,7 @@
 #include "../contrib/utils_fp.h"
 
 
-#define MAX_KERNEL_WIDTH 16
+#define MAX_KERNEL_WIDTH 28
 
 struct t3attrib{
 	PCS i_half_width[3];

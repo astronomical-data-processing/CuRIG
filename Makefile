@@ -5,7 +5,7 @@ CXX  ?= g++
 NVCC ?= nvcc
 
 #set based on GPU card, sm_60 (Tesla P100) or sm_61 (consumer Pascal) or sm_70 (Tesla V100, Titan V) or sm_80 (A100)
-NVARCH ?= -gencode=arch=compute_70,code=sm_70
+NVARCH ?= -gencode=arch=compute_80,code=sm_80
 
 
 

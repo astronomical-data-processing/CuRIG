@@ -159,7 +159,9 @@ int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, C
                 checkCudaErrors(cudaMalloc(&plan->fwkerhalf3, (plan->nf3 / 2 + 1) * sizeof(PCS)));
                 n3 = plan->nf3;
             }
-            checkCudaErrors(cudaMalloc(&plan->fw, n1 * n2 * n3 * sizeof(CUCPX)));
+            
+            checkCudaErrors(cudaMalloc((void**)&plan->fw, n1 * n2 * n3 * sizeof(CUCPX)));
+            checkCudaErrors(cudaMemset(plan->fw, 0, n1 * n2 * n3 * sizeof(CUCPX)));
         }
         else
         {
@@ -175,7 +177,8 @@ int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, C
                 checkCudaErrors(cudaMalloc(&plan->fwkerhalf3, (plan->mu) * sizeof(PCS)));
                 n3 = plan->nf3;
             }
-            checkCudaErrors(cudaMalloc(&plan->fw, n1 * n2 * n3 * sizeof(CUCPX)));
+            checkCudaErrors(cudaMalloc((void**)&plan->fw, n1 * n2 * n3 * sizeof(CUCPX)));
+            checkCudaErrors(cudaMemset(plan->fw, 0, n1 * n2 * n3 * sizeof(CUCPX)));
         }
 
         /* For multi GPU

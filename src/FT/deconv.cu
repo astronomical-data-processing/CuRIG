@@ -166,7 +166,9 @@ int fourier_series_appro_invoker(PCS *fseries, PCS *k, conv_opts opts, int N)
     // comments need to be revised
     int ier = 0;
     PCS alpha = opts.kw / 2.0; // J/2, half-width of ker z-support
+#ifdef INFO
     printf("alpha %lf, beta %lf\n",alpha, opts.ES_beta);
+#endif
     // # quadr nodes in z (from 0 to J/2; reflections will be added)...
     int p = (int)(2 + 3.0 * alpha); // not sure why so large? cannot exceed MAX_NQUAD
     PCS g[MAX_NQUAD]; // intermediate result

@@ -47,11 +47,11 @@ def _get_ctypes(dtype):
 ms2dirty = lib.ms2dirty
 # the last two parameters have default value
 ms2dirty.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.double, flags='C'),
-                     np.ctypeslib.ndpointer(np.complex128, flags='C'), c_void_p, c_double, c_double] 
+                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double] 
 ms2dirty.restype = c_int
 
 
-def imaging_ms2dirty(uvw, freq, ms, wgt, nxdirty, nydirty, fov, epsilon=1e-6,sigma=1.25):
+def imaging_ms2dirty(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
     """
     Generate an image from visibility by non-uniform fourier transform
     Arguments:
@@ -67,13 +67,15 @@ def imaging_ms2dirty(uvw, freq, ms, wgt, nxdirty, nydirty, fov, epsilon=1e-6,sig
         dirty image - shape-[nxdirty,nydirty]
     """
     nrow = uvw.shape[0]
+    nxdirty = dirty.shape[0]
+    nydirty = dirty.shape[1]
     # u = np.ctypeslib.as_ctypes(uvw[:,0])
     # v = np.ctypeslib.as_ctypes(uvw[:,1])
     # w = np.ctypeslib.as_ctypes(uvw[:,2])
-    dirty_gpu = gpuarray.GPUArray([nxdirty*nydirty,],dtype=np.complex128) #shape is 2d, cautious
+ #   dirty_gpu = gpuarray.GPUArray([nxdirty*nydirty,],dtype=np.complex128) #shape is 2d, cautious
 
     ms2dirty(nrow,nxdirty,nydirty,fov,freq[0],uvw
-            ,ms,dirty_gpu.ptr,epsilon,sigma)
+            ,ms,dirty,epsilon,sigma)
 
-    dirty = dirty_gpu.get()
+#    dirty = dirty_gpu.get()
     return dirty

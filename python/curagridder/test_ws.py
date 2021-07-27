@@ -1,6 +1,6 @@
 from curagridder import imaging_ms2dirty
 import numpy as np
-
+import time
 
 def _l2error(a, b):
     return np.sqrt(np.sum(np.abs(a-b)**2)/np.sum(np.abs(a)**2))
@@ -27,7 +27,7 @@ def explicit_gridder(uvw, freq, ms, nxdirty, nydirty, xpixsize, ypixsize):
 
 
 def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon):
-    print("\n\nTesting gridding/degridding with {} rows and {} "
+    print("\n\nTesting imaging with {} rows and {} "
           "frequency channels".format(nrow, nchan))
     print("Dirty image has {}x{} pixels, "
           "FOV={} degrees".format(nxdirty, nydirty, fov))
@@ -43,16 +43,36 @@ def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon):
     uvw = (np.random.rand(nrow, 3)-0.5)/(f0/speedoflight)
     
     ms = np.random.rand(nrow, nchan)-0.5 + 1j*(np.random.rand(nrow, nchan)-0.5)
-
-    dirty = imaging_ms2dirty(uvw,freq, ms, None, nxdirty, nydirty, fov, epsilon,2)
-    print("execution finished, vertification begin")
+    dirty = np.zeros((nxdirty,nydirty),dtype=np.complex128)
+    print("begin")
+    start = time.time()
+    dirty = imaging_ms2dirty(uvw,freq, ms, None, dirty, fov, epsilon,2)
+    end = time.time()
+    print("The elapsed time {} (sec)".format(end-start))
+    print("Execution finished")
     dirty = np.reshape(dirty,[nxdirty,nydirty])
-    truth = explicit_gridder(uvw, freq, ms, nxdirty, nydirty, xpixsize, ypixsize)
-
-    print("L2 error between explicit transform and gridder:",
+    if nrow<1e4:
+        print("Vertification begin")
+        truth = explicit_gridder(uvw, freq, ms, nxdirty, nydirty, xpixsize, ypixsize)
+        print("L2 error between explicit transform and gridder:",
               _l2error(truth, dirty.real))
 
+test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
 
-test_against_wdft(10000, 1, 640, 1300, 0.5, 1e-10)
+
+print("new 1024")
+test_against_wdft(500000000, 1, 1024, 1024, 2, 1e-12)
+
+#test_against_wdft(700000000, 1, 1024, 1024, 2, 1e-12)
+
+
+
+# time.sleep(5)
+# test_against_wdft(10000, 1, 2048, 2048, 2, 1e-12)
 
 
