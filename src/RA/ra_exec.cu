@@ -103,21 +103,18 @@ int exec_vis2dirty(curafft_plan *plan, ragridder_plan *gridder_plan)
         totaltime += milliseconds;
         printf("[time  ] conv time:\t\t %.3g s\n", milliseconds / 1000);
 #endif
+       
 #ifdef DEBUG
         printf("conv result printing (first w plane)...\n");
         CPX *fw = (CPX *)malloc(sizeof(CPX) * plan->nf1 * plan->nf2 * plan->nf3);
         cudaMemcpy(fw, plan->fw, sizeof(CUCPX) * plan->nf1 * plan->nf2 * plan->nf3, cudaMemcpyDeviceToHost);
         PCS temp = 0;
-        for (int i = 0; i < plan->nf2; i++)
+        for (int i = plan->nf1 * plan->nf2; i < 200; i++)
         {
-            for (int j = 0; j < plan->nf1; j++)
-            {
-                temp += fw[i * plan->nf1 + j].real();
-                printf("%.3g ", fw[i * plan->nf1 + j].real());
-            }
-            printf("\n");
+                temp += fw[i].real();
+                printf("%.3g ", fw[i].real());
         }
-        printf("fft 000 %.3g\n", temp);
+
 #endif
         // printf("n1 n2 n3 M %d, %d, %d, %d\n",plan->nf1,plan->nf2,plan->nf3,plan->M);
         // 2. cufft
@@ -139,18 +136,11 @@ int exec_vis2dirty(curafft_plan *plan, ragridder_plan *gridder_plan)
         printf("fft result printing (first w plane)...\n");
         //CPX *fw = (CPX *)malloc(sizeof(CPX)*plan->nf1*plan->nf2*plan->nf3);
         cudaMemcpy(fw, plan->fw, sizeof(CUCPX) * plan->nf1 * plan->nf2 * plan->nf3, cudaMemcpyDeviceToHost);
-        for (int i = 0; i < plan->nf2; i++)
+        for (int i = 0; i < 10; i++)
         {
-            for (int j = 0; j < plan->nf1; j++)
-                printf("%.3g ", fw[i * plan->nf1 + j].real());
+                printf("%.3g ", fw[i].real());
             printf("\n");
         }
-        temp = 0;
-        for (int i = 0; i < plan->nf3; i++)
-        {
-            temp += fw[i * plan->nf1 * plan->nf2].real();
-        }
-        printf("dft 00 %.3g\n", temp);
 #endif
         // keep the N1*N2*num_w. ignore the outputs that are out of range
 
@@ -170,10 +160,10 @@ int exec_vis2dirty(curafft_plan *plan, ragridder_plan *gridder_plan)
         printf("part of dft result printing:...\n");
         //CPX *fw = (CPX *)malloc(sizeof(CPX)*plan->nf1*plan->nf2*plan->nf3);
         cudaMemcpy(fw, plan->fw, sizeof(CUCPX) * plan->nf1 * plan->nf2 * plan->nf3, cudaMemcpyDeviceToHost);
-        for (int i = 0; i < plan->nf2; i++)
+        for (int i = 0; i < 10; i++)
         {
-            for (int j = 0; j < plan->nf1; j++)
-                printf("%.3g ", fw[i * plan->nf1 + j].real());
+            
+                printf("%.3g ", fw[i ].real());
             printf("\n");
         }
 #endif
@@ -196,10 +186,10 @@ int exec_vis2dirty(curafft_plan *plan, ragridder_plan *gridder_plan)
         printf("deconv result printing stage 1:...\n");
         CPX *fk = (CPX *)malloc(sizeof(CPX) * plan->ms * plan->mt);
         cudaMemcpy(fk, plan->fk, sizeof(CUCPX) * plan->ms * plan->mt, cudaMemcpyDeviceToHost);
-        for (int i = 0; i < plan->mt; i++)
+        for (int i = 0; i < 10; i++)
         {
-            for (int j = 0; j < plan->ms; j++)
-                printf("%.5lf ", fk[i * plan->ms + j].real());
+            
+                printf("%.5lf ", fk[i].real());
             printf("\n");
         }
 #endif
@@ -219,10 +209,10 @@ int exec_vis2dirty(curafft_plan *plan, ragridder_plan *gridder_plan)
         printf("deconv result printing stage 2:...\n");
         //CPX *fk = (CPX *)malloc(sizeof(CPX)*plan->ms*plan->mt);
         cudaMemcpy(fk, plan->fk, sizeof(CUCPX) * plan->ms * plan->mt, cudaMemcpyDeviceToHost);
-        for (int i = 0; i < plan->mt; i++)
+        for (int i = 0; i < 10; i++)
         {
-            for (int j = 0; j < plan->ms; j++)
-                printf("%.5lf ", fk[i * plan->ms + j].real());
+            
+                printf("%.5lf ", fk[i].real());
             printf("\n");
         }
 #endif

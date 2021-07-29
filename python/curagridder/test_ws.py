@@ -41,9 +41,10 @@ def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon):
     f0 = 1e9
     freq = f0 + np.arange(nchan)*(f0/nchan)
     uvw = (np.random.rand(nrow, 3)-0.5)/(f0/speedoflight)
-    
     ms = np.random.rand(nrow, nchan)-0.5 + 1j*(np.random.rand(nrow, nchan)-0.5)
+
     dirty = np.zeros((nxdirty,nydirty),dtype=np.complex128)
+    
     print("begin")
     start = time.time()
     dirty = imaging_ms2dirty(uvw,freq, ms, None, dirty, fov, epsilon,2)
@@ -57,18 +58,27 @@ def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon):
         print("L2 error between explicit transform and gridder:",
               _l2error(truth, dirty.real))
 
-test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(100, 1, 512, 512, 2, 1e-12)
+test_against_wdft(1000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(1000000, 1, 4096*4, 4096*4, 2, 0.01)
+# test_against_wdft(5000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(9000, 1, 512, 512, 2, 1e-12)
 
-
-print("new 1024")
-test_against_wdft(500000000, 1, 1024, 1024, 2, 1e-12)
-
-#test_against_wdft(700000000, 1, 1024, 1024, 2, 1e-12)
+# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(10000000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(100000000, 1, 512, 512, 2, 1e-12)
+# test_against_wdft(10000000, 1, 1024, 1024, 2, 1e-12)
+# test_against_wdft(100000000, 1, 1024, 1024, 2, 1e-12)
+# test_against_wdft(500000000, 1, 1024, 1024, 2, 1e-12)
+# test_against_wdft(10000000, 1, 2048, 2048, 2, 1e-12)
+# test_against_wdft(100000000, 1, 2048, 2048, 2, 1e-12)
+# test_against_wdft(10000000, 1, 4096, 4096, 2, 1e-12)
+# test_against_wdft(100000000, 1, 4096, 4096, 2, 1e-12)
+# test_against_wdft(700000000, 1, 1024, 1024, 2, 1e-12)
 
 
 

@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	int nxdirty, nydirty;
-	PCS sigma = 1.25; // upsampling factor
+	PCS sigma = 2; // upsampling factor
 	int nrow, nchan;
 	PCS fov;
 
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 		sscanf(argv[7], "%d", &nchan);
 	}
 
-	PCS epsilon = 1e-6;
+	PCS epsilon = 1e-12;
 	if (argc > 8)
 	{
 		sscanf(argv[8], "%lf", &inp);
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 	pointer_v->vis = vis;
 	pointer_v->frequency = freq;
 	pointer_v->weight = wgt;
-	pointer_v->pirange = 1;
+	pointer_v->pirange = 0;
 
 	int direction = 1; //vis to image
 

@@ -52,5 +52,5 @@ void get_max_min(PCS &max, PCS &min, PCS *d_array, int n);
 int matrix_transpose_invoker(PCS *d_arr, int width, int height);
 void GPU_info();
 void show_mem_usage();
-
+int matrix_elementwise_multiply_invoker(CUCPX *a, PCS *b, int N);
 #endif

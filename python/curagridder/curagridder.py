@@ -11,7 +11,6 @@ from ctypes import c_int
 from ctypes import c_float
 from ctypes import c_void_p
 
-
 c_int_p = ctypes.POINTER(c_int)
 c_float_p = ctypes.POINTER(c_float)
 c_double_p = ctypes.POINTER(c_double)
@@ -50,6 +49,10 @@ ms2dirty.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpoi
                      np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double] 
 ms2dirty.restype = c_int
 
+ms2dirty_2 = lib.ms2dirty_2
+ms2dirty_2.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.double, flags='C'),
+                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.double, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double] 
+ms2dirty_2.restype = c_int
 
 def imaging_ms2dirty(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
     """
@@ -73,9 +76,12 @@ def imaging_ms2dirty(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
     # v = np.ctypeslib.as_ctypes(uvw[:,1])
     # w = np.ctypeslib.as_ctypes(uvw[:,2])
  #   dirty_gpu = gpuarray.GPUArray([nxdirty*nydirty,],dtype=np.complex128) #shape is 2d, cautious
-
-    ms2dirty(nrow,nxdirty,nydirty,fov,freq[0],uvw
+    if(wgt==None):
+        ms2dirty(nrow,nxdirty,nydirty,fov,freq[0],uvw
             ,ms,dirty,epsilon,sigma)
+    else:
+        ms2dirty_2(nrow,nxdirty,nydirty,fov,freq[0],uvw
+                ,ms,wgt,dirty,epsilon,sigma)
 
 #    dirty = dirty_gpu.get()
     return dirty
