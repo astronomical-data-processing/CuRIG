@@ -58,31 +58,17 @@ def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon):
         print("L2 error between explicit transform and gridder:",
               _l2error(truth, dirty.real))
 
-# test_against_wdft(100, 1, 512, 512, 2, 1e-12)
+# the first test will execute 2 times to warp up the GPU
 test_against_wdft(1000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(1000000, 1, 4096*4, 4096*4, 2, 0.01)
-# test_against_wdft(5000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(9000, 1, 512, 512, 2, 1e-12)
-
-# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(10000000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(100000000, 1, 512, 512, 2, 1e-12)
-# test_against_wdft(10000000, 1, 1024, 1024, 2, 1e-12)
-# test_against_wdft(100000000, 1, 1024, 1024, 2, 1e-12)
-# test_against_wdft(500000000, 1, 1024, 1024, 2, 1e-12)
-# test_against_wdft(10000000, 1, 2048, 2048, 2, 1e-12)
-# test_against_wdft(100000000, 1, 2048, 2048, 2, 1e-12)
-# test_against_wdft(10000000, 1, 4096, 4096, 2, 1e-12)
-# test_against_wdft(100000000, 1, 4096, 4096, 2, 1e-12)
-# test_against_wdft(700000000, 1, 1024, 1024, 2, 1e-12)
-
-
-
-# time.sleep(5)
-# test_against_wdft(10000, 1, 2048, 2048, 2, 1e-12)
+test_against_wdft(1000, 1, 512, 512, 2, 1e-12)
+test_against_wdft(1000, 1, 512, 512, 2, 1e-12)
+test_against_wdft(5000, 1, 512, 512, 2, 1e-12)
+test_against_wdft(9000, 1, 512, 512, 2, 1e-12)
+test_against_wdft(10000, 1, 512, 512, 2, 1e-12)
+test_against_wdft(100000000, 1, 512, 512, 2, 1e-12)
+test_against_wdft(10000, 1, 1024, 1024, 2, 1e-12)
+test_against_wdft(100000000, 1, 1024, 1024, 2, 1e-12)
+test_against_wdft(100000000, 1, 2048, 2048, 2, 1e-12)
+test_against_wdft(100000000, 1, 4096, 4096, 2, 1e-12)
 
 

@@ -1,5 +1,5 @@
-import pycuda.autoinit # NOQA:401
-import pycuda.gpuarray as gpuarray
+#import pycuda.autoinit # NOQA:401
+#import pycuda.gpuarray as gpuarray
 
 import ctypes
 import os
@@ -18,8 +18,9 @@ c_double_p = ctypes.POINTER(c_double)
 # TODO: See if there is a way to improve this so it is less hacky.
 lib = None
 # Try to load a local library directly.
+lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../lib/libcurafft.so")
 try:
-    lib = ctypes.cdll.LoadLibrary("/home/liuhao/Project/NUFFT/lib/libcurafft.so")
+    lib = ctypes.cdll.LoadLibrary(lib_path)
 except Exception:
     raise RuntimeError('Failed to find curagridder library')
 
@@ -75,7 +76,6 @@ def imaging_ms2dirty(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
     # u = np.ctypeslib.as_ctypes(uvw[:,0])
     # v = np.ctypeslib.as_ctypes(uvw[:,1])
     # w = np.ctypeslib.as_ctypes(uvw[:,2])
- #   dirty_gpu = gpuarray.GPUArray([nxdirty*nydirty,],dtype=np.complex128) #shape is 2d, cautious
     if(wgt==None):
         ms2dirty(nrow,nxdirty,nydirty,fov,freq[0],uvw
             ,ms,dirty,epsilon,sigma)
@@ -83,5 +83,4 @@ def imaging_ms2dirty(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
         ms2dirty_2(nrow,nxdirty,nydirty,fov,freq[0],uvw
                 ,ms,wgt,dirty,epsilon,sigma)
 
-#    dirty = dirty_gpu.get()
     return dirty
