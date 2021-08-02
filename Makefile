@@ -167,6 +167,9 @@ checkfft: nufft_test conv_theorem_dft_test
 	bin/conv_theorem_dft_test
 	@echo "random k testing..."
 	bin/conv_theorem_dft_2_test
+
+python: libtest
+	cp lib/libcurafft.so python/curagridder/
 # -----------------------------------------------------------------
 
 clean:
