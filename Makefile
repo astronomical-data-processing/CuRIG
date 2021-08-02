@@ -1,8 +1,8 @@
 # CURAFFT Makefile
 
-CC   ?= gcc
-CXX  ?= g++
-NVCC ?= nvcc
+CC   = gcc
+CXX  = g++
+NVCC = nvcc
 
 #set based on GPU card, sm_60 (Tesla P100) or sm_61 (consumer Pascal) or sm_70 (Tesla V100, Titan V) or sm_80 (A100)
 NVARCH ?= -gencode=arch=compute_80,code=sm_80
@@ -90,10 +90,10 @@ test/%.o: test/%.cu $(HEADERS)
 default: all
 
 
-all: libtest convtest utiltest
+all: libtest
 
 # testers for the lib (does not execute)
-libtest: lib $(BINDIR)/utils_test
+libtest: lib convtest utiltest w_s_test nufft_test
 
 convtest: $(BINDIR)/conv_2d_test \
 	$(BINDIR)/conv_3d_test

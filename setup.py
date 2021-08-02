@@ -1,15 +1,16 @@
 
 import os
-import ctypes
-from setuptools import setup, Extension
+import subprocess
+from setuptools import setup
+from distutils.command.install import install as _install
 
 
-lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),"lib/libcurafft.so")
-try:
-    lib = ctypes.cdll.LoadLibrary(lib_path)
-except Exception as e:
-    print('CUDA shared libraries not found in library path.')
-    raise(e)
+class install(_install):
+    def run(self):
+        subprocess.call(['make', 'clean'])
+        subprocess.call(['make', 'python'])
+        _install.run(self)
+
 
 
 setup(
@@ -19,15 +20,12 @@ setup(
     author_email="stein.h.liu@gmail.com",
     description="GPU version of NUFFT and Radio astronomy gridder package",
     packages=['curagridder'],
-    package_dir={'': 'python'},
+    package_dir={'curagridder': 'python/curagridder'},
+    package_data={'curagridder': ['libcurafft.so']},
     url="https://github.com/HLSUD/CURIG",
     install_requires=['numpy', 'pycuda', 'six'],
     python_requires='>=3.6',
     zip_safe=False,
-    ext_modules=[
-        Extension(name='CURIG',
-                  sources=[],
-                  libraries=['curafft'],
-                  library_dirs=['lib'])
-        ]
+    include_package_data=True,
+    cmdclass={'install': install},
 )

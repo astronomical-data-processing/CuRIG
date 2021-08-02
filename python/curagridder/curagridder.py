@@ -18,7 +18,7 @@ c_double_p = ctypes.POINTER(c_double)
 # TODO: See if there is a way to improve this so it is less hacky.
 lib = None
 # Try to load a local library directly.
-lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../lib/libcurafft.so")
+lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),"libcurafft.so")
 try:
     lib = ctypes.cdll.LoadLibrary(lib_path)
 except Exception:

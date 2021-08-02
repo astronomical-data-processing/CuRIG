@@ -6,3 +6,4 @@ build
 python/curagridder/__pycache__
 lib
 lib-static
+*.so

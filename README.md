@@ -25,7 +25,7 @@ git clone https://github.com/HLSUD/NUFFT.git
     4.2 Radio astronomical imaging: w stacking testing and explicit testing are provided. (```make checkwst``` and ```make explicit_gridder_test```).
 
 ### Python interface
-Currently, we bind cuda and python simply by ctype. After generating the library by compiling, packages like pycuda, six and numpy are required. Those can be install by run ```pip intall pycuda six numpy```. Then, the curagridder under /CURIG/python/curagridder/curagridder need to be imported.
+Currently, we bind cuda and python simply by ctype. After generating the library by compiling, packages like pycuda, six and numpy are required. You can install those packages and our package (curagridder) by ```python setup.py install```.
 
 The imaging API:
 ```
