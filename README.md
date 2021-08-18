@@ -30,7 +30,9 @@ Currently, we bind cuda and python simply by ctype. After generating the library
 The APIs:
 ```
 dirty = ms2dirty(uvw, freq, ms, wgt, dirty, fov, epsilon, sigma)
-dirty = dirty2ms(uvw, freq, ms, wgt, dirty, fov, epsilon, sigma)
+```
+```
+ms = dirty2ms(uvw, freq, ms, wgt, dirty, fov, epsilon, sigma)
 ```
 uvw - 2d array storing coordinates of visbility, freq - freqency, ms - visibility value (complex number), wgt - weight, dirty - dirty image, fov - field of veiw, epsilon - the tolerance and siamg - upsampling factor.
 
