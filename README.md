@@ -1,7 +1,7 @@
-# Cuda Radio Interferometer Gridder - CURIG
+# Cuda Radio Interferometer Gridder - cuRIG
 
 ## Introduction
-CURIG provides general Cuda version of non-uniform Fourier transform and specified one for radio astronomical imaging. We implemented non-uniform Fourier transform to generate dirty images from visibility received by antennas. In order to accelerate the imaging process, GPU is involved to reduce the processing time. Obvious time speedup can be seen compared with the CPU parallel version. And this is our basic version for cuNUFFT and radio astronomical imaging. We adopt the ES kernel function for NUFFT and improved W-stacking for imaging. HKUST_GZU Group.
+CuRIG provides general Cuda version of non-uniform Fourier transform and specified one for radio astronomical imaging. We implemented non-uniform Fourier transform to generate dirty images from visibility received by antennas. In order to accelerate the imaging process, GPU is involved to reduce the processing time. Obvious time speedup can be seen compared with the CPU parallel version. And this is our basic version for cuNUFFT and radio astronomical imaging. We adopt the ES kernel function for NUFFT and improved W-stacking for imaging. HKUST_GZU Group.
 
 ## Installation
 
@@ -17,7 +17,7 @@ git clone https://github.com/HLSUD/NUFFT.git
 2. Revise cuda toolkit path and GPU compute architecture in Makefile
     - add ```/your_path/cuda``` at line 22
     - set the correct compute architecture at line 8 (sm_70 for V100, sm_80 for A100)
-3. Compiling and library creating: ``` make ```
+3. Compiling and library creating: ``` make ``` (If you are python user, jump to python interface.)
 4. Running and testing\
     All the executable files are in the bin folder. (If you are a python user, directly skip to Python interface.)\
     For TESTING,\
@@ -25,11 +25,12 @@ git clone https://github.com/HLSUD/NUFFT.git
     4.2 Radio astronomical imaging: w stacking testing and explicit testing are provided. (```make checkwst``` and ```make explicit_gridder_test```).
 
 ### Python interface
-Currently, we bind cuda and python simply by ctype. After generating the library by compiling, packages like pycuda, six and numpy are required. You can install those packages and our package (curagridder) by ```python setup.py install```.
+Currently, we bind cuda and python simply by ctype. After generating the library by compiling, packages like pycuda, six and numpy are required. You can install those packages and our package (curagridder) by ```pip install .```.
 
-The imaging API:
+The APIs:
 ```
-dirty = imaging_ms2dirty(uvw, freq, ms, wgt, dirty, fov, epsilon, sigma)
+dirty = ms2dirty(uvw, freq, ms, wgt, dirty, fov, epsilon, sigma)
+dirty = dirty2ms(uvw, freq, ms, wgt, dirty, fov, epsilon, sigma)
 ```
 uvw - 2d array storing coordinates of visbility, freq - freqency, ms - visibility value (complex number), wgt - weight, dirty - dirty image, fov - field of veiw, epsilon - the tolerance and siamg - upsampling factor.
 
