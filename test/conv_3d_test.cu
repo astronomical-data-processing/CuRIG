@@ -8,7 +8,8 @@
 using namespace thrust;
 using namespace std::complex_literals;
 
-#include "conv_invoker.h"
+#include "conv_interp_invoker.h"
+
 #include "cuft.h"
 #include "utils.h"
 

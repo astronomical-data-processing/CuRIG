@@ -61,7 +61,6 @@ int fourier_series_appro_invoker(PCS *fseries, conv_opts opts, int N)
 {
     /*
         One dimensional Fourier series approximation. f(k) = int e^{ikx} f(x) dx.
-
         Input: 
             opts - convolution options
             k - location of the series (on device)
@@ -107,7 +106,6 @@ int fourier_series_appro_invoker(PCS *fseries, PCS *k, conv_opts opts, int N, in
 {
     /*
         One dimensional Fourier series approximation. f(k) = int e^{ikx} f(x) dx.
-
         Input: 
             opts - convolution options
             k - location of the series (on device)
@@ -154,7 +152,6 @@ int fourier_series_appro_invoker(PCS *fseries, PCS *k, conv_opts opts, int N)
 {
     /*
         One dimensional Fourier series approximation. f(k) = int e^{ikx} f(x) dx.
-
         Input: 
             opts - convolution options
             k - location of the series (on device)
@@ -199,7 +196,7 @@ int fourier_series_appro_invoker(PCS *fseries, PCS *k, conv_opts opts, int N)
     return ier;
 }
 
-__global__ void deconv_1d(int N1, int nf1, CUCPX *fw, CUCPX *fk, PCS *fwkerhalf1, int flag){
+__global__ void deconv_1d(int N1, int nf1, CUCPX *fw, CUCPX *fk, PCS *fwkerhalf1, int flag, int type){
     /*
         One dimensional deconvlution
         N - number of modes
@@ -208,6 +205,7 @@ __global__ void deconv_1d(int N1, int nf1, CUCPX *fw, CUCPX *fk, PCS *fwkerhalf1
         fk - final result after deconv
         fwkerhalf - half of Fourier tranform (integal) of kernel fucntion, size - N/2+1
         flag - FFTW style (other) or CMCL (1)
+        type - 1 NU->U, 2 U->NU.
     */
     int idx;
     int nmodes = N1;
@@ -223,13 +221,20 @@ __global__ void deconv_1d(int N1, int nf1, CUCPX *fw, CUCPX *fk, PCS *fwkerhalf1
             w = k >= N1/2 ? nf1+k-N1 : k; // FFTW
         }
         idx_fw = w;
-        fk[idx].x = fw[idx_fw].x / fwkerhalf1[abs(k-N1/2)];
-        fk[idx].y = fw[idx_fw].y / fwkerhalf1[abs(k-N1/2)];
+        if(type==1){
+            fk[idx].x = fw[idx_fw].x / fwkerhalf1[abs(k-N1/2)];
+            fk[idx].y = fw[idx_fw].y / fwkerhalf1[abs(k-N1/2)];
+        }
+        else{
+            fw[idx_fw].x = fk[idx].x / fwkerhalf1[abs(k-N1/2)];
+            fw[idx_fw].y = fk[idx].y / fwkerhalf1[abs(k-N1/2)];
+        }
+        
     }
 }
 
 __global__ void deconv_2d(int N1, int N2, int nf1, int nf2, CUCPX* fw, CUCPX* fk, PCS* fwkerhalf1,
- PCS* fwkerhalf2, int flag){
+ PCS* fwkerhalf2, int flag, int type){
      /*
         The output of cufft is from 0 to N/2-1 and then -N/2 to -1
         Should convert to -N/2 to N/2-1, then set flag = 1
@@ -257,14 +262,21 @@ __global__ void deconv_2d(int N1, int N2, int nf1, int nf2, CUCPX* fw, CUCPX* fk
         
 		PCS kervalue = fwkerhalf1[abs(k1-N1/2)]*fwkerhalf2[abs(k2-N2/2)];
 
-		fk[idx].x = fw[idx_fw].x/kervalue;
-		fk[idx].y = fw[idx_fw].y/kervalue;
+        if(type==1){
+            fk[idx].x = fw[idx_fw].x / kervalue;
+            fk[idx].y = fw[idx_fw].y / kervalue;
+        }
+        else{
+            // if(idx==(N1*N2/2+N1/2))printf("kerval %.6g..........\n",kervalue);
+            fw[idx_fw].x = fk[idx].x / kervalue;
+            fw[idx_fw].y = fk[idx].y / kervalue;
+        }
 
     }
 }
 
 __global__ void deconv_3d(int N1, int N2, int N3, int nf1, int nf2, int nf3, CUCPX* fw, 
-	CUCPX *fk, PCS *fwkerhalf1, PCS *fwkerhalf2, PCS *fwkerhalf3, int flag)
+	CUCPX *fk, PCS *fwkerhalf1, PCS *fwkerhalf2, PCS *fwkerhalf3, int flag, int type)
 {
     int idx;
     int nmodes = N1*N2*N3;
@@ -290,8 +302,15 @@ __global__ void deconv_3d(int N1, int N2, int N3, int nf1, int nf2, int nf3, CUC
 
 		PCS kervalue = fwkerhalf1[abs(k1-N1/2)]*fwkerhalf2[abs(k2-N2/2)]*
 			fwkerhalf3[abs(k3-N3/2)];
-		fk[idx].x = fw[idx_fw].x/kervalue;
-		fk[idx].y = fw[idx_fw].y/kervalue;
+		if(type==1){
+            fk[idx].x = fw[idx_fw].x / kervalue;
+            fk[idx].y = fw[idx_fw].y / kervalue;
+        }
+        else{
+            
+            fw[idx_fw].x = fk[idx].x / kervalue;
+            fw[idx_fw].y = fk[idx].y / kervalue;
+        }
 	}
 }
 
@@ -307,13 +326,14 @@ int curafft_deconv(curafft_plan *plan){
     int nmodes, N2, N3, nf2, nf3;
     // int batch_size = plan->batchsize;
     int flag = plan->mode_flag;
+    int type = plan->type;
     int blocksize = 256;
     
     switch(dim){
         case 1:{
             nmodes = N1;
             deconv_1d<<<(nmodes-1)/blocksize+1, blocksize>>>(N1, nf1, plan->fw,plan->fk,
-        plan->fwkerhalf1, flag);
+        plan->fwkerhalf1, flag, type);
             checkCudaErrors(cudaDeviceSynchronize());
             break;
         }
@@ -322,7 +342,7 @@ int curafft_deconv(curafft_plan *plan){
             nf2 = plan->nf2;
             nmodes = N1*N2;
             deconv_2d<<<(nmodes-1)/blocksize+1, blocksize>>>(N1, N2, nf1, nf2, plan->fw,plan->fk,
-        plan->fwkerhalf1, plan->fwkerhalf2, flag);
+        plan->fwkerhalf1, plan->fwkerhalf2, flag, type);
             checkCudaErrors(cudaDeviceSynchronize());
             break;
         }
@@ -333,7 +353,7 @@ int curafft_deconv(curafft_plan *plan){
             nf3 = plan->nf3;
             nmodes = N1*N2*N3;
             deconv_3d<<<(nmodes-1)/blocksize+1, blocksize>>>(N1, N2, N3, nf1, nf2, nf3, plan->fw,plan->fk,
-        plan->fwkerhalf1, plan->fwkerhalf2, plan->fwkerhalf3, flag);
+        plan->fwkerhalf1, plan->fwkerhalf2, plan->fwkerhalf3, flag, type);
             checkCudaErrors(cudaDeviceSynchronize());
             break;
         }
@@ -348,7 +368,7 @@ int curafft_deconv(curafft_plan *plan){
 
 //------------------Below this line, the content is just for Radio Astronomy---------------------
 
-__global__ void w_term_deconv(int N1, int N2, CUCPX* fk, PCS* fwkerhalf, PCS i_center, PCS o_center ,PCS xpixelsize, PCS ypixelsize){
+__global__ void w_term_deconv(int N1, int N2, CUCPX* fk, PCS* fwkerhalf, PCS i_center, PCS o_center ,PCS xpixelsize, PCS ypixelsize, int flag){
     /*
         w term deconvolution
         Due to the symetric property, just calculate (N1/2+1)*(N2/2+1), input and output are CMCL format
@@ -358,6 +378,7 @@ __global__ void w_term_deconv(int N1, int N2, CUCPX* fk, PCS* fwkerhalf, PCS i_c
             fwkerhalf - correction factor
             i|o_center - input or output center
             pixelsize - degrees per pixel
+            flag
     */
     // 
     int idx;
@@ -366,13 +387,18 @@ __global__ void w_term_deconv(int N1, int N2, CUCPX* fk, PCS* fwkerhalf, PCS i_c
     for(idx = blockIdx.x*blockDim.x + threadIdx.x; idx < nmodes; idx+=gridDim.x*blockDim.x){
         int row = idx / N1;
         int col = idx % N1;
-        PCS phase = ((sqrt(1.0 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize,2)) - 1)-o_center)*i_center; // caused by shifting ({i*(u+u_c)*x_c})
+        PCS phase = ((sqrt(1.0 - pow((row-N2/2)*xpixelsize,2) - pow((col-N1/2)*ypixelsize,2)) - 1)-o_center)*i_center*flag; // caused by shifting ({i*(u+u_c)*x_c})
 
         idx_fw = abs(col-N1/2)+abs(row-N2/2)*(N1/2+1);
-        fk[idx].x = (fk[idx].x*cos(phase)-fk[idx].y*sin(phase)) / fwkerhalf[idx_fw];
-        fk[idx].y = (fk[idx].x*sin(phase)+fk[idx].y*cos(phase))  / fwkerhalf[idx_fw];
+        // if(idx==0)printf("gpu fwkerhalf %.10g, exp .real %.10g sin %.10g,  %.10g\n",fwkerhalf[idx_fw], cos(phase), sin(phase), (fk[idx].x*cos(phase)-fk[idx].y*sin(phase)) / fwkerhalf[idx_fw]);
+        CUCPX temp;
+        temp.x = (fk[idx].x*cos(phase)-fk[idx].y*sin(phase)) / fwkerhalf[idx_fw];
+        temp.y = (fk[idx].x*sin(phase)+fk[idx].y*cos(phase))  / fwkerhalf[idx_fw];
+        fk[idx] = temp;
     }
 }
+
+
 
 int curadft_w_deconv(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize){
     /*
@@ -383,7 +409,10 @@ int curadft_w_deconv(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize){
     int N = plan->ms*plan->mt;
     PCS i_center = plan->ta.i_center[0];
     PCS o_center = plan->ta.o_center[0];
-    w_term_deconv<<<(N-1)/blocksize+1,blocksize>>>(plan->ms,plan->mt,plan->fk,plan->fwkerhalf3,i_center,o_center,xpixelsize,ypixelsize);
+    int flag = plan->iflag;
+    w_term_deconv<<<(N-1)/blocksize+1,blocksize>>>(plan->ms,plan->mt,plan->fk,plan->fwkerhalf3,i_center,o_center,xpixelsize,ypixelsize,flag);
     checkCudaErrors(cudaDeviceSynchronize());
+    
+    
     return ier;
 }
