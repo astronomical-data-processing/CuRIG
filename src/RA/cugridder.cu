@@ -600,3 +600,10 @@ int dirty2ms_1(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
     ier = dirty2ms_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,NULL,dirty,epsilon,sigma);
     return ier;
 }
+
+int dirty2ms_2(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
+             CPX *vis, PCS *wgt, CPX *dirty, PCS epsilon, PCS sigma){
+    int ier = 0;
+    ier = dirty2ms_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,wgt,dirty,epsilon,sigma);
+    return ier;
+}

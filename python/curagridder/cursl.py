@@ -1,5 +1,4 @@
-#import pycuda.autoinit # NOQA:401
-#import pycuda.gpuarray as gpuarray
+# Contents in this file are specified for RASCIL
 
 import ctypes
 import os
@@ -25,23 +24,6 @@ except Exception:
     raise RuntimeError('Failed to find curagridder library')
 
 
-def _get_ctypes(dtype):
-    """
-    Checks dtype is float32 or float64.
-    Returns floating point and floating point pointer.
-    Y. Shih, G. Wright, J. Andén, J. Blaschke, A. H. Barnett (2021). cuFINUFFT
-    """
-
-    if dtype == np.float64:
-        REAL_t = c_double
-    elif dtype == np.float32:
-        REAL_t = c_float
-    else:
-        raise TypeError("Expected np.float32 or np.float64.")
-
-    REAL_ptr = ctypes.POINTER(REAL_t)
-
-    return REAL_t, REAL_ptr
 
 
 ms2dirty_1 = lib.ms2dirty_1
@@ -61,24 +43,31 @@ dirty2ms_1.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndp
                      np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double] 
 dirty2ms_1.restype = c_int
 
-def vis2dirty(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
+#----------------------------------------
+# the interfaces below are idential to NIFTY
+#-----------------------------------------
+
+def ms2dirty(uvw, freq, ms, wgt, nxdirty, nydirty, deg_pix_x, deg_pix_y, epsilon, do_wstacking, *args):
     """
     Generate an image from visibility by non-uniform fourier transform
     Arguments:
         uvw - 3D coordinates, numpy array, shape - (nrow,3)
         freq - frequencies
-        vis - visibility, shape - (nrow,)
+        ms - visibility, shape - (nrow,)
         wgt - weight
         nxdirty, nydirty - image size
-        fov - field of view
+        deg_pix_ - degree per pixel
         epsilon - tolerance of relative error (expect, default 1e-6)
-        sigma - upsampling factor for grid (default 1.25)
+        do_wstacking - True, improved w stacking.
+    
     Return:
         dirty image - shape-[nxdirty,nydirty]
     """
     nrow = uvw.shape[0]
-    nxdirty = dirty.shape[0]
-    nydirty = dirty.shape[1]
+    sigma = 2
+    fov = deg_pix_x * nxdirty * 180 / np.pi
+    dirty = np.zeros((nxdirty,nydirty),dtype=np.complex128)
+
     # u = np.ctypeslib.as_ctypes(uvw[:,0])
     # v = np.ctypeslib.as_ctypes(uvw[:,1])
     # w = np.ctypeslib.as_ctypes(uvw[:,2])
@@ -88,16 +77,16 @@ def vis2dirty(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
     else:
         ms2dirty_2(nrow,nxdirty,nydirty,fov,freq[0],uvw
                 ,ms,wgt,dirty,epsilon,sigma)
-
+    dirty = np.reshape(dirty,[nxdirty,nydirty])
     return dirty
 
-def dirty2vis(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
+def dirty2ms(uvw, freq, dirty, wgt, deg_pix_x, deg_pix_y, epsilon, do_wstacking, *args):
     """
     Generate Visibility from dirty image by non-uniform fourier transform
     Arguments:
         uvw - 3D coordinates, numpy array, shape - (nrow,3)
         freq - frequencies
-        vis - visibility, shape - (nrow,)
+        ms - visibility, shape - (nrow,)
         wgt - weight
         nxdirty, nydirty - image size
         fov - field of view
@@ -109,6 +98,9 @@ def dirty2vis(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
     nrow = uvw.shape[0]
     nxdirty = dirty.shape[0]
     nydirty = dirty.shape[1]
+    sigma = 2
+    fov = deg_pix_x * nxdirty * 180 / np.pi
+    ms = np.zeros((nrow,1),dtype=np.complex128)
     # u = np.ctypeslib.as_ctypes(uvw[:,0])
     # v = np.ctypeslib.as_ctypes(uvw[:,1])
     # w = np.ctypeslib.as_ctypes(uvw[:,2])
@@ -116,5 +108,6 @@ def dirty2vis(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
         dirty2ms_1(nrow,nxdirty,nydirty,fov,freq[0],uvw
             ,ms,dirty,epsilon,sigma)
     else:
-        return None
+        dirty2ms_2(nrow,nxdirty,nydirty,fov,freq[0],uvw
+            ,ms,dirty,epsilon,sigma)
     return ms
