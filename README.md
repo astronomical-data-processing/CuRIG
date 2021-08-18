@@ -1,7 +1,11 @@
 # Cuda Radio Interferometer Gridder - cuRIG
 
 ## Introduction
-CuRIG provides general Cuda version of non-uniform Fourier transform and specified one for radio astronomical imaging. We implemented non-uniform Fourier transform to generate dirty images from visibility received by antennas. In order to accelerate the imaging process, GPU is involved to reduce the processing time. Obvious time speedup can be seen compared with the CPU parallel version. And this is our basic version for cuNUFFT and radio astronomical imaging. We adopt the ES kernel function for NUFFT and improved W-stacking for imaging. HKUST_GZU Group.
+CuRIG is a CUDA-based package for non-uniform Fourier transforms. The package refers to the function definitions of Nifty Gridder in order to make the code portability in RASCIL as easy as possible. We have implemented two main functions of Nifty Gridder such as ms2dirty and dirty2ms. Compared with the CPU parallel version, cuRIG significantly improves the processing performance and can effectively improve the performance of non-uniform FFT in radio astronomical interferometer data processing.
+
+In the current version, we use ES kernel functions in NUFFT and improved W-stacking in imaging.
+
+-- HKUST & GZHU Joint Group，2021
 
 ## Installation
 
@@ -12,7 +16,7 @@ CuRIG provides general Cuda version of non-uniform Fourier transform and specifi
 ### Procedure
 1. Get the code in this repository
 ```
-git clone https://github.com/HLSUD/NUFFT.git
+git clone https://github.com/astronomical-data-processing/cuRIG.git
 ```
 2. Revise cuda toolkit path and GPU compute architecture in Makefile
     - add ```/your_path/cuda``` at line 22
