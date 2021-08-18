@@ -1,4 +1,4 @@
-from curagridder import vis2dirty, dirty2vis
+from cursl import ms2dirty, dirty2ms
 import numpy as np
 import time
 # import pytest
@@ -51,13 +51,13 @@ def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon):
     
     print("begin")
     start = time.time()
-    dirty2 = vis2dirty(uvw,freq, ms, None, dirty2, fov, epsilon,2)
+    dirty2 = ms2dirty(uvw,freq, ms, None, nxdirty, nydirty, xpixsize, ypixsize, epsilon, True, 4)
     end = time.time()
     print("The elapsed time {} (sec)".format(end-start))
     print("Execution finished")
-    dirty2 = np.reshape(dirty2,[nxdirty,nydirty])
+    
     ms2 = np.zeros((nrow,1),dtype=np.complex128)
-    ms2 = dirty2vis(uvw,freq, ms2, None, dirty, fov, epsilon,2)
+    ms2 = dirty2ms(uvw,freq, dirty, None, xpixsize, ypixsize, epsilon, True, 4)
 
     # ms2 = np.reshape(ms2,[nrow,1])
     print("\nadjointness testing....")
@@ -85,5 +85,3 @@ test_against_wdft(10000, 1, 512, 512, 60, 1e-12)
 # test_against_wdft(100000000, 1, 1024, 1024, 2, 1e-12)
 # test_against_wdft(100000000, 1, 2048, 2048, 2, 1e-12)
 # test_against_wdft(100000000, 1, 4096, 4096, 2, 1e-12)
-
-

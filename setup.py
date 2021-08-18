@@ -14,14 +14,14 @@ class install(_install):
 
 
 setup(
-    name='curagridder',  
+    name='curig',  
     version='0.1',
     author="LIU Honghao",
     author_email="stein.h.liu@gmail.com",
     description="GPU version of NUFFT and Radio astronomy gridder package",
-    packages=['curagridder'],
-    package_dir={'curagridder': 'python/curagridder'},
-    package_data={'curagridder': ['libcurafft.so']},
+    packages=['curig'],
+    package_dir={'curig': 'python/curagridder'},
+    package_data={'curig': ['libcurafft.so']},
     url="https://github.com/HLSUD/CURIG",
     install_requires=['numpy', 'pycuda', 'six'],
     python_requires='>=3.6',

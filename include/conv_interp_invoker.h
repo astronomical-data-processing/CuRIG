@@ -11,4 +11,5 @@ int setup_conv_opts(conv_opts &c_opts, PCS eps, PCS upsampfac, int pirange, int 
 int get_num_cells(int ms, conv_opts copts);
 int curafft_conv(curafft_plan *plan);
 int curafft_free(curafft_plan *plan);
+int curafft_interp(curafft_plan * plan);
 #endif
