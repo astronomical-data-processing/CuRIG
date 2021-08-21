@@ -5,7 +5,7 @@ CXX  = g++
 NVCC = nvcc
 
 #set based on GPU card, sm_60 (Tesla P100) or sm_61 (consumer Pascal) or sm_70 (Tesla V100, Titan V) or sm_80 (A100)
-NVARCH ?= -gencode=arch=compute_70,code=sm_70
+NVARCH ?= -gencode=arch=compute_80,code=sm_80
 
 
 
@@ -13,6 +13,7 @@ CFLAGS    ?= -fPIC -O3 -funroll-loops -march=native
 CXXFLAGS  ?= $(CFLAGS) -std=c++14
 NVCCFLAGS ?= -std=c++14 -ccbin=$(CXX) -O3 $(NVARCH) -Wno-deprecated-gpu-targets \
 	     --default-stream per-thread -Xcompiler "$(CXXFLAGS)"
+
 
 
 #NVCCFLAGS+= -DINFO -DDEBUG -DRESULT -DTIME
@@ -47,7 +48,7 @@ STATICLIB=lib-static/$(LIBNAME).a
 BINDIR=bin
 
 HEADERS = include/curafft_opts.h include/curafft_plan.h include/cugridder.h \
-	include/conv_interp_invoker.h include/conv.h include/interp.h include/cuft.h include/dataType.h \
+	include/conv_interp_invoker.h include/conv.h include/interp.h include/cuft.h include/datatype.h \
 	include/deconv.h include/precomp.h include/ragridder_plan.h include/utils.h \
 	contrib/common.h contrib/legendre_rule_fast.h contrib/utils_fp.h
 # later put some file into the contrib
@@ -59,8 +60,6 @@ CURAFFTOBJS_64=src/FT/conv_interp_invoker.o src/FT/conv.o src/FT/interp.o src/FT
 	src/RA/cugridder.o src/RA/precomp.o src/RA/ra_exec.o $(CONTRIBOBJS)
 
 #ignore single precision first
-
-
 
 %.o: %.cpp $(HEADERS)
 	$(CXX) -c $(CXXFLAGS) $(INC) $< -o $@
@@ -90,7 +89,8 @@ test/%.o: test/%.cu $(HEADERS)
 default: all
 
 
-all: libtest explicit_gridder_test checkadjoint
+all: libtest 
+# explicit_gridder_test checkadjoint
 
 # testers for the lib (does not execute)
 libtest: lib convtest utiltest w_s_test nufft_test

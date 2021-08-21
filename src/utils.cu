@@ -21,7 +21,7 @@
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
 
-#include "dataType.h"
+#include "datatype.h"
 
 void prefix_scan(PCS *d_arr, PCS *d_res, int n, int flag)
 {
@@ -34,7 +34,7 @@ void prefix_scan(PCS *d_arr, PCS *d_res, int n, int flag)
   thrust::device_ptr<PCS> d_result(d_res);
 
   if (flag)
-    thrust::inclusive_scan(d_ptr, d_ptr + n, d_result); 
+    thrust::inclusive_scan(d_ptr, d_ptr + n, d_result);
   else
     thrust::exclusive_scan(d_ptr, d_ptr + n, d_result);
 }
@@ -138,7 +138,6 @@ __global__ void transpose(PCS *odata, PCS *idata, int width, int height)
   // __syncthreads();
 }
 
-
 int matrix_transpose_invoker(PCS *d_arr, int width, int height)
 {
   int ier = 0;
@@ -146,42 +145,48 @@ int matrix_transpose_invoker(PCS *d_arr, int width, int height)
   dim3 block(blocksize, blocksize);
   dim3 grid((width - 1) / blocksize + 1, (height - 1) / blocksize + 1);
   PCS *temp_o;
-  checkCudaErrors(cudaMalloc((void**)&temp_o,sizeof(PCS)*width*height));
+  checkCudaErrors(cudaMalloc((void **)&temp_o, sizeof(PCS) * width * height));
   transpose<<<grid, block>>>(temp_o, d_arr, width, height);
   checkCudaErrors(cudaDeviceSynchronize());
-  checkCudaErrors(cudaMemcpy(d_arr,temp_o,sizeof(PCS)*width*height,cudaMemcpyDeviceToDevice));
+  checkCudaErrors(cudaMemcpy(d_arr, temp_o, sizeof(PCS) * width * height, cudaMemcpyDeviceToDevice));
   checkCudaErrors(cudaFree(temp_o));
   return ier;
 }
 
-__global__ void matrix_elementwise_multiply(CUCPX *a, PCS *b, int N){
+__global__ void matrix_elementwise_multiply(CUCPX *a, PCS *b, int N)
+{
   int idx;
-  for(idx = threadIdx.x+blockIdx.x*blockDim.x; idx<N; idx+=gridDim.x*blockDim.x){
-    a[idx].x = a[idx].x*b[idx];
-    a[idx].y = a[idx].y*b[idx];
+  for (idx = threadIdx.x + blockIdx.x * blockDim.x; idx < N; idx += gridDim.x * blockDim.x)
+  {
+    a[idx].x = a[idx].x * b[idx];
+    a[idx].y = a[idx].y * b[idx];
   }
 }
 
-int matrix_elementwise_multiply_invoker(CUCPX *a, PCS *b, int N){
-  int ier=0;
+int matrix_elementwise_multiply_invoker(CUCPX *a, PCS *b, int N)
+{
+  int ier = 0;
   int blocksize = 512;
-  matrix_elementwise_multiply<<<(N-1)/blocksize+1,blocksize>>>(a,b,N);
+  matrix_elementwise_multiply<<<(N - 1) / blocksize + 1, blocksize>>>(a, b, N);
   checkCudaErrors(cudaDeviceSynchronize());
   return ier;
 }
 
-__global__ void matrix_elementwise_divide(CUCPX *a, PCS *b, int N){
+__global__ void matrix_elementwise_divide(CUCPX *a, PCS *b, int N)
+{
   int idx;
-  for(idx = threadIdx.x+blockIdx.x*blockDim.x; idx<N; idx+=gridDim.x*blockDim.x){
-    a[idx].x = a[idx].x/b[idx];
-    a[idx].y = a[idx].y/b[idx];
+  for (idx = threadIdx.x + blockIdx.x * blockDim.x; idx < N; idx += gridDim.x * blockDim.x)
+  {
+    a[idx].x = a[idx].x / b[idx];
+    a[idx].y = a[idx].y / b[idx];
   }
 }
 
-int matrix_elementwise_divide_invoker(CUCPX *a, PCS *b, int N){
-  int ier=0;
+int matrix_elementwise_divide_invoker(CUCPX *a, PCS *b, int N)
+{
+  int ier = 0;
   int blocksize = 512;
-  matrix_elementwise_multiply<<<(N-1)/blocksize+1,blocksize>>>(a,b,N);
+  matrix_elementwise_multiply<<<(N - 1) / blocksize + 1, blocksize>>>(a, b, N);
   checkCudaErrors(cudaDeviceSynchronize());
   return ier;
 }
