@@ -6,7 +6,7 @@
 #include <cuda.h>
 #include <math.h>
 #include <complex>
-using namespace std::complex_literals;
+// using namespace std::complex_literals;
 //complex not thrust/complex
 #define COMPLEX(X) std::complex<X>
 

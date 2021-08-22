@@ -6,6 +6,11 @@
 #include "datatype.h"
 #include "curafft_plan.h"
 
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+#else
+__device__ double atomicAdd(double *a, double b) { return b; }
+#endif
+
 // NU coord handling macro: if p is true, rescales from [-pi,pi) to [0,N], then
 // folds *only* one period below and above, ie [-N,2N], into the domain [0,N]...
 // RESCALE is from Barnett 2/7/17.

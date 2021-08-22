@@ -56,8 +56,8 @@ CONTRIBOBJS=contrib/common.o contrib/utils_fp.o
 
 CURAFFTOBJS=src/utils.o contrib/legendre_rule_fast.o
 
-CURAFFTOBJS_64=src/FT/conv_interp_invoker.o src/FT/conv.o src/FT/interp.o src/FT/cuft.o src/FT/deconv.o \
-	src/RA/cugridder.o src/RA/precomp.o src/RA/ra_exec.o $(CONTRIBOBJS)
+CURAFFTOBJS_64=src/fouriertran/conv_interp_invoker.o src/fouriertran/conv.o src/fouriertran/interp.o src/fouriertran/cuft.o src/fouriertran/deconv.o \
+	src/astro/cugridder.o src/astro/precomp.o src/astro/ra_exec.o $(CONTRIBOBJS)
 
 #ignore single precision first
 
@@ -77,10 +77,10 @@ src/%.o: src/%.c $(HEADERS)
 src/%.o: src/%.cu $(HEADERS)
 	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
-src/FT/%.o: src/FT/%.cu $(HEADERS)
+src/fouriertran/%.o: src/fouriertran/%.cu $(HEADERS)
 	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
-src/RA/%.o: src/FT/%.cu $(HEADERS)
+src/astro/%.o: src/fouriertran/%.cu $(HEADERS)
 	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
 test/%.o: test/%.cu $(HEADERS)
@@ -182,8 +182,8 @@ clean:
 	rm -f *.o
 	rm -f test/*.o
 	rm -f src/*.o
-	rm -f src/FT/*.o
-	rm -f src/RA/*.o
+	rm -f src/fouriertran/*.o
+	rm -f src/astro/*.o
 	rm -f contrib/*.o
 	rm -rf $(BINDIR)
 	rm -rf lib
