@@ -11,10 +11,12 @@ int gridder_execution(curafft_plan *plan, ragridder_plan *gridder_plan);
 int gridder_destroy(curafft_plan *plan, ragridder_plan *gridder_plan);
 extern "C"{
 int ms2dirty_2(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
-             CPX *vis, PCS *wgt,  CPX *dirty, PCS epsilon, PCS sigma);
+             CPX *vis, PCS *wgt, CPX *dirty, PCS epsilon, PCS sigma);
 int ms2dirty_1(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
              CPX *vis, CPX *dirty, PCS epsilon, PCS sigma);
 int dirty2ms_1(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
              CPX *vis, CPX *dirty, PCS epsilon, PCS sigma);
+int dirty2ms_2(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
+             CPX *vis, PCS *wgt, CPX *dirty, PCS epsilon, PCS sigma);
 }
 #endif

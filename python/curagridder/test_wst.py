@@ -46,24 +46,24 @@ def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon):
     freq = f0 + np.arange(nchan)*(f0/nchan)
     uvw = (np.random.rand(nrow, 3)-0.5)/(f0/speedoflight)
     ms = np.random.rand(nrow, nchan)-0.5 + 1j*(np.random.rand(nrow, nchan)-0.5)
-    dirty = np.random.rand(nxdirty, nydirty)-0.5 + 0j
-    dirty2 = np.zeros((nxdirty,nydirty),dtype=np.complex128)
+    dirty = np.random.rand(nxdirty, nydirty)-0.5
+    dirty2 = np.zeros((nxdirty,nydirty),dtype=np.float64)
     
     print("begin")
     start = time.time()
-    dirty2 = ms2dirty(uvw,freq, ms, None, nxdirty, nydirty, xpixsize, ypixsize, epsilon, True, 4)
+    dirty2 = ms2dirty(uvw,freq, ms, None, nxdirty, nydirty, xpixsize, ypixsize, 0, 0, epsilon, True, 4)
     end = time.time()
     print("The elapsed time {} (sec)".format(end-start))
     print("Execution finished")
     
     ms2 = np.zeros((nrow,1),dtype=np.complex128)
-    ms2 = dirty2ms(uvw,freq, dirty, None, xpixsize, ypixsize, epsilon, True, 4)
+    ms2 = dirty2ms(uvw,freq, dirty, None, xpixsize, ypixsize, 0, 0, epsilon, True, 4)
 
     # ms2 = np.reshape(ms2,[nrow,1])
     print("\nadjointness testing....")
     print(np.vdot(ms, ms2).real)
     print(np.vdot(dirty2, dirty).real)
-    assert_allclose(np.vdot(ms, ms2).real, np.vdot(dirty2, dirty).real, rtol=1e-12)
+    assert_allclose(np.vdot(ms, ms2).real, np.vdot(dirty2, dirty), rtol=1e-12)
 
     if nrow<1e4:
         print("Vertification begin")
