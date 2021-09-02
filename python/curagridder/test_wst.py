@@ -27,7 +27,7 @@ def explicit_gridder(uvw, freq, ms, nxdirty, nydirty, xpixsize, ypixsize):
     for row in range(ms.shape[0]):
         for chan in range(ms.shape[1]):
             phase = (freq[chan]/speedoflight *
-                     (x*uvw[row, 0] + y*uvw[row, 1] + uvw[row, 2]*nm1))
+                     (x*uvw[row, 0] + y*uvw[row, 1] - uvw[row, 2]*nm1))
             res += (ms[row, chan]*np.exp(2j*np.pi*phase)).real
     return res/n
 
@@ -39,7 +39,7 @@ def explicit_gridder(uvw, freq, ms, nxdirty, nydirty, xpixsize, ypixsize):
 @pmp("nydirty", (128, 250, 64))
 @pmp("fov",(1, 10, 20))
 @pmp("epsilon", (2e-1, 5e-3, 5e-5, 5e-7, 5e-12))
-@pmp("use_wgt", (True, False))
+@pmp("use_wgt", (False,))
 
 def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon, use_wgt):
     print("\n\nTesting imaging with {} rows and {} "

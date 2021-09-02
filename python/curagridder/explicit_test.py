@@ -83,7 +83,7 @@ def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon):
     ms2 = dirty2ms(uvw,freq, dirty, None, xpixsize, ypixsize, 0, 0, epsilon, True, 4)
     truth_ms = explicit_degridder(uvw, freq, dirty, xpixsize, ypixsize, nrow, nchan)
     print("L2 error between explicit degridding and CURIG:",
-              _l2error(truth_ms.real, ms2.real))
+              _l2error(truth_ms.real, np.squeeze(ms2.real)))
 
     # ms2 = np.reshape(ms2,[nrow,1])
     print("\nadjointness testing....")

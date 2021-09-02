@@ -131,8 +131,9 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     PCS f_over_c = pointer_v->frequency[0]/SPEEDOFLIGHT;
     // printf("foverc %lf\n",f_over_c);
    
-
-    get_effective_coordinate_invoker(d_u,d_v,d_w,f_over_c,pointer_v->pirange,M);
+    int sign;
+    sign = pointer_v->sign;
+    get_effective_coordinate_invoker(d_u,d_v,d_w,f_over_c,pointer_v->pirange,M,sign);
 
     // PCS *w = (PCS *) malloc(sizeof(PCS)*M);
     // checkCudaErrors(cudaMemcpy(w,d_w,sizeof(PCS)*M,cudaMemcpyDeviceToHost));
@@ -327,7 +328,7 @@ int py_gridder_destroy(curafft_plan *plan, ragridder_plan *gridder_plan)
 }
 // -------------gridder warpper-----------------
 int ms2dirty_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
-             CPX *vis, PCS *wgt,  CPX *dirty, PCS epsilon, PCS sigma){
+             CPX *vis, PCS *wgt,  CPX *dirty, PCS epsilon, PCS sigma, int sign){
     /*
     generating image from ms(vis)
     Input:
@@ -392,6 +393,7 @@ int ms2dirty_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uv
 	pointer_v->frequency = &freq;
 	pointer_v->weight = wgt;
 	pointer_v->pirange = 0;
+    pointer_v->sign = sign;
 	int direction = 1; //vis to image
     //---------STEP1: gridder setting---------------
     ier = gridder_setting(nydirty,nxdirty,0,0,1,epsilon,direction,sigma,0,1,nrow,1,fov,pointer_v,d_u,d_v,d_w,d_vis
@@ -451,7 +453,7 @@ int ms2dirty_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uv
 }
 
 int dirty2ms_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
-             CPX *vis, PCS *wgt,  CPX *dirty, PCS epsilon, PCS sigma){
+             CPX *vis, PCS *wgt,  CPX *dirty, PCS epsilon, PCS sigma, int sign){
     // +++ c dirty c/*.
     /*
     from image to ms(vis)
@@ -518,6 +520,8 @@ int dirty2ms_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uv
 	pointer_v->frequency = &freq;
 	pointer_v->weight = wgt;
 	pointer_v->pirange = 0;
+    pointer_v->sign = sign;
+
     plan->fk = d_dirty;
 	int direction = 0; 
     //---------STEP1: gridder setting---------------
@@ -581,28 +585,28 @@ int dirty2ms_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uv
 
 // a litter bit messy, not know how to handle as one function when wgt can be None or not in python
 int ms2dirty_2(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
-             CPX *vis, PCS *wgt, CPX *dirty, PCS epsilon, PCS sigma){
+             CPX *vis, PCS *wgt, CPX *dirty, PCS epsilon, PCS sigma, int sign){
     int ier = 0;
     ier = ms2dirty_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,wgt,dirty,epsilon,sigma);
     return ier;
 }
 
 int ms2dirty_1(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
-             CPX *vis, CPX *dirty, PCS epsilon, PCS sigma){
+             CPX *vis, CPX *dirty, PCS epsilon, PCS sigma, int sign){
     int ier = 0;
     ier = ms2dirty_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,NULL,dirty,epsilon,sigma);
     return ier;
 }
 
 int dirty2ms_1(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
-             CPX *vis, CPX *dirty, PCS epsilon, PCS sigma){
+             CPX *vis, CPX *dirty, PCS epsilon, PCS sigma, int sign){
     int ier = 0;
     ier = dirty2ms_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,NULL,dirty,epsilon,sigma);
     return ier;
 }
 
 int dirty2ms_2(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
-             CPX *vis, PCS *wgt, CPX *dirty, PCS epsilon, PCS sigma){
+             CPX *vis, PCS *wgt, CPX *dirty, PCS epsilon, PCS sigma, int sign){
     int ier = 0;
     ier = dirty2ms_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,wgt,dirty,epsilon,sigma);
     return ier;

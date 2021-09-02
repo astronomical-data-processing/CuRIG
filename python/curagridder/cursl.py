@@ -29,23 +29,23 @@ except Exception:
 ms2dirty_1 = lib.ms2dirty_1
 # the last two parameters have default value
 ms2dirty_1.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.double, flags='C'),
-                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double] 
+                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double, c_int] 
 ms2dirty_1.restype = c_int
 
 ms2dirty_2 = lib.ms2dirty_2
 ms2dirty_2.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.double, flags='C'),
-                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.double, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double] 
+                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.double, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double, c_int] 
 ms2dirty_2.restype = c_int
 
 dirty2ms_1 = lib.dirty2ms_1
 # the last two parameters have default value
 dirty2ms_1.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.double, flags='C'),
-                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double] 
+                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double, c_int] 
 dirty2ms_1.restype = c_int
 
 dirty2ms_2 = lib.dirty2ms_2
 dirty2ms_2.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.double, flags='C'),
-                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.double, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double] 
+                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.double, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double, c_int] 
 dirty2ms_2.restype = c_int
 
 #----------------------------------------
@@ -72,16 +72,16 @@ def ms2dirty(uvw, freq, ms, wgt, nxdirty, nydirty, rad_pix_x, rad_pix_y, nx, ny,
     sigma = 2
     fov = rad_pix_x * nxdirty * 180 / np.pi
     dirty = np.zeros((nxdirty,nydirty),dtype=np.complex128)
-
+    sign = -1
     # u = np.ctypeslib.as_ctypes(uvw[:,0])
     # v = np.ctypeslib.as_ctypes(uvw[:,1])
     # w = np.ctypeslib.as_ctypes(uvw[:,2])
     if(wgt is None):
         ms2dirty_1(nrow,nxdirty,nydirty,fov,freq[0],uvw
-            ,ms,dirty,epsilon,sigma)
+            ,ms,dirty,epsilon,sigma,sign)
     else:
         ms2dirty_2(nrow,nxdirty,nydirty,fov,freq[0],uvw
-                ,ms,wgt,dirty,epsilon,sigma)
+                ,ms,wgt,dirty,epsilon,sigma,sign)
     dirty = np.reshape(dirty,[nxdirty,nydirty])
     return dirty.real
 
@@ -105,14 +105,15 @@ def dirty2ms(uvw, freq, dirty, wgt, rad_pix_x, rad_pix_y, nx, ny, epsilon, do_ws
     nydirty = dirty.shape[1]
     sigma = 2
     fov = rad_pix_x * nxdirty * 180 / np.pi
+    sign = -1
     ms = np.zeros((nrow,1),dtype=np.complex128)
     dirty1 = np.zeros(dirty.shape,dtype=np.complex128)
     dirty1.real = dirty
 
     if(wgt is None):
         dirty2ms_1(nrow,nxdirty,nydirty,fov,freq[0],uvw
-            ,ms,dirty1,epsilon,sigma)
+            ,ms,dirty1,epsilon,sigma,sign)
     else:
         dirty2ms_2(nrow,nxdirty,nydirty,fov,freq[0],uvw
-            ,ms,wgt,dirty1,epsilon,sigma)
+            ,ms,wgt,dirty1,epsilon,sigma,sign)
     return ms

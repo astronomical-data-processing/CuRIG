@@ -47,19 +47,24 @@ def _get_ctypes(dtype):
 ms2dirty_1 = lib.ms2dirty_1
 # the last two parameters have default value
 ms2dirty_1.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.double, flags='C'),
-                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double] 
+                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double, c_int] 
 ms2dirty_1.restype = c_int
 
 ms2dirty_2 = lib.ms2dirty_2
 ms2dirty_2.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.double, flags='C'),
-                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.double, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double] 
+                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.double, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double, c_int] 
 ms2dirty_2.restype = c_int
 
 dirty2ms_1 = lib.dirty2ms_1
 # the last two parameters have default value
 dirty2ms_1.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.double, flags='C'),
-                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double] 
+                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double, c_int] 
 dirty2ms_1.restype = c_int
+
+dirty2ms_2 = lib.dirty2ms_2
+dirty2ms_2.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.double, flags='C'),
+                     np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.double, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double, c_int] 
+dirty2ms_2.restype = c_int
 
 def vis2dirty(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
     """
@@ -79,15 +84,16 @@ def vis2dirty(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
     nrow = uvw.shape[0]
     nxdirty = dirty.shape[0]
     nydirty = dirty.shape[1]
+    sign = 1
     # u = np.ctypeslib.as_ctypes(uvw[:,0])
     # v = np.ctypeslib.as_ctypes(uvw[:,1])
     # w = np.ctypeslib.as_ctypes(uvw[:,2])
-    if(wgt==None):
+    if(wgt is None):
         ms2dirty_1(nrow,nxdirty,nydirty,fov,freq[0],uvw
-            ,ms,dirty,epsilon,sigma)
+            ,ms,dirty,epsilon,sigma,sign)
     else:
         ms2dirty_2(nrow,nxdirty,nydirty,fov,freq[0],uvw
-                ,ms,wgt,dirty,epsilon,sigma)
+                ,ms,wgt,dirty,epsilon,sigma,sign)
 
     return dirty
 
@@ -112,9 +118,11 @@ def dirty2vis(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
     # u = np.ctypeslib.as_ctypes(uvw[:,0])
     # v = np.ctypeslib.as_ctypes(uvw[:,1])
     # w = np.ctypeslib.as_ctypes(uvw[:,2])
-    if(wgt==None):
+    sign = 1
+    if(wgt is None):
         dirty2ms_1(nrow,nxdirty,nydirty,fov,freq[0],uvw
-            ,ms,dirty,epsilon,sigma)
+            ,ms,dirty,epsilon,sigma,sign)
     else:
-        return None
+        dirty2ms_2(nrow,nxdirty,nydirty,fov,freq[0],uvw
+            ,ms,wgt,dirty,epsilon,sigma,sign)
     return ms

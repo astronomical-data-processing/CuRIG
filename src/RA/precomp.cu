@@ -43,6 +43,37 @@ void get_effective_coordinate_invoker(PCS *d_u, PCS *d_v, PCS *d_w, PCS f_over_c
     checkCudaErrors(cudaDeviceSynchronize());
 }
 
+__global__ void get_effective_coordinate(PCS *u, PCS *v, PCS *w, PCS f_over_c, int pirange, int nrow, int sign){
+    /*
+        u, v, w - coordinate
+        f_over_c - frequency divide speed of light
+        pirange - 1 in [-pi,pi), 0 - [-0.5,0.5)
+        nrow - number of coordinates
+    */
+    
+    int idx;
+    for(idx = blockDim.x * blockIdx.x + threadIdx.x; idx<nrow; idx+= gridDim.x * blockDim.x){
+        //if(idx==0) printf("Before scaling w %lf, f over c %lf\n",w[idx],f_over_c);
+        u[idx] *= f_over_c;
+        v[idx] *= f_over_c;
+        w[idx] *= f_over_c * sign;
+        if(!pirange){
+            u[idx] *= 2 * PI;
+            v[idx] *= 2 * PI;
+            w[idx] *= 2 * PI;
+        }
+        // if(idx==0) printf("After scaling w %lf, f over c %lf\n",w[idx],f_over_c);
+    }
+    
+
+}
+
+void get_effective_coordinate_invoker(PCS *d_u, PCS *d_v, PCS *d_w, PCS f_over_c, int pirange, int nrow, int sign){
+    int blocksize = 512;
+    // printf("nrow %d, foc %lf",nrow,f_over_c);
+    get_effective_coordinate<<<(nrow-1)/blocksize+1,blocksize>>>(d_u,d_v,d_w,f_over_c,pirange,nrow,sign);
+    checkCudaErrors(cudaDeviceSynchronize());
+}
 __global__ void gridder_rescaling_real(PCS *x, PCS scale_ratio, int N){
     int idx;
     for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx<N; idx += gridDim.x * blockDim.x){
