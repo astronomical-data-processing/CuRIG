@@ -187,6 +187,7 @@ int main(int argc, char *argv[])
 	pointer_v->frequency = freq;
 	pointer_v->weight = wgt;
 	pointer_v->pirange = 0;
+	pointer_v->sign = -1;
 
 	int direction = 0; //dirty to vis
 
@@ -248,7 +249,7 @@ int main(int argc, char *argv[])
         for(int i=0; i<nxdirty; i++){
 		    for(int j=0; j<nydirty; j++){
                 PCS n_lm = sqrt(1.0-pow(gridder_plan->pixelsize_x*(i-nxdirty/2),2)-pow(gridder_plan->pixelsize_y*(j-nydirty/2),2));
-                PCS phase = -f0/SPEEDOFLIGHT*(u[k]*pi_ratio*gridder_plan->pixelsize_x*(i-nxdirty/2)+v[k]*pi_ratio*gridder_plan->pixelsize_y*(j-nydirty/2)+w[k]*pi_ratio*(n_lm-1));
+                PCS phase = -f0/SPEEDOFLIGHT*(u[k]*pi_ratio*gridder_plan->pixelsize_x*(i-nxdirty/2)+v[k]*pi_ratio*gridder_plan->pixelsize_y*(j-nydirty/2)-w[k]*pi_ratio*(n_lm-1));
                 temp += dirty_image[i*nydirty+j]/n_lm*exp(phase*IMA);
             }
         }

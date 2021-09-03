@@ -181,6 +181,7 @@ int main(int argc, char *argv[])
 	pointer_v->frequency = freq;
 	pointer_v->weight = wgt;
 	pointer_v->pirange = 0;
+	pointer_v->sign = -1;
 
 	int direction = 1; //vis to image
 
@@ -244,7 +245,7 @@ int main(int argc, char *argv[])
 			CPX temp(0.0,0.0);
 			PCS n_lm = sqrt(1.0-pow(gridder_plan->pixelsize_x*(i-nxdirty/2),2)-pow(gridder_plan->pixelsize_y*(j-nydirty/2),2));
 			for(int k=0; k<nrow; k++){
-				PCS phase = f0/SPEEDOFLIGHT*(u[k]*pi_ratio*gridder_plan->pixelsize_x*(i-nxdirty/2)+v[k]*pi_ratio*gridder_plan->pixelsize_y*(j-nydirty/2)+w[k]*pi_ratio*(n_lm-1));
+				PCS phase = f0/SPEEDOFLIGHT*(u[k]*pi_ratio*gridder_plan->pixelsize_x*(i-nxdirty/2)+v[k]*pi_ratio*gridder_plan->pixelsize_y*(j-nydirty/2)-w[k]*pi_ratio*(n_lm-1));
 				temp += vis[k]*exp(phase*IMA);
 			}
 			truth[i*nydirty+j] = temp.real()/n_lm;

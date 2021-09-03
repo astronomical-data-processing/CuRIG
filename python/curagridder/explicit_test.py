@@ -10,7 +10,7 @@ def _l2error(a, b):
     return np.sqrt(np.sum(np.abs(a-b)**2)/np.sum(np.abs(a)**2))
 
 
-def explicit_gridder(uvw, freq, ms, nxdirty, nydirty, xpixsize, ypixsize):
+def explicit_gridder(uvw, freq, ms, nxdirty, nydirty, xpixsize, ypixsize, sign):
     speedoflight = 299792458.
 
     x, y = np.meshgrid(*[-ss/2 + np.arange(ss) for ss in [nxdirty, nydirty]],
@@ -25,11 +25,11 @@ def explicit_gridder(uvw, freq, ms, nxdirty, nydirty, xpixsize, ypixsize):
     for row in range(ms.shape[0]):
         for chan in range(ms.shape[1]):
             phase = (freq[chan]/speedoflight *
-                     (x*uvw[row, 0] + y*uvw[row, 1] + uvw[row, 2]*nm1))
+                     (x*uvw[row, 0] + y*uvw[row, 1] + sign*uvw[row, 2]*nm1))
             res += (ms[row, chan]*np.exp(2j*np.pi*phase)).real
     return res/n
 
-def explicit_degridder(uvw, freq, dirty, xpixsize, ypixsize, nrow, nchan):
+def explicit_degridder(uvw, freq, dirty, xpixsize, ypixsize, nrow, nchan, sign):
     speedoflight = 299792458.
     nxdirty = dirty.shape[0]
     nydirty = dirty.shape[1]
@@ -49,7 +49,7 @@ def explicit_degridder(uvw, freq, dirty, xpixsize, ypixsize, nrow, nchan):
     for row in range(nrow):
         for chan in range(nchan):
             phase = -(freq[chan]/speedoflight *
-                     (x*uvw[row, 0] + y*uvw[row, 1] + uvw[row, 2]*nm1))
+                     (x*uvw[row, 0] + y*uvw[row, 1] + sign*uvw[row, 2]*nm1))
             res[row] = np.sum((dirty1/n*np.exp(2j*np.pi*phase)))
     return res
 
@@ -70,7 +70,7 @@ def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon):
     uvw = (np.random.rand(nrow, 3)-0.5)/(f0/speedoflight)
     ms = np.random.rand(nrow, nchan)-0.5 + 1j*(np.random.rand(nrow, nchan)-0.5)
     dirty = np.random.rand(nxdirty, nydirty)-0.5
-    
+    wgt = np.random.rand(nrow, nchan)
     
     print("begin")
     start = time.time()
@@ -81,7 +81,7 @@ def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon):
     dirty2 = np.reshape(dirty2,[nxdirty,nydirty])
     ms2 = np.zeros((nrow,1),dtype=np.complex128)
     ms2 = dirty2ms(uvw,freq, dirty, None, xpixsize, ypixsize, 0, 0, epsilon, True, 4)
-    truth_ms = explicit_degridder(uvw, freq, dirty, xpixsize, ypixsize, nrow, nchan)
+    truth_ms = explicit_degridder(uvw, freq, dirty, xpixsize, ypixsize, nrow, nchan, -1)
     print("L2 error between explicit degridding and CURIG:",
               _l2error(truth_ms.real, np.squeeze(ms2.real)))
 
@@ -93,7 +93,7 @@ def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon):
 
     if nrow<1e4:
         print("Vertification begin")
-        truth = explicit_gridder(uvw, freq, ms, nxdirty, nydirty, xpixsize, ypixsize)
+        truth = explicit_gridder(uvw, freq, ms, nxdirty, nydirty, xpixsize, ypixsize, -1)
         print("L2 error between explicit gridding and CURIG:",
               _l2error(truth, dirty2))
 

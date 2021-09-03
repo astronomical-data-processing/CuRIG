@@ -72,6 +72,15 @@ int shift_corr_invoker(CUCPX *d_c, PCS *d_w, PCS i_center, PCS o_center, PCS gam
 }
 int cura_fw(curafft_plan *plan, ragridder_plan *gridder_plan){
     // /wgt
+    if(gridder_plan->kv.weight!=NULL){
+        PCS *d_wgt;
+        int nrow = gridder_plan->nrow;
+        checkCudaErrors(cudaMalloc((void**)&d_wgt,sizeof(PCS)*nrow));
+        checkCudaErrors(cudaMemcpy(d_wgt,gridder_plan->kv.weight,sizeof(PCS)*nrow,cudaMemcpyHostToDevice));
+
+        matrix_elementwise_divide_invoker(plan->d_c,d_wgt,nrow);
+        checkCudaErrors(cudaFree(d_wgt)); // to save memory
+   }
     int ier = 0;
     int flag = plan->iflag;
     PCS gamma = plan->ta.gamma[0];
@@ -102,6 +111,7 @@ int cura_prestage(curafft_plan *plan, ragridder_plan *gridder_plan){
                 
         }
         else{
+                
                 // u_j to u_j' x_k to x_k' fk to fk'
                 checkCudaErrors(cudaMalloc((void **)&plan->d_x, sizeof(PCS) * (N1 / 2 + 1) * (N2 / 2 + 1)));
                 w_term_k_generation(plan->d_x, N1, N2, gridder_plan->pixelsize_x, gridder_plan->pixelsize_y);
