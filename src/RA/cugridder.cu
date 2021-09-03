@@ -587,27 +587,27 @@ int dirty2ms_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uv
 int ms2dirty_2(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
              CPX *vis, PCS *wgt, CPX *dirty, PCS epsilon, PCS sigma, int sign){
     int ier = 0;
-    ier = ms2dirty_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,wgt,dirty,epsilon,sigma);
+    ier = ms2dirty_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,wgt,dirty,epsilon,sigma,sign);
     return ier;
 }
 
 int ms2dirty_1(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
              CPX *vis, CPX *dirty, PCS epsilon, PCS sigma, int sign){
     int ier = 0;
-    ier = ms2dirty_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,NULL,dirty,epsilon,sigma);
+    ier = ms2dirty_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,NULL,dirty,epsilon,sigma,sign);
     return ier;
 }
 
 int dirty2ms_1(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
              CPX *vis, CPX *dirty, PCS epsilon, PCS sigma, int sign){
     int ier = 0;
-    ier = dirty2ms_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,NULL,dirty,epsilon,sigma);
+    ier = dirty2ms_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,NULL,dirty,epsilon,sigma,sign);
     return ier;
 }
 
 int dirty2ms_2(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
              CPX *vis, PCS *wgt, CPX *dirty, PCS epsilon, PCS sigma, int sign){
     int ier = 0;
-    ier = dirty2ms_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,wgt,dirty,epsilon,sigma);
+    ier = dirty2ms_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,wgt,dirty,epsilon,sigma,sign);
     return ier;
 }
