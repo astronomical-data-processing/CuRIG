@@ -182,8 +182,8 @@ clean:
 	rm -f *.o
 	rm -f test/*.o
 	rm -f src/*.o
-	rm -f src/FT/*.o
-	rm -f src/RA/*.o
+	rm -f src/fourier/*.o
+	rm -f src/astro/*.o
 	rm -f contrib/*.o
 	rm -rf $(BINDIR)
 	rm -rf lib
