@@ -116,12 +116,12 @@ __global__ void transpose(PCS *odata, PCS *idata, int width, int height)
   // read the matrix tile into shared memory
   // load one element per thread from device memory (idata) and store it
   // in transposed order in block[][]
-  unsigned int xIndex = blockIdx.x * blockDim.x + threadIdx.x;
-  unsigned int yIndex = blockIdx.y * blockDim.y + threadIdx.y;
-  if ((xIndex < width) && (yIndex < height))
+  unsigned int xIndex = blockIdx.x * blockDim.x + threadIdx.x; //height
+  unsigned int yIndex = blockIdx.y * blockDim.y + threadIdx.y; //width
+  if ((yIndex < width) && (xIndex < height))
   {
-    unsigned int index_in = yIndex * width + xIndex;
-    block[threadIdx.y][threadIdx.x] = idata[index_in];
+    unsigned int index_in = xIndex * width + yIndex;
+    block[threadIdx.x][threadIdx.y] = idata[index_in];
   }
 
   // synchronise to ensure all writes to block[][] have completed
@@ -130,10 +130,10 @@ __global__ void transpose(PCS *odata, PCS *idata, int width, int height)
   // write the transposed matrix tile to global memory (odata) in linear order
   xIndex = blockIdx.y * blockDim.x + threadIdx.x;
   yIndex = blockIdx.x * blockDim.y + threadIdx.y;
-  if ((xIndex < height) && (yIndex < width))
+  if ((yIndex < height) && (xIndex < width))
   {
-    unsigned int index_out = yIndex * height + xIndex;
-    odata[index_out] = block[threadIdx.x][threadIdx.y];
+    unsigned int index_out = xIndex * height + yIndex;
+    odata[index_out] = block[threadIdx.y][threadIdx.x];
   }
   // __syncthreads();
 }
@@ -144,7 +144,7 @@ int matrix_transpose_invoker(PCS *d_arr, int width, int height)
   int ier = 0;
   int blocksize = BLOCKSIZE;
   dim3 block(blocksize, blocksize);
-  dim3 grid((width - 1) / blocksize + 1, (height - 1) / blocksize + 1);
+  dim3 grid((height - 1) / blocksize + 1, (width - 1) / blocksize + 1);
   PCS *temp_o;
   checkCudaErrors(cudaMalloc((void**)&temp_o,sizeof(PCS)*width*height));
   transpose<<<grid, block>>>(temp_o, d_arr, width, height);
