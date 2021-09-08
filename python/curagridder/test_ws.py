@@ -5,7 +5,7 @@ import time
 from numpy.testing import assert_, assert_allclose, assert_array_almost_equal
 
 
-# some functions are refered to NIFTY
+# some functions are refered to NIFTY, the image size should be even, due to the ss/2 is not a integer
 def _l2error(a, b):
     return np.sqrt(np.sum(np.abs(a-b)**2)/np.sum(np.abs(a)**2))
 
