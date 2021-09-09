@@ -10,8 +10,8 @@ NVARCH ?= -gencode=arch=compute_80,code=sm_80
 
 
 CFLAGS    ?= -fPIC -O3 -funroll-loops -march=native
-CXXFLAGS  ?= $(CFLAGS) -std=c++14
-NVCCFLAGS ?= -std=c++14 -ccbin=$(CXX) -O3 $(NVARCH) -Wno-deprecated-gpu-targets \
+CXXFLAGS  ?= $(CFLAGS) -std=c++11
+NVCCFLAGS ?= -std=c++11 -ccbin=$(CXX) -O3 $(NVARCH) -Wno-deprecated-gpu-targets \
 	     --default-stream per-thread -Xcompiler "$(CXXFLAGS)"
 
 
@@ -47,7 +47,7 @@ STATICLIB=lib-static/$(LIBNAME).a
 BINDIR=bin
 
 HEADERS = include/curafft_opts.h include/curafft_plan.h include/cugridder.h \
-	include/conv_interp_invoker.h include/conv.h include/interp.h include/cuft.h include/dataType.h \
+	include/conv_interp_invoker.h include/conv.h include/interp.h include/cuft.h include/datatype.h \
 	include/deconv.h include/precomp.h include/ragridder_plan.h include/utils.h \
 	contrib/common.h contrib/legendre_rule_fast.h contrib/utils_fp.h
 # later put some file into the contrib
@@ -55,8 +55,8 @@ CONTRIBOBJS=contrib/common.o contrib/utils_fp.o
 
 CURAFFTOBJS=src/utils.o contrib/legendre_rule_fast.o
 
-CURAFFTOBJS_64=src/FT/conv_interp_invoker.o src/FT/conv.o src/FT/interp.o src/FT/cuft.o src/FT/deconv.o \
-	src/RA/cugridder.o src/RA/precomp.o src/RA/ra_exec.o $(CONTRIBOBJS)
+CURAFFTOBJS_64=src/fourier/conv_interp_invoker.o src/fourier/conv.o src/fourier/interp.o src/fourier/cuft.o src/fourier/deconv.o \
+	src/astro/cugridder.o src/astro/precomp.o src/astro/ra_exec.o $(CONTRIBOBJS)
 
 #ignore single precision first
 

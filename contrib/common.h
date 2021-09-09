@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "dataType.h"
+#include "datatype.h"
 #include "utils_fp.h"
 #include "utils.h"
 

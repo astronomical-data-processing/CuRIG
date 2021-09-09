@@ -3,7 +3,7 @@
 
 #include <cuda.h>
 #include <helper_cuda.h>
-#include "dataType.h"
+#include "datatype.h"
 #include "ragridder_plan.h"
 #include "curafft_plan.h"
 
