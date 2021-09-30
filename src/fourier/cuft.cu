@@ -124,7 +124,7 @@ void pre_stage_invoker(PCS *i_center, PCS *o_center, PCS *gamma, PCS *h, PCS *d_
 }
 
 // cufft_exec
-int cura_cufft(curafft_plan *plan){
+int cura_cufft(CURAFFT_PLAN *plan){
     int batchsize = plan->batchsize;
     int direction = plan->iflag;
     int remain_batch = plan->nf3 % batchsize;
@@ -142,7 +142,7 @@ int cura_cufft(curafft_plan *plan){
     return 0;
 }
 
-int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan)
+int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, CURAFFT_PLAN *plan)
 {
     /* different dim will have different setting
     ----plan setting, and related memory allocation----
@@ -247,7 +247,7 @@ int setup_plan(int nf1, int nf2, int nf3, int M, PCS *d_u, PCS *d_v, PCS *d_w, C
 }
 
 int cunufft_setting(int N1, int N2, int N3, int M, int kerevalmeth, int method, int direction, PCS tol, PCS sigma, int type, int dim,
-                    PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, curafft_plan *plan)
+                    PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_c, CURAFFT_PLAN *plan)
 {
     /*
         convolution related parameters setting, plan setting and cufft setting
@@ -423,7 +423,7 @@ int cunufft_setting(int N1, int N2, int N3, int M, int kerevalmeth, int method, 
     return 0;
 }
 
-int cunufft_exec(curafft_plan *plan)
+int cunufft_exec(CURAFFT_PLAN *plan)
 {
     // step1
     curafft_conv(plan);
@@ -443,7 +443,7 @@ int cunufft_exec(curafft_plan *plan)
     return 0;
 }
 
-int curafft_free(curafft_plan *plan)
+int curafft_free(CURAFFT_PLAN *plan)
 {
     /*
     Free device memory
@@ -611,7 +611,7 @@ __global__ void w_term_idft(CUCPX *fw, int nf1, int nf2, int nf3, int N1, int N2
     }
 }
 
-void curadft_invoker(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize)
+void curadft_invoker(CURAFFT_PLAN *plan, PCS xpixelsize, PCS ypixelsize)
 {
     /*
         Specified for radio astronomy

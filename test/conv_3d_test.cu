@@ -138,8 +138,8 @@ int main(int argc, char *argv[])
 	checkCudaErrors(cudaMemcpy(d_z, z, M * sizeof(PCS), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_c, c, M * sizeof(CUCPX), cudaMemcpyHostToDevice));
 
-	curafft_plan *h_plan = new curafft_plan();
-	memset(h_plan, 0, sizeof(curafft_plan));
+	CURAFFT_PLAN *h_plan = new CURAFFT_PLAN();
+	memset(h_plan, 0, sizeof(CURAFFT_PLAN));
 
 	// opts and copts setting
 	h_plan->opts.gpu_conv_only = 1;

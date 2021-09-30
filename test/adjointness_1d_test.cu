@@ -72,9 +72,9 @@ int main(int argc, char *argv[])
 
     /*-------------------------------------- C -> Fk ---------------------------------*/
     // setting plan
-    curafft_plan *plan;
-	plan = new curafft_plan();
-	memset(plan, 0, sizeof(curafft_plan));
+    CURAFFT_PLAN *plan;
+	plan = new CURAFFT_PLAN();
+	memset(plan, 0, sizeof(CURAFFT_PLAN));
 
     // memory transfering
     checkCudaErrors(cudaMemcpy(d_z, z, sizeof(PCS)*N, cudaMemcpyHostToDevice));
@@ -147,8 +147,8 @@ int main(int argc, char *argv[])
     free(plan);
 
     /*-------------------------------------- Fk -> C ---------------------------------*/
-	plan = new curafft_plan();
-	memset(plan, 0, sizeof(curafft_plan));
+	plan = new CURAFFT_PLAN();
+	memset(plan, 0, sizeof(CURAFFT_PLAN));
 
 	checkCudaErrors(cudaMemcpy(d_z, z, sizeof(PCS) * N, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_u, u, sizeof(PCS)*M, cudaMemcpyHostToDevice));

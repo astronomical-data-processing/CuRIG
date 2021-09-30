@@ -81,10 +81,10 @@ int main(int argc, char *argv[])
 
 
 	/* ----------Step2: plan setting------------*/
-	curafft_plan *plan;
+	CURAFFT_PLAN *plan;
 
-	plan = new curafft_plan();
-	memset(plan, 0, sizeof(curafft_plan));
+	plan = new CURAFFT_PLAN();
+	memset(plan, 0, sizeof(CURAFFT_PLAN));
 
 	PCS *d_k;
 	checkCudaErrors(cudaMalloc((void **)&d_k, sizeof(PCS) * N));

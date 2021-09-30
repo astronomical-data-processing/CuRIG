@@ -1,4 +1,4 @@
-from curagridder import vis2dirty, dirty2vis
+from curig import vis2dirty, dirty2vis
 import numpy as np
 import time
 # import pytest

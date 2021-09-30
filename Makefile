@@ -5,13 +5,13 @@ CXX  = g++
 NVCC = nvcc
 
 #set based on GPU card, sm_60 (Tesla P100) or sm_61 (consumer Pascal) or sm_70 (Tesla V100, Titan V) or sm_80 (A100)
-NVARCH ?= -gencode=arch=compute_80,code=sm_80
+NVARCH ?= -gencode=arch=compute_70,code=sm_70
 
 
 
 CFLAGS    ?= -fPIC -O3 -funroll-loops -march=native
-CXXFLAGS  ?= $(CFLAGS) -std=c++11
-NVCCFLAGS ?= -std=c++11 -ccbin=$(CXX) -O3 $(NVARCH) -Wno-deprecated-gpu-targets \
+CXXFLAGS  ?= $(CFLAGS) -std=c++14
+NVCCFLAGS ?= -std=c++14 -ccbin=$(CXX) -O3 $(NVARCH) -Wno-deprecated-gpu-targets \
 	     --default-stream per-thread -Xcompiler "$(CXXFLAGS)"
 
 
@@ -48,19 +48,28 @@ BINDIR=bin
 
 HEADERS = include/curafft_opts.h include/curafft_plan.h include/cugridder.h \
 	include/conv_interp_invoker.h include/conv.h include/interp.h include/cuft.h include/datatype.h \
-	include/deconv.h include/precomp.h include/ragridder_plan.h include/utils.h \
+	include/deconv.h include/precomp.h include/ragridder_plan.h include/utils.h include/common_utils.h \
 	contrib/common.h contrib/legendre_rule_fast.h contrib/utils_fp.h
 # later put some file into the contrib
 CONTRIBOBJS=contrib/common.o contrib/utils_fp.o
 
-CURAFFTOBJS=src/utils.o contrib/legendre_rule_fast.o
+CURAFFTOBJS=contrib/legendre_rule_fast.o src/common_utils.o
 
 CURAFFTOBJS_64=src/fourier/conv_interp_invoker.o src/fourier/conv.o src/fourier/interp.o src/fourier/cuft.o src/fourier/deconv.o \
-	src/astro/cugridder.o src/astro/precomp.o src/astro/ra_exec.o $(CONTRIBOBJS)
+	src/astro/cugridder.o src/astro/precomp.o src/astro/ra_exec.o src/utils.o $(CONTRIBOBJS)
 
 #ignore single precision first
 
 
+
+CURAFFTOBJS_32=$(CURAFFTOBJS_64:%.o=%_32.o)
+
+%_32.o: %.cpp $(HEADERS)
+	$(CXX) -DSINGLE -c $(CXXFLAGS) $(INC) $< -o $@
+%_32.o: %.c $(HEADERS)
+	$(CC) -DSINGLE -c $(CFLAGS) $(INC) $< -o $@
+%_32.o: %.cu $(HEADERS)
+	$(NVCC) -DSINGLE --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
 %.o: %.cpp $(HEADERS)
 	$(CXX) -c $(CXXFLAGS) $(INC) $< -o $@
@@ -68,6 +77,21 @@ CURAFFTOBJS_64=src/fourier/conv_interp_invoker.o src/fourier/conv.o src/fourier/
 	$(CC) -c $(CFLAGS) $(INC) $< -o $@
 %.o: %.cu $(HEADERS)
 	$(NVCC) --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
+
+src/%_32.o: src/%.cpp $(HEADERS)
+	$(CXX) -DSINGLE -c $(CXXFLAGS) $(INC) $< -o $@
+
+src/%_32.o: src/%.c $(HEADERS)
+	$(CC) -DSINGLE -c $(CFLAGS) $(INC) $< -o $@
+
+src/%_32.o: src/%.cu $(HEADERS)
+	$(NVCC) -DSINGLE --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
+
+src/FT/%_32.o: src/FT/%.cu $(HEADERS)
+	$(NVCC) -DSINGLE --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
+
+src/RA/%_32.o: src/FT/%.cu $(HEADERS)
+	$(NVCC) -DSINGLE --device-c -c $(NVCCFLAGS) $(INC) $< -o $@
 
 src/%.o: src/%.cpp $(HEADERS)
 	$(CXX) -c $(CXXFLAGS) $(INC) $< -o $@
@@ -123,10 +147,10 @@ $(BINDIR)/%: test/%.o $(CURAFFTOBJS_64) $(CURAFFTOBJS)
 # user-facing library...
 lib: $(STATICLIB) $(DYNAMICLIB)
 # add $(CONTRIBOBJS) to static and dynamic later
-$(STATICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CONTRIBOBJS)
+$(STATICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CURAFFTOBJS_32) $(CONTRIBOBJS)
 	mkdir -p lib-static
 	ar rcs $(STATICLIB) $^
-$(DYNAMICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CONTRIBOBJS)
+$(DYNAMICLIB): $(CURAFFTOBJS) $(CURAFFTOBJS_64) $(CURAFFTOBJS_32) $(CONTRIBOBJS)
 	mkdir -p lib
 	$(NVCC) -shared $(NVCCFLAGS) $^ -o $(DYNAMICLIB) $(LIBS)
 

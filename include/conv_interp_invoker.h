@@ -8,8 +8,8 @@
 #define CONV_THREAD_NUM 32
 
 int setup_conv_opts(conv_opts &c_opts, PCS eps, PCS upsampfac, int pirange, int direction, int kerevalmeth);//cautious the &
-int get_num_cells(int ms, conv_opts copts);
-int curafft_conv(curafft_plan *plan);
-int curafft_free(curafft_plan *plan);
-int curafft_interp(curafft_plan * plan);
+int get_num_cells(PCS ms, conv_opts copts);
+int curafft_conv(CURAFFT_PLAN *plan);
+int curafft_free(CURAFFT_PLAN *plan);
+int curafft_interp(CURAFFT_PLAN * plan);
 #endif

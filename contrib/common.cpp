@@ -12,24 +12,7 @@ extern "C"
 #include "legendre_rule_fast.h"
 #endif
 
-int next235even(int &n)
-// finds even integer not less than n, with prime factors no larger than 5
-// (ie, "smooth"). Adapted from fortran in hellskitchen.  Barnett 2/9/17
-// changed INT64 type 3/28/17. Runtime is around n*1e-11 sec for big n.
-{
-  if (n<=2) return 2;
-  if (n%2 == 1) n+=1;   // even
-  int nplus = n-2;   // to cancel out the +=2 at start of loop
-  int numdiv = 2;    // a dummy that is >1
-  while (numdiv>1) {
-    nplus += 2;         // stays even
-    numdiv = nplus;
-    while (numdiv%2 == 0) numdiv /= 2;  // remove all factors of 2,3,5...
-    while (numdiv%3 == 0) numdiv /= 3;
-    while (numdiv%5 == 0) numdiv /= 5;
-  }
-  return nplus;
-}
+
 
 
 PCS evaluate_kernel(PCS x, const conv_opts &opts)
@@ -190,7 +173,24 @@ void set_nhg_type3(PCS S, PCS X, conv_opts spopts,
   // catch too small nf, and nan or +-inf, otherwise spread fails...
   if (nf<2*spopts.kw) nf=2*spopts.kw;
   if (nf<MAX_NF)                             // otherwise will fail anyway
-    nf = next235even(nf);                   // expensive at huge nf
+  {
+    int n = nf;
+    if (n<=2) n = 2;
+    else{
+    if (n%2 == 1) n+=1;   // even
+    int nplus = n-2;   // to cancel out the +=2 at start of loop
+    int numdiv = 2;    // a dummy that is >1
+    while (numdiv>1) {
+    nplus += 2;         // stays even
+    numdiv = nplus;
+    while (numdiv%2 == 0) numdiv /= 2;  // remove all factors of 2,3,5...
+    while (numdiv%3 == 0) numdiv /= 3;
+    while (numdiv%5 == 0) numdiv /= 5;
+    }
+    n = nplus;
+    }
+    nf = n;
+  }
   h = 2*PI / nf;                            // upsampled grid spacing
   gam = (PCS)nf / (2.0*spopts.upsampfac*Ssafe);  // x scale fac to x'
 }

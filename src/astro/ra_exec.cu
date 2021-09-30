@@ -36,7 +36,7 @@ __global__ void div_n_lm(CUCPX *fk, PCS xpixelsize, PCS ypixelsize, int N1, int 
     }
 }
 
-int cura_rscaling(curafft_plan *plan, ragridder_plan *gridder_plan)
+int cura_rscaling(CURAFFT_PLAN *plan, ragridder_plan *gridder_plan)
 {
     //  * 1/n
     int N1 = gridder_plan->width;
@@ -70,7 +70,7 @@ int shift_corr_invoker(CUCPX *d_c, PCS *d_w, PCS i_center, PCS o_center, PCS gam
     checkCudaErrors(cudaDeviceSynchronize());
     return 0;
 }
-int cura_fw(curafft_plan *plan, ragridder_plan *gridder_plan){
+int cura_fw(CURAFFT_PLAN *plan, ragridder_plan *gridder_plan){
     // /wgt
     if(gridder_plan->kv.weight!=NULL){
         PCS *d_wgt;
@@ -89,7 +89,7 @@ int cura_fw(curafft_plan *plan, ragridder_plan *gridder_plan){
 }
 
 
-int cura_prestage(curafft_plan *plan, ragridder_plan *gridder_plan){
+int cura_prestage(CURAFFT_PLAN *plan, ragridder_plan *gridder_plan){
         int ier = 0;
         int nrow = gridder_plan -> nrow;
         int N1 = plan->ms;
@@ -132,13 +132,13 @@ int cura_prestage(curafft_plan *plan, ragridder_plan *gridder_plan){
         return ier;
 }
 
-// int cura_cscaling(curafft_plan *plan, ragridder_plan *gridder_plan)
+// int cura_cscaling(CURAFFT_PLAN *plan, ragridder_plan *gridder_plan)
 // {
 //     int N = gridder_plan->nrow;
 //     return 0;
 // }
 
-int exec_vis2dirty(curafft_plan *plan, ragridder_plan *gridder_plan)
+int exec_vis2dirty(CURAFFT_PLAN *plan, ragridder_plan *gridder_plan)
 {
     /*
     Currently, just suitable for improved W stacking
@@ -322,7 +322,7 @@ int exec_vis2dirty(curafft_plan *plan, ragridder_plan *gridder_plan)
     return ier;
 }
 
-int exec_dirty2vis(curafft_plan *plan, ragridder_plan *gridder_plan){
+int exec_dirty2vis(CURAFFT_PLAN *plan, ragridder_plan *gridder_plan){
     int ier=0;
     
 

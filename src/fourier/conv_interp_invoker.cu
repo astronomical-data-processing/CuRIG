@@ -26,7 +26,7 @@ Issue: Revise for batch
 #include "interp.h"
 #include "utils.h"
 
-int get_num_cells(int ms, conv_opts copts)
+int get_num_cells(PCS ms, conv_opts copts)
 // type 1 & 2 recipe for how to set 1d size of upsampled array, nf, given opts
 // and requested number of Fourier modes ms.
 {
@@ -116,7 +116,7 @@ int setup_conv_opts(conv_opts &opts, PCS eps, PCS upsampfac, int pirange, int di
 }
 
 
-int conv_1d_invoker(int nf1, int M, curafft_plan *plan){
+int conv_1d_invoker(int nf1, int M, CURAFFT_PLAN *plan){
   /*
     convolution invoker, invoke the kernel function
     nf1 - grid size in 1D
@@ -139,7 +139,7 @@ int conv_1d_invoker(int nf1, int M, curafft_plan *plan){
   return 0;
 }
 
-int conv_2d_invoker(int nf1, int nf2, int M, curafft_plan *plan)
+int conv_2d_invoker(int nf1, int nf2, int M, CURAFFT_PLAN *plan)
 {
 
   dim3 grid;
@@ -162,7 +162,7 @@ int conv_2d_invoker(int nf1, int nf2, int M, curafft_plan *plan)
   return 0;
 }
 
-int conv_3d_invoker(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
+int conv_3d_invoker(int nf1, int nf2, int nf3, int M, CURAFFT_PLAN *plan)
 {
 
   dim3 grid;
@@ -184,7 +184,7 @@ int conv_3d_invoker(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
   return 0;
 }
 
-int curafft_conv(curafft_plan * plan)
+int curafft_conv(CURAFFT_PLAN * plan)
 {
   /*
   ---- convolution opertion ----
@@ -216,7 +216,7 @@ int curafft_conv(curafft_plan * plan)
 }
 
 
-int interp_1d_invoker(int nf1, int M, curafft_plan *plan){
+int interp_1d_invoker(int nf1, int M, CURAFFT_PLAN *plan){
   /*
     convolution invoker, invoke the kernel function
     nf1 - grid size in 1D
@@ -239,7 +239,7 @@ int interp_1d_invoker(int nf1, int M, curafft_plan *plan){
   return 0;
 }
 
-int interp_2d_invoker(int nf1, int nf2, int M, curafft_plan *plan)
+int interp_2d_invoker(int nf1, int nf2, int M, CURAFFT_PLAN *plan)
 {
 
   dim3 grid;
@@ -262,7 +262,7 @@ int interp_2d_invoker(int nf1, int nf2, int M, curafft_plan *plan)
   return 0;
 }
 
-int interp_3d_invoker(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
+int interp_3d_invoker(int nf1, int nf2, int nf3, int M, CURAFFT_PLAN *plan)
 {
 
   dim3 grid;
@@ -284,7 +284,7 @@ int interp_3d_invoker(int nf1, int nf2, int nf3, int M, curafft_plan *plan)
   return 0;
 }
 
-int curafft_interp(curafft_plan * plan)
+int curafft_interp(CURAFFT_PLAN * plan)
 {
   /*
   ---- convolution opertion ----
@@ -315,13 +315,13 @@ int curafft_interp(curafft_plan * plan)
   return ier;
 }
 
-int curaff_partial_conv(){
+// int curaff_partial_conv(){
   
-  // improved WS
-  // invoke the partial 3d conv, calcualte the conv result and saved the result to plan->fw
-  // directly invoke, not packed into function
+//   // improved WS
+//   // invoke the partial 3d conv, calcualte the conv result and saved the result to plan->fw
+//   // directly invoke, not packed into function
 
 
-  // WS
-  return 0;
-}
+//   // WS
+//   return 0;
+// }

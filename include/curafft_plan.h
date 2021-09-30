@@ -13,6 +13,14 @@
 
 #define MAX_KERNEL_WIDTH 28
 
+#undef CURAFFT_PLAN
+
+#ifdef SINGLE
+#define CURAFFT_PLAN curafftf_plan
+#else
+#define CURAFFT_PLAN curafft_plan
+#endif
+
 struct t3attrib
 {
 	PCS i_half_width[3];
@@ -47,7 +55,7 @@ struct conv_opts
 	PCS ES_c; //default 4/kw^2 for reusing
 };
 
-struct curafft_plan
+struct CURAFFT_PLAN
 {
 	curafft_opts opts;
 	conv_opts copts;
