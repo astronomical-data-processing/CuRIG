@@ -35,7 +35,7 @@ def explicit_gridder(uvw, freq, ms, nxdirty, nydirty, xpixsize, ypixsize):
 
 @pmp("nrow", (2, 27, 100))
 @pmp("nchan", (1, ))
-@pmp("nxdirty", (30, 64, 16))
+@pmp("nxdirty", (32, 64, 16))
 @pmp("nydirty", (128, 250, 64))
 @pmp("fov",(1, 10, 20))
 @pmp("epsilon", (2e-1, 5e-3, 5e-5, 5e-7, 5e-12))

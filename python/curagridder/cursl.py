@@ -56,7 +56,7 @@ ms2dirtyf_1.argtypes = [c_int, c_int, c_int, c_float, c_float, np.ctypeslib.ndpo
 ms2dirtyf_1.restype = c_int
 
 ms2dirtyf_2 = lib.ms2dirtyf_2
-ms2dirtyf_2.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.float32, flags='C'),
+ms2dirtyf_2.argtypes = [c_int, c_int, c_int, c_float, c_float, np.ctypeslib.ndpointer(np.float32, flags='C'),
                      np.ctypeslib.ndpointer(np.complex64, flags='C'), np.ctypeslib.ndpointer(np.float32, flags='C'), np.ctypeslib.ndpointer(np.complex64, flags='C'), c_float, c_float, c_int] 
 ms2dirtyf_2.restype = c_int
 
