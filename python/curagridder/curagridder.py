@@ -43,7 +43,7 @@ def _get_ctypes(dtype):
 
     return REAL_t, REAL_ptr
 
-
+#double
 ms2dirty_1 = lib.ms2dirty_1
 # the last two parameters have default value
 ms2dirty_1.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.double, flags='C'),
@@ -65,6 +65,29 @@ dirty2ms_2 = lib.dirty2ms_2
 dirty2ms_2.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.double, flags='C'),
                      np.ctypeslib.ndpointer(np.complex128, flags='C'), np.ctypeslib.ndpointer(np.double, flags='C'), np.ctypeslib.ndpointer(np.complex128, flags='C'), c_double, c_double, c_int] 
 dirty2ms_2.restype = c_int
+
+#float
+ms2dirtyf_1 = lib.ms2dirtyf_1
+# the last two parameters have default value
+ms2dirtyf_1.argtypes = [c_int, c_int, c_int, c_float, c_float, np.ctypeslib.ndpointer(np.float32, flags='C'),
+                     np.ctypeslib.ndpointer(np.complex64, flags='C'), np.ctypeslib.ndpointer(np.complex64, flags='C'), c_float, c_float, c_int] 
+ms2dirtyf_1.restype = c_int
+
+ms2dirtyf_2 = lib.ms2dirtyf_2
+ms2dirtyf_2.argtypes = [c_int, c_int, c_int, c_double, c_double, np.ctypeslib.ndpointer(np.float32, flags='C'),
+                     np.ctypeslib.ndpointer(np.complex64, flags='C'), np.ctypeslib.ndpointer(np.float32, flags='C'), np.ctypeslib.ndpointer(np.complex64, flags='C'), c_float, c_float, c_int] 
+ms2dirtyf_2.restype = c_int
+
+dirty2msf_1 = lib.dirty2msf_1
+# the last two parameters have default value
+dirty2msf_1.argtypes = [c_int, c_int, c_int, c_float, c_float, np.ctypeslib.ndpointer(np.float32, flags='C'),
+                     np.ctypeslib.ndpointer(np.complex64, flags='C'), np.ctypeslib.ndpointer(np.complex64, flags='C'), c_float, c_float, c_int] 
+dirty2msf_1.restype = c_int
+
+dirty2msf_2 = lib.dirty2msf_2
+dirty2msf_2.argtypes = [c_int, c_int, c_int, c_float, c_float, np.ctypeslib.ndpointer(np.float32, flags='C'),
+                     np.ctypeslib.ndpointer(np.complex64, flags='C'), np.ctypeslib.ndpointer(np.float32, flags='C'), np.ctypeslib.ndpointer(np.complex64, flags='C'), c_float, c_float, c_int] 
+dirty2msf_2.restype = c_int
 
 def vis2dirty(uvw, freq, ms, wgt, dirty, fov, epsilon=1e-6,sigma=1.25):
     """

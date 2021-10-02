@@ -13,8 +13,8 @@ extern "C"
 int fourier_series_appro_invoker(PCS *fseries, conv_opts opts, int N);
 int fourier_series_appro_invoker(PCS *fseries, PCS *k, conv_opts opts, int N, int nf);
 int fourier_series_appro_invoker(PCS *fseries, PCS *k, conv_opts opts, int N);
-int curafft_deconv(curafft_plan *plan);
+int curafft_deconv(CURAFFT_PLAN *plan);
 
 // below this line, all contents ares pecified for radio astronomy
-int curadft_w_deconv(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize);
+int curadft_w_deconv(CURAFFT_PLAN *plan, PCS xpixelsize, PCS ypixelsize);
 #endif

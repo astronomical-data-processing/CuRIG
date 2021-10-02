@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
     plan->dirty_image = (CPX *)malloc(sizeof(CPX)*nxdirty*nydirty*nchan); //
 
-    explicit_gridder_invoker(plan);
+    explicit_gridder_invoker(plan,0);
 
     // result printing
 	printf("result printing...\n");

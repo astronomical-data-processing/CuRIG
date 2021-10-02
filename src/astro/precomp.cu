@@ -87,7 +87,7 @@ __global__ void gridder_rescaling_real(PCS *x, PCS scale_ratio, int N)
     }
 }
 
-void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, curafft_plan *plan, ragridder_plan *gridder_plan)
+void pre_setting(PCS *d_u, PCS *d_v, PCS *d_w, CUCPX *d_vis, CURAFFT_PLAN *plan, ragridder_plan *gridder_plan)
 {
     PCS f_over_c = gridder_plan->kv.frequency[gridder_plan->cur_channel] / SPEEDOFLIGHT;
     PCS xpixelsize = gridder_plan->pixelsize_x;
@@ -274,8 +274,9 @@ __global__ void explicit_gridder(int N1, int N2, int nrow, PCS *u, PCS *v, PCS *
     }
 }
 
-void explicit_gridder_invoker(ragridder_plan *gridder_plan)
+int explicit_gridder_invoker(ragridder_plan *gridder_plan, PCS e)
 {
+    int ier = (int) e;
     int nchan = gridder_plan->channel;
     int nrow = gridder_plan->nrow;
     int N1 = gridder_plan->width;
@@ -312,4 +313,5 @@ void explicit_gridder_invoker(ragridder_plan *gridder_plan)
     checkCudaErrors(cudaFree(d_w));
     checkCudaErrors(cudaFree(d_vis));
     checkCudaErrors(cudaFree(d_dirty));
+    return ier;
 }

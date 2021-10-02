@@ -169,13 +169,13 @@ int main(int argc, char *argv[])
 
 	/* ----------Step2: cugridder------------*/
 	// plan setting
-	curafft_plan *plan;
+	CURAFFT_PLAN *plan;
 
 	ragridder_plan *gridder_plan;
 
-	plan = new curafft_plan();
+	plan = new CURAFFT_PLAN();
     gridder_plan = new ragridder_plan();
-    memset(plan, 0, sizeof(curafft_plan));
+    memset(plan, 0, sizeof(CURAFFT_PLAN));
     memset(gridder_plan, 0, sizeof(ragridder_plan));
 	
 	visibility *pointer_v;

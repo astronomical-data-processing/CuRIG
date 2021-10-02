@@ -227,10 +227,10 @@ __global__ void conv_3d_nputsdriven(PCS *x, PCS *y, PCS *z, CUCPX *c, CUCPX *fw,
 	}
 }
 
-__global__ void partial_3d_conv_sorted()
-{
-	/*
-		Based on the image size, do paritical convolution in order to save memory. 
-		All the parts consists of the whole conv.
-	*/
-}
+// __global__ void partial_3d_conv_sorted()
+// {
+// 	/*
+// 		Based on the image size, do paritical convolution in order to save memory. 
+// 		All the parts consists of the whole conv.
+// 	*/
+// }

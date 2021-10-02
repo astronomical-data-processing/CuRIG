@@ -18,7 +18,7 @@
 #define PCS float
 #define CUCPX cuFloatComplex
 #define CUFFT_TYPE CUFFT_C2C
-#define CUFFT_EX cufftExecC2C
+#define CUFFT_EXEC cufftExecC2C
 #else
 #define PCS double
 #define CUCPX cuDoubleComplex

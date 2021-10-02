@@ -9,7 +9,7 @@
 //#include <thrust/extrema.h>
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
-
+#include "common_utils.h"
 #include "datatype.h"
 
 ///contrib
@@ -32,7 +32,11 @@
 
 #define PI (PCS) M_PI
 
+#ifdef SINGLE
+#define EPSILON (float)6e-08
+#else
 #define EPSILON (double)1.1e-16
+#endif
 
 #define BLOCKSIZE 16
 
@@ -48,12 +52,9 @@
 #define randm11() (2 * rand01() - (PCS)1.0)
 void rescaling_real_invoker(PCS *d_x, PCS scale_ratio, int N);
 void rescaling_complex_invoker(CUCPX *d_x, PCS scale_ratio, int N);
-int next235beven(int n, int b);
 void prefix_scan(PCS *d_arr, PCS *d_res, int n, int flag);
 void get_max_min(PCS &max, PCS &min, PCS *d_array, int n);
 int matrix_transpose_invoker(PCS *d_arr, int width, int height);
-void GPU_info();
-void show_mem_usage();
 int matrix_elementwise_multiply_invoker(CUCPX *a, PCS *b, int N);
 int matrix_elementwise_divide_invoker(CUCPX *a, PCS *b, int N);
 #endif

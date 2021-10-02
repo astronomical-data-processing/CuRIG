@@ -10,7 +10,7 @@ legendre_rule_fast cuda version should be implemented here, g and x to constant 
 #include "curafft_plan.h"
 
 
-__global__ void fourier_series_appro(PCS *fseries, int N, PCS *g, PCS *x, int p){
+__global__ void fourier_series_appro(PCS *fseries, int N, PCS *g, double *x, int p){
     int idx;
     for(idx = blockDim.x * blockIdx.x + threadIdx.x; idx < N; idx+=gridDim.x*blockDim.x){
         fseries[idx] = 0;
@@ -23,7 +23,7 @@ __global__ void fourier_series_appro(PCS *fseries, int N, PCS *g, PCS *x, int p)
     }
 }
 
-__global__ void fourier_series_appro(PCS *fseries, PCS *k, int N, int nf, PCS *g, PCS *x, int p){
+__global__ void fourier_series_appro(PCS *fseries, PCS *k, int N, int nf, PCS *g, double *x, int p){
     // 2p nodes and with some error
     int idx;
     
@@ -42,7 +42,7 @@ __global__ void fourier_series_appro(PCS *fseries, PCS *k, int N, int nf, PCS *g
     }
 }
 
-__global__ void fourier_series_appro(PCS *fseries, PCS *k, int N, PCS *g, PCS *x, int p){
+__global__ void fourier_series_appro(PCS *fseries, PCS *k, int N, PCS *g, double *x, int p){
     // 2p nodes and with some error
     int idx;
     
@@ -315,7 +315,7 @@ __global__ void deconv_3d(int N1, int N2, int N3, int nf1, int nf2, int nf3, CUC
 }
 
 
-int curafft_deconv(curafft_plan *plan){
+int curafft_deconv(CURAFFT_PLAN *plan){
     /*
         invoke deconv based on dimension(s)
     */
@@ -400,7 +400,7 @@ __global__ void w_term_deconv(int N1, int N2, CUCPX* fk, PCS* fwkerhalf, PCS i_c
 
 
 
-int curadft_w_deconv(curafft_plan *plan, PCS xpixelsize, PCS ypixelsize){
+int curadft_w_deconv(CURAFFT_PLAN *plan, PCS xpixelsize, PCS ypixelsize){
     /*
         w term deconvolution invoker
     */

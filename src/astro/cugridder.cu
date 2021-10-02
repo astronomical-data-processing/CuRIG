@@ -26,7 +26,7 @@
 #include "deconv.h"
 #include "cugridder.h"
 
-int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow, PCS *d_w, CUCPX *d_c, conv_opts copts, ragridder_plan *gridder_plan, curafft_plan *plan)
+int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow, PCS *d_w, CUCPX *d_c, conv_opts copts, ragridder_plan *gridder_plan, CURAFFT_PLAN *plan)
 {
     /*
     gridder related parameters setting
@@ -104,7 +104,7 @@ int setup_gridder_plan(int N1, int N2, PCS fov, int lshift, int mshift, int nrow
 
 int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_method, PCS tol, int direction, double sigma, int iflag,
                     int batchsize, int M, int channel, PCS fov, visibility *pointer_v, PCS *d_u, PCS *d_v, PCS *d_w,
-                    CUCPX *d_c, curafft_plan *plan, ragridder_plan *gridder_plan)
+                    CUCPX *d_c, CURAFFT_PLAN *plan, ragridder_plan *gridder_plan)
 {
     /*
         N1, N2 - number of Fouier modes
@@ -259,7 +259,7 @@ int gridder_setting(int N1, int N2, int method, int kerevalmeth, int w_term_meth
     return ier;
 }
 
-int gridder_execution(curafft_plan *plan, ragridder_plan *gridder_plan)
+int gridder_execution(CURAFFT_PLAN *plan, ragridder_plan *gridder_plan)
 {
     /*
     Execute conv, fft, dft, correction
@@ -286,7 +286,7 @@ int gridder_execution(curafft_plan *plan, ragridder_plan *gridder_plan)
     return ier;
 }
 
-int gridder_destroy(curafft_plan *plan, ragridder_plan *gridder_plan)
+int gridder_destroy(CURAFFT_PLAN *plan, ragridder_plan *gridder_plan)
 {
     // free memory
     int ier = 0;
@@ -306,7 +306,7 @@ int gridder_destroy(curafft_plan *plan, ragridder_plan *gridder_plan)
     return ier;
 }
 
-int py_gridder_destroy(curafft_plan *plan, ragridder_plan *gridder_plan)
+int py_gridder_destroy(CURAFFT_PLAN *plan, ragridder_plan *gridder_plan)
 {   
     // free memory
     int ier=0;
@@ -375,13 +375,13 @@ int ms2dirty_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uv
 
     /* -------------- cugridder-----------------*/
 	// plan setting
-	curafft_plan *plan;
+	CURAFFT_PLAN *plan;
 
 	ragridder_plan *gridder_plan;
 
-	plan = new curafft_plan();
+	plan = new CURAFFT_PLAN();
     gridder_plan = new ragridder_plan();
-    memset(plan, 0, sizeof(curafft_plan));
+    memset(plan, 0, sizeof(CURAFFT_PLAN));
     memset(gridder_plan, 0, sizeof(ragridder_plan));
 	
 	visibility *pointer_v;
@@ -502,13 +502,13 @@ int dirty2ms_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uv
 
     /* -------------- cugridder-----------------*/
 	// plan setting
-	curafft_plan *plan;
+	CURAFFT_PLAN *plan;
 
 	ragridder_plan *gridder_plan;
 
-	plan = new curafft_plan();
+	plan = new CURAFFT_PLAN();
     gridder_plan = new ragridder_plan();
-    memset(plan, 0, sizeof(curafft_plan));
+    memset(plan, 0, sizeof(CURAFFT_PLAN));
     memset(gridder_plan, 0, sizeof(ragridder_plan));
 	
 	visibility *pointer_v;
@@ -584,28 +584,28 @@ int dirty2ms_exec(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uv
 
 
 // a litter bit messy, not know how to handle as one function when wgt can be None or not in python
-int ms2dirty_2(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
+int MS2DIRTY_2(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
              CPX *vis, PCS *wgt, CPX *dirty, PCS epsilon, PCS sigma, int sign){
     int ier = 0;
     ier = ms2dirty_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,wgt,dirty,epsilon,sigma,sign);
     return ier;
 }
 
-int ms2dirty_1(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
+int MS2DIRTY_1(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
              CPX *vis, CPX *dirty, PCS epsilon, PCS sigma, int sign){
     int ier = 0;
     ier = ms2dirty_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,NULL,dirty,epsilon,sigma,sign);
     return ier;
 }
 
-int dirty2ms_1(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
+int DIRTY2MS_1(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
              CPX *vis, CPX *dirty, PCS epsilon, PCS sigma, int sign){
     int ier = 0;
     ier = dirty2ms_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,NULL,dirty,epsilon,sigma,sign);
     return ier;
 }
 
-int dirty2ms_2(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
+int DIRTY2MS_2(int nrow, int nxdirty, int nydirty, PCS fov, PCS freq, PCS *uvw,
              CPX *vis, PCS *wgt, CPX *dirty, PCS epsilon, PCS sigma, int sign){
     int ier = 0;
     ier = dirty2ms_exec(nrow,nxdirty,nydirty,fov,freq,uvw,vis,wgt,dirty,epsilon,sigma,sign);

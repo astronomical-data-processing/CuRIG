@@ -35,18 +35,22 @@ def explicit_gridder(uvw, freq, ms, nxdirty, nydirty, xpixsize, ypixsize):
 
 @pmp("nrow", (2, 27, 100))
 @pmp("nchan", (1, ))
-@pmp("nxdirty", (30, 128, 16))
+@pmp("nxdirty", (32, 64, 16))
 @pmp("nydirty", (128, 250, 64))
 @pmp("fov",(1, 10, 20))
 @pmp("epsilon", (2e-1, 5e-3, 5e-5, 5e-7, 5e-12))
-@pmp("use_wgt", (False,True))
+@pmp("singleprec", (False, True))
+@pmp("use_wgt", (False, True))
 
-def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon, use_wgt):
+def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon, singleprec, use_wgt):
     print("\n\nTesting imaging with {} rows and {} "
           "frequency channels".format(nrow, nchan))
     print("Dirty image has {}x{} pixels, "
           "FOV={} degrees".format(nxdirty, nydirty, fov))
     print("Requested accuracy: {}".format(epsilon))
+
+    if singleprec and epsilon < 5e-6:
+            return
 
     xpixsize = fov*np.pi/180/nxdirty
     ypixsize = fov*np.pi/180/nydirty
@@ -60,21 +64,29 @@ def test_against_wdft(nrow, nchan, nxdirty, nydirty, fov, epsilon, use_wgt):
     dirty = np.random.rand(nxdirty, nydirty)-0.5
     dirty2 = np.zeros((nxdirty,nydirty),dtype=np.float64)
     wgt = np.random.rand(nrow, nchan) if use_wgt else None
+    if singleprec:
+        ms = ms.astype("c8")
+        dirty = dirty.astype("f4")
+        if wgt is not None:
+            wgt = wgt.astype("f4")
+
+
     print("begin")
     start = time.time()
-    dirty2 = ms2dirty(uvw,freq, ms, wgt, nxdirty, nydirty, xpixsize, ypixsize, 0, 0, epsilon, True, 4)
+    dirty2 = ms2dirty(uvw, freq, ms, wgt, nxdirty, nydirty, xpixsize, ypixsize, 0, 0, epsilon, True, 4).astype("f8")
     end = time.time()
     print("The elapsed time {} (sec)".format(end-start))
     print("Execution finished")
     
     ms2 = np.zeros((nrow,1),dtype=np.complex128)
-    ms2 = dirty2ms(uvw,freq, dirty, wgt, xpixsize, ypixsize, 0, 0, epsilon, True, 4)
+    ms2 = dirty2ms(uvw,freq, dirty, wgt, xpixsize, ypixsize, 0, 0, epsilon, True, 4).astype("c16")
 
+    tol = 5e-5 if singleprec else 1e-12
     # ms2 = np.reshape(ms2,[nrow,1])
     print("\nadjointness testing....")
     print(np.vdot(ms, ms2).real)
     print(np.vdot(dirty2, dirty).real)
-    assert_allclose(np.vdot(ms, ms2).real, np.vdot(dirty2, dirty), rtol=1e-12)
+    assert_allclose(np.vdot(ms, ms2).real, np.vdot(dirty2, dirty), rtol=tol)
     
     if nrow<1e4:
         print("Vertification begin")
